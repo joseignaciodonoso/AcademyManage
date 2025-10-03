@@ -1,0 +1,694 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Branch ↔ Coach assignments
+model BranchCoach {
+  branchId String
+  coachId  String
+  createdAt DateTime @default(now())
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  coach  User   @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@id([branchId, coachId])
+  @@map("branch_coaches")
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core Academy Management
+model Academy {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Odoo Integration
+  odooUrl      String?
+  odooDb       String?
+  odooClientId String?
+  
+  // Branding
+  brandPrimary    String @default("#000000")
+  brandSecondary  String @default("#666666")
+  brandAccent     String @default("#0066cc")
+  brandNeutral    String @default("#f5f5f5")
+  brandBackground String @default("#ffffff")
+  brandForeground String @default("#000000")
+  logoUrl         String?
+  logoDarkUrl     String?
+  faviconUrl      String?
+  ogImageUrl      String?
+  defaultThemeMode String @default("system") // light | dark | system
+  
+  // Business Settings
+  currency     String @default("CLP")
+  timezone     String @default("America/Santiago")
+  dateFormat   String @default("DD/MM/YYYY")
+  taxRate      Float  @default(0.19) // IVA Chile
+  useUf        Boolean @default(false)
+  
+  // Onboarding
+  onboardingCompleted Boolean @default(false)
+  
+  // Relations
+  branches     Branch[]
+  users        User[]
+  plans        Plan[]
+  memberships  Membership[]
+  payments     Payment[]
+  curricula    Curriculum[]
+  contents     Content[]
+  channels     Channel[]
+  contentPermissions ContentPermission[]
+  classes      Class[]
+  events       Event[]
+  auditLogs    AuditLog[]
+  kpisCache    KpiCache[]
+
+  @@map("academies")
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  academyId String
+  name      String
+  address   String
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Operating Hours
+  mondayOpen     String?
+  mondayClose    String?
+  tuesdayOpen    String?
+  tuesdayClose   String?
+  wednesdayOpen  String?
+  wednesdayClose String?
+  thursdayOpen   String?
+  thursdayClose  String?
+  fridayOpen     String?
+  fridayClose    String?
+  saturdayOpen   String?
+  saturdayClose  String?
+  sundayOpen     String?
+  sundayClose    String?
+  
+  // Relations
+  academy     Academy       @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  classes     Class[]
+  events      Event[]
+  enrollments Enrollment[]
+  coaches     BranchCoach[]
+
+  @@map("branches")
+}
+
+// User Management & RBAC
+enum UserRole {
+  SUPER_ADMIN
+  ACADEMY_ADMIN
+  COACH
+  STUDENT
+  FINANCE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model User {
+  id        String     @id @default(cuid())
+  academyId String?
+  email     String     @unique
+  name      String?
+  phone     String?
+  password  String?
+  role      UserRole   @default(STUDENT)
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  // Student specific
+  beltLevel    String?
+  discipline   String?
+  emergencyContact String?
+  medicalNotes String?
+  
+  // Odoo Integration
+  odooPartnerId Int?
+  
+  // Relations
+  academy      Academy?      @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  accounts     Account[]
+  sessions     Session[]
+  memberships  Membership[]
+  enrollments  Enrollment[]
+  attendances  Attendance[]
+  assessments  Assessment[]
+  auditLogs    AuditLog[]
+  classesAsCoach Class[] @relation("ClassCoach")
+  contentPermissions ContentPermission[]
+  branchesAsCoach BranchCoach[]
+
+  @@map("users")
+}
+
+// NextAuth Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Plans & Subscriptions
+enum PlanType {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  UNLIMITED
+}
+
+enum PlanStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+model Plan {
+  id        String     @id @default(cuid())
+  academyId String
+  name      String
+  slug      String
+  type      PlanType
+  status    PlanStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  // Pricing
+  price         Float
+  currency      String @default("CLP")
+  trialDays     Int    @default(0)
+  setupFee      Float  @default(0)
+  
+  // Features
+  classesPerMonth    Int?
+  unlimitedClasses   Boolean @default(false)
+  accessToContent    Boolean @default(true)
+  personalTraining   Boolean @default(false)
+  competitionAccess  Boolean @default(false)
+  
+  // Odoo Integration
+  odooProductId       Int?
+  odooSubscriptionTemplateId Int?
+  
+  // Relations
+  academy     Academy      @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+
+  @@unique([academyId, slug])
+  @@map("plans")
+}
+
+// Memberships & Payments
+enum MembershipStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+  TRIAL
+}
+
+model Membership {
+  id        String           @id @default(cuid())
+  academyId String
+  userId    String
+  planId    String
+  status    MembershipStatus @default(TRIAL)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  
+  // Subscription Details
+  startDate    DateTime
+  endDate      DateTime?
+  trialEndDate DateTime?
+  nextBillingDate DateTime?
+  
+  // Odoo Integration
+  odooSubscriptionId Int?
+  
+  // Relations
+  academy  Academy   @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     Plan      @relation(fields: [planId], references: [id])
+  payments Payment[]
+
+  @@map("memberships")
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELED
+  REFUNDED
+}
+
+enum PaymentType {
+  SUBSCRIPTION
+  INVOICE
+  SETUP_FEE
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  academyId    String
+  membershipId String?
+  amount       Float
+  currency     String        @default("CLP")
+  status       PaymentStatus @default(PENDING)
+  type         PaymentType   @default(SUBSCRIPTION)
+  method       PaymentMethod?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Odoo Integration
+  odooTransactionId String?
+  odooMoveId        Int?
+  odooSubscriptionId Int?
+  externalRef       String? @unique
+  acquirerCode      String?
+  
+  // Payment Details
+  paidAt      DateTime?
+  failureReason String?
+  
+  // Relations
+  academy    Academy     @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  membership Membership? @relation(fields: [membershipId], references: [id])
+
+  @@map("payments")
+}
+
+// Curriculum & Content
+model Curriculum {
+  id          String   @id @default(cuid())
+  academyId   String
+  name        String
+  description String?
+  discipline  String
+  level       String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  modules Module[]
+
+  @@map("curricula")
+}
+
+model Module {
+  id           String   @id @default(cuid())
+  curriculumId String
+  name         String
+  description  String?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  curriculum Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  units      Unit[]
+
+  @@map("modules")
+}
+
+model Unit {
+  id          String   @id @default(cuid())
+  moduleId    String
+  name        String
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  module     Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  techniques Technique[]
+
+  @@map("units")
+}
+
+model Technique {
+  id          String   @id @default(cuid())
+  unitId      String
+  name        String
+  description String?
+  videoUrl    String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Prerequisites
+  prerequisites String[] // Array of technique IDs
+  tags          String[]
+  
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@map("techniques")
+}
+
+enum ContentType {
+  VIDEO
+  DOCUMENT
+  IMAGE
+  AUDIO
+}
+
+enum ContentVisibility {
+  PUBLIC
+  PLAN_RESTRICTED
+  LEVEL_RESTRICTED
+  PRIVATE
+}
+
+enum ChannelVisibility {
+  PUBLIC
+  STUDENTS
+  COACHES
+}
+
+model Content {
+  id          String            @id @default(cuid())
+  academyId   String
+  title       String
+  description String?
+  type        ContentType
+  visibility  ContentVisibility @default(PLAN_RESTRICTED)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  // File Details
+  fileUrl     String
+  thumbnailUrl String?
+  duration    Int? // in seconds for video/audio
+  fileSize    Int? // in bytes
+  
+  // Access Control
+  requiredPlans String[] // Plan IDs
+  requiredLevel String?
+  
+  // Video Specific (Mux/Stream)
+  muxAssetId    String?
+  muxPlaybackId String?
+  
+  // Relations
+  channelId String?
+  channel   Channel?  @relation(fields: [channelId], references: [id])
+  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+
+  @@map("contents")
+}
+
+model Channel {
+  id          String             @id @default(cuid())
+  academyId   String
+  name        String
+  slug        String
+  visibility  ChannelVisibility  @default(PUBLIC)
+  description String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  // Relations
+  academy  Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  contents Content[]
+
+  @@unique([academyId, slug])
+  @@map("channels")
+}
+
+model ContentPermission {
+  id               String  @id @default(cuid())
+  academyId        String
+  coachId          String
+  canVideo         Boolean @default(false)
+  canAnnouncement  Boolean @default(false)
+  canDoc           Boolean @default(false)
+  canLink          Boolean @default(false)
+  requireApproval  Boolean @default(true)
+  monthlyQuota     Int?
+  maxUploadMB      Int?
+
+  // Relations
+  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  coach   User    @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@unique([academyId, coachId])
+  @@map("content_permissions")
+}
+
+// Calendar & Classes
+enum ClassStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+model Class {
+  id        String      @id @default(cuid())
+  academyId String
+  branchId  String
+  coachId   String
+  title     String
+  description String?
+  discipline  String
+  level       String
+  status      ClassStatus @default(SCHEDULED)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Schedule
+  startTime DateTime
+  endTime   DateTime
+  
+  // Capacity
+  maxCapacity Int @default(20)
+  
+  // Relations
+  academy     Academy      @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  branch      Branch       @relation(fields: [branchId], references: [id])
+  coach       User         @relation("ClassCoach", fields: [coachId], references: [id])
+  enrollments Enrollment[]
+  attendances Attendance[]
+
+  @@map("classes")
+}
+
+// Events
+enum EventType {
+  CHAMPIONSHIP
+  SEMINAR
+  HOLIDAY
+  ANNOUNCEMENT
+  OTHER
+}
+
+model Event {
+  id         String    @id @default(cuid())
+  academyId  String
+  branchId   String?
+  title      String
+  description String?
+  type       EventType @default(OTHER)
+  allDay     Boolean   @default(true)
+  eventDate  DateTime
+  startAt    DateTime?
+  endAt      DateTime?
+  published  Boolean   @default(true)
+  important  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
+  academy  Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  branch   Branch? @relation(fields: [branchId], references: [id])
+
+  @@map("events")
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  WAITLIST
+  CANCELED
+}
+
+model Enrollment {
+  id        String           @id @default(cuid())
+  classId   String
+  userId    String
+  branchId  String
+  status    EnrollmentStatus @default(ENROLLED)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  
+  // Relations
+  class  Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch Branch @relation(fields: [branchId], references: [id])
+
+  @@unique([classId, userId])
+  @@map("enrollments")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  classId   String
+  userId    String
+  status    AttendanceStatus @default(PRESENT)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  
+  // Check-in Details
+  checkedInAt DateTime?
+  notes       String?
+  
+  // Relations
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, userId])
+  @@map("attendances")
+}
+
+// Assessments (Optional)
+model Assessment {
+  id        String   @id @default(cuid())
+  userId    String
+  assessorId String
+  title     String
+  notes     String?
+  score     Float?
+  maxScore  Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Belt/Level Progression
+  currentLevel String?
+  newLevel     String?
+  passed       Boolean @default(false)
+  
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("assessments")
+}
+
+// KPIs & Analytics
+model KpiCache {
+  id        String   @id @default(cuid())
+  academyId String
+  metric    String   // MRR, ARPU, churn_rate, etc.
+  value     Float
+  period    String   // YYYY-MM format
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+
+  @@unique([academyId, metric, period])
+  @@map("kpis_cache")
+}
+
+// Audit Logs
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PAYMENT
+  ENROLLMENT
+}
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  academyId String
+  userId    String?
+  action    AuditAction
+  resource  String      // table name or resource type
+  resourceId String?    // ID of the affected resource
+  oldValues Json?
+  newValues Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+  
+  // Relations
+  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
