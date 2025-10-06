@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,7 +28,10 @@ import {
   Ban,
   CheckCircle,
   MoreVertical,
-  Pencil
+  Pencil,
+  Key,
+  Info,
+  Check,
 } from "lucide-react"
 import {
   Dialog,
@@ -58,6 +61,19 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/components/ui/use-toast"
 import { useSession } from "next-auth/react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface Student {
   id: string
@@ -75,41 +91,6 @@ interface Student {
       currency: string
       type: string
     }
-    /*
-  const handleOpenEdit = (student: Student) => {
-    setEditingStudentId(student.id)
-    setEditForm({ name: student.name || "", email: student.email || "", phone: student.phone || "" })
-    setEditDialogOpen(true)
-  }
-
-  const saveEditStudent = async () => {
-    try {
-      if (!editingStudentId) return
-      if (!editForm.name || !editForm.email) {
-        toast({ title: "Faltan datos", description: "Nombre y email son obligatorios", variant: "destructive" })
-        return
-      }
-      setEditSaving(true)
-      const res = await fetch(`/api/admin/students/${editingStudentId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editForm.name, email: editForm.email, phone: editForm.phone })
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || "No se pudo actualizar el estudiante")
-      }
-      toast({ title: "Datos actualizados" })
-      setEditDialogOpen(false)
-      setEditingStudentId(null)
-      fetchStudents()
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message || "No se pudo actualizar el estudiante", variant: "destructive" })
-    } finally {
-      setEditSaving(false)
-    }
-  }
-    */
     startDate: string
     endDate: string
     nextBillingDate: string
@@ -140,7 +121,19 @@ export default function StudentsPage() {
     monthlyRevenue: 0,
     newStudentsThisMonth: 0
   })
+  // KPI visibility
+  const [kpiVisibility, setKpiVisibility] = useState({
+    total: true,
+    active: true,
+    monthly: true,
+    projected: true,
+    new: true,
+  })
   const [searchTerm, setSearchTerm] = useState("")
+  // Filtros
+  const [debtFilter, setDebtFilter] = useState<string>("ALL")
+  const [statusFilter, setStatusFilter] = useState<string>("ALL")
+  const [planFilter, setPlanFilter] = useState<string>("ALL")
   const [loading, setLoading] = useState(true)
   const [openCreate, setOpenCreate] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -155,6 +148,11 @@ export default function StudentsPage() {
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null)
   const [editSaving, setEditSaving] = useState(false)
   const [editForm, setEditForm] = useState<{ name: string; email: string; phone: string }>({ name: "", email: "", phone: "" })
+  // Reset password dialog state
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
+  const [resetStudentId, setResetStudentId] = useState<string | null>(null)
+  const [resetSaving, setResetSaving] = useState(false)
+  const [resetForm, setResetForm] = useState<{ password: string; confirm: string }>({ password: "", confirm: "" })
 
   useEffect(() => {
     fetchStudents()
@@ -192,10 +190,189 @@ export default function StudentsPage() {
     }
   }
 
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const statusOptions = useMemo(() => {
+    const set = new Set<string>()
+    students.forEach((s) => { if (s.membership?.status) set.add(s.membership.status) })
+    return ["ALL", ...Array.from(set).sort()]
+  }, [students])
+
+  const planOptions = useMemo(() => {
+    const set = new Set<string>()
+    students.forEach((s) => { if (s.membership?.plan?.name) set.add(s.membership.plan.name) })
+    return ["ALL", ...Array.from(set).sort()]
+  }, [students])
+
+  const resetFilters = () => {
+    setSearchTerm("")
+    setDebtFilter("ALL")
+    setStatusFilter("ALL")
+    setPlanFilter("ALL")
+  }
+
+  const filteredStudents = students
+    .filter(student =>
+      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter(student => {
+      if (debtFilter === "ALL") return true
+      const hasMembership = Boolean(student.membership)
+      const nextInfo = hasMembership ? getNextPayment(student) : { date: null as Date | null, overdue: false }
+      const overdue = nextInfo.overdue
+      const now = new Date()
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+      switch (debtFilter) {
+        case "UP_TO_DATE":
+          // Al día: requiere membresía y no vencido
+          return hasMembership && !overdue
+        case "OVERDUE":
+          // Atrasado: requiere membresía y vencido
+          return hasMembership && overdue
+        case "NO_PLAN":
+          // Sin plan: no tiene membresía
+          return !hasMembership
+        case "DUE_THIS_MONTH":
+          // Pagan este mes: requiere membresía ACTIVA y próxima fecha dentro del mes actual
+          return (
+            hasMembership &&
+            student.membership?.status === "ACTIVE" &&
+            !!nextInfo.date &&
+            nextInfo.date >= startOfMonth &&
+            nextInfo.date < startOfNextMonth
+          )
+        default:
+          return true
+      }
+    })
+    .filter(student => {
+      if (statusFilter === "ALL") return true
+      return student.membership?.status === statusFilter
+    })
+    .filter(student => {
+      if (planFilter === "ALL") return true
+      return student.membership?.plan?.name === planFilter
+    })
+
+  // Projected revenue (filters applied): sum of
+  // - paid this month (payments.status === 'PAID' within current month)
+  // - plus dues this month (ACTIVE membership with next payment in current month) if not already paid this month
+  const projectedRevenue = useMemo(() => {
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    let paid = 0
+    let due = 0
+
+    for (const s of filteredStudents) {
+      // sum paid payments this month
+      if (Array.isArray(s.payments)) {
+        for (const p of s.payments) {
+          if (p.status === "PAID" && p.paidAt) {
+            const d = new Date(p.paidAt)
+            if (d >= startOfMonth && d < startOfNextMonth) {
+              paid += p.amount || 0
+            }
+          }
+        }
+      }
+
+      // add due if active and next payment is within this month and not already paid this month
+      if (s.membership?.status === "ACTIVE") {
+        const info = getNextPayment(s)
+        if (info.date && info.date >= startOfMonth && info.date < startOfNextMonth) {
+          const paidThisStudent = (s.payments || []).some((p) => {
+            if (p.status !== "PAID" || !p.paidAt) return false
+            const d = new Date(p.paidAt)
+            return d >= startOfMonth && d < startOfNextMonth
+          })
+          if (!paidThisStudent) {
+            due += s.membership.plan?.price || 0
+          }
+        }
+      }
+    }
+
+    return paid + due
+  }, [filteredStudents])
+
+  // Detailed breakdown lists for modal
+  const projectedBreakdown = useMemo(() => {
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    const paidList: { id: string; name: string; amount: number; date: string }[] = []
+    const dueList: { id: string; name: string; amount: number; date: Date }[] = []
+    for (const s of filteredStudents) {
+      if (Array.isArray(s.payments)) {
+        for (const p of s.payments) {
+          if (p.status === "PAID" && p.paidAt) {
+            const d = new Date(p.paidAt)
+            if (d >= startOfMonth && d < startOfNextMonth) {
+              paidList.push({ id: s.id, name: s.name, amount: p.amount || 0, date: p.paidAt })
+            }
+          }
+        }
+      }
+      if (s.membership?.status === "ACTIVE") {
+        const info = getNextPayment(s)
+        if (info.date && info.date >= startOfMonth && info.date < startOfNextMonth) {
+          const paidThisStudent = (s.payments || []).some((p) => {
+            if (p.status !== "PAID" || !p.paidAt) return false
+            const d = new Date(p.paidAt)
+            return d >= startOfMonth && d < startOfNextMonth
+          })
+          if (!paidThisStudent) {
+            dueList.push({ id: s.id, name: s.name, amount: s.membership.plan?.price || 0, date: info.date })
+          }
+        }
+      }
+    }
+    return { paidList, dueList }
+  }, [filteredStudents])
+
+  const [projectedDetailOpen, setProjectedDetailOpen] = useState(false)
+
+  // Compare projection vs actual monthly revenue (backend metric)
+  const projectedDelta = useMemo(() => projectedRevenue - (metrics.monthlyRevenue || 0), [projectedRevenue, metrics.monthlyRevenue])
+  const projectedPercent = useMemo(() => {
+    const actual = metrics.monthlyRevenue || 0
+    if (actual <= 0) return 0
+    return Math.round((projectedRevenue / actual) * 100)
+  }, [projectedRevenue, metrics.monthlyRevenue])
+
+  // Breakdown for tooltip
+  const { paidThisMonth, dueThisMonth } = useMemo(() => {
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    let paidSum = 0
+    let dueSum = 0
+    for (const s of filteredStudents) {
+      if (Array.isArray(s.payments)) {
+        for (const p of s.payments) {
+          if (p.status === "PAID" && p.paidAt) {
+            const d = new Date(p.paidAt)
+            if (d >= startOfMonth && d < startOfNextMonth) {
+              paidSum += p.amount || 0
+            }
+          }
+        }
+      }
+      if (s.membership?.status === "ACTIVE") {
+        const info = getNextPayment(s)
+        if (info.date && info.date >= startOfMonth && info.date < startOfNextMonth) {
+          const paidThisStudent = (s.payments || []).some((p) => {
+            if (p.status !== "PAID" || !p.paidAt) return false
+            const d = new Date(p.paidAt)
+            return d >= startOfMonth && d < startOfNextMonth
+          })
+          if (!paidThisStudent) dueSum += s.membership.plan?.price || 0
+        }
+      }
+    }
+    return { paidThisMonth: paidSum, dueThisMonth: dueSum }
+  }, [filteredStudents])
 
   const resetNewStudent = () => setNewStudent({ name: "", email: "", phone: "" })
 
@@ -309,7 +486,7 @@ export default function StudentsPage() {
   }
 
   // Helpers to compute next payment date when membership has no nextBillingDate
-  const monthsForPlanType = (type?: string) => {
+  function monthsForPlanType(type?: string) {
     switch (type) {
       case "MONTHLY": return 1
       case "QUARTERLY": return 3
@@ -318,7 +495,7 @@ export default function StudentsPage() {
     }
   }
 
-  const addMonths = (date: Date, months: number) => {
+  function addMonths(date: Date, months: number) {
     const d = new Date(date)
     const day = d.getDate()
     d.setMonth(d.getMonth() + months)
@@ -326,7 +503,7 @@ export default function StudentsPage() {
     return d
   }
 
-  const getNextPayment = (student: Student): { date: Date | null; overdue: boolean } => {
+  function getNextPayment(student: Student): { date: Date | null; overdue: boolean } {
     const m = student.membership
     if (!m) return { date: null, overdue: false }
     if (m.nextBillingDate) {
@@ -380,8 +557,49 @@ export default function StudentsPage() {
     }
   }
 
+  // Reset password handlers
+  const handleOpenResetPassword = (student: Student) => {
+    setResetStudentId(student.id)
+    setResetForm({ password: "", confirm: "" })
+    setResetDialogOpen(true)
+  }
+
+  const saveResetPassword = async () => {
+    try {
+      if (!resetStudentId) return
+      const pwd = resetForm.password.trim()
+      const conf = resetForm.confirm.trim()
+      if (!pwd || pwd.length < 8) {
+        toast({ title: "Contraseña inválida", description: "Debe tener al menos 8 caracteres", variant: "destructive" })
+        return
+      }
+      if (pwd !== conf) {
+        toast({ title: "Las contraseñas no coinciden", description: "Verifica e intenta nuevamente", variant: "destructive" })
+        return
+      }
+      setResetSaving(true)
+      const res = await fetch(`/api/admin/students/${resetStudentId}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pwd })
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "No se pudo reestablecer la contraseña")
+      }
+      toast({ title: "Contraseña actualizada" })
+      setResetDialogOpen(false)
+      setResetStudentId(null)
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "No se pudo reestablecer la contraseña", variant: "destructive" })
+    } finally {
+      setResetSaving(false)
+    }
+  }
+
   const kpiCardData = [
     {
+      id: 'total',
       title: 'Total Estudiantes',
       value: metrics.totalStudents,
       change: 'Estudiantes registrados',
@@ -390,6 +608,7 @@ export default function StudentsPage() {
       progress: Math.min((metrics.totalStudents / 100) * 100, 100),
     },
     {
+      id: 'active',
       title: 'Suscripciones Activas',
       value: metrics.activeSubscriptions,
       change: 'Pagos al día',
@@ -398,6 +617,7 @@ export default function StudentsPage() {
       progress: metrics.totalStudents > 0 ? Math.min((metrics.activeSubscriptions / metrics.totalStudents) * 100, 100) : 0,
     },
     {
+      id: 'monthly',
       title: 'Ingresos Mensuales',
       value: formatCurrency(metrics.monthlyRevenue),
       change: 'Recaudación mensual',
@@ -406,6 +626,40 @@ export default function StudentsPage() {
       progress: Math.min((metrics.monthlyRevenue / 50000) * 100, 100),
     },
     {
+      id: 'projected',
+      title: 'Ingresos Proyectados (mes)',
+      value: formatCurrency(projectedRevenue),
+      change: `Vs actual: ${projectedDelta >= 0 ? '+' : ''}${formatCurrency(projectedDelta)} (${projectedPercent}%)`,
+      icon: DollarSign,
+      color: 'from-sky-500 to-cyan-600',
+      progress: metrics.monthlyRevenue > 0 ? Math.min((projectedRevenue / metrics.monthlyRevenue) * 100, 100) : 0,
+      tooltipContent: (
+        <div className="text-sm space-y-1">
+          <div className="flex justify-between">
+            <span className="text-gray-300">Pagado este mes</span>
+            <span className="text-white font-medium">{formatCurrency(paidThisMonth)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-300">Por cobrar este mes</span>
+            <span className="text-white font-medium">{formatCurrency(dueThisMonth)}</span>
+          </div>
+          <div className="border-t border-gray-700 my-1" />
+          <div className="flex justify-between">
+            <span className="text-gray-300">Proyección</span>
+            <span className="text-white font-semibold">{formatCurrency(projectedRevenue)}</span>
+          </div>
+        </div>
+      ),
+      extraAction: (
+        <div className="mt-2">
+          <Button variant="outline" onClick={() => setProjectedDetailOpen(true)} className="border-white/30 text-white/90 hover:bg-white/10">
+            Ver detalle
+          </Button>
+        </div>
+      ),
+    },
+    {
+      id: 'new',
       title: 'Nuevos Este Mes',
       value: metrics.newStudentsThisMonth,
       change: 'Registros recientes',
@@ -440,24 +694,69 @@ export default function StudentsPage() {
             <h1 className="text-3xl font-bold tracking-tight">Gestión de Estudiantes</h1>
             <p className="text-gray-400">Administra y supervisa todos los estudiantes de tu academia</p>
           </div>
-          <Button onClick={handleOpenCreate} className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-lg shadow-indigo-500/30 transition-all duration-300 transform hover:scale-105">
-            <UserPlus className="mr-2 h-4 w-4" />
-            Agregar Estudiante
-          </Button>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="px-3 py-2 rounded-md bg-gray-800/60 border border-gray-700 text-white text-sm hover:bg-gray-700">
+                KPIs
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-gray-800 border border-gray-700 text-white">
+                {[
+                  { id: 'total', label: 'Total Estudiantes' },
+                  { id: 'active', label: 'Suscripciones Activas' },
+                  { id: 'monthly', label: 'Ingresos Mensuales' },
+                  { id: 'projected', label: 'Ingresos Proyectados (mes)' },
+                  { id: 'new', label: 'Nuevos Este Mes' },
+                ].map((opt) => {
+                  const visible = (kpiVisibility as any)[opt.id]
+                  return (
+                    <DropdownMenuItem
+                      key={opt.id}
+                      onClick={() => setKpiVisibility((v) => ({ ...v, [opt.id]: !visible }))}
+                      className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer text-white flex items-center justify-between"
+                    >
+                      <span>{opt.label}</span>
+                      {visible && <Check className="h-4 w-4 text-green-400" />}
+                    </DropdownMenuItem>
+                  )
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={handleOpenCreate} className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-lg shadow-indigo-500/30 transition-all duration-300 transform hover:scale-105">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Agregar Estudiante
+            </Button>
+          </div>
         </header>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {kpiCardData.map((kpi, index) => (
+          {kpiCardData.filter(k => (kpiVisibility as any)[k.id]).map((kpi, index) => (
             <Card key={index} className="glass-effect rounded-2xl border-gray-700/50 overflow-hidden transition-all duration-300 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10">
               <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-br ${kpi.color} p-4`}>
-                <CardTitle className="text-sm font-medium text-white/90">{kpi.title}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-sm font-medium text-white/90">{kpi.title}</CardTitle>
+                  {kpi.tooltipContent && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button aria-label="Detalle proyección" className="text-white/80 hover:text-white focus:outline-none">
+                            <Info className="h-4 w-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-gray-900 border border-gray-700 text-white">
+                          {kpi.tooltipContent}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
                 <kpi.icon className="h-5 w-5 text-white/80" />
               </CardHeader>
               <CardContent className="p-4">
                 <div className="text-3xl font-bold text-white">{kpi.value}</div>
                 <p className="text-xs text-gray-400 mt-1">{kpi.change}</p>
                 <Progress value={kpi.progress} className="mt-4 h-2 bg-gray-700/50" indicatorClassName={`bg-gradient-to-r ${kpi.color}`} />
+                {kpi.extraAction}
               </CardContent>
             </Card>
           ))}
@@ -473,14 +772,59 @@ export default function StudentsPage() {
                   Busca y gestiona todos los estudiantes de tu academia
                 </CardDescription>
               </div>
-              <div className="flex items-center space-x-2">
-                <Search className="h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por nombre o email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="max-w-sm bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-indigo-500"
-                />
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
+                  <Search className="h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Buscar por nombre o email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-indigo-500"
+                  />
+                </div>
+                {/* Estado de pago */}
+                <Select value={debtFilter} onValueChange={setDebtFilter}>
+                  <SelectTrigger className="w-48 bg-gray-800/50 border-gray-700 text-white">
+                    <SelectValue placeholder="Estado de pago" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                    <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" value="ALL">Todos (estado de pago)</SelectItem>
+                    <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" value="UP_TO_DATE">Al día</SelectItem>
+                    <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" value="OVERDUE">Atrasado</SelectItem>
+                    <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" value="DUE_THIS_MONTH">Pagan este mes</SelectItem>
+                    <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" value="NO_PLAN">Sin plan</SelectItem>
+                  </SelectContent>
+                </Select>
+                {/* Status filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700 text-white">
+                    <SelectValue placeholder="Estado" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                    {statusOptions.map((opt) => (
+                      <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" key={opt} value={opt}>{opt === "ALL" ? "Todos (estado)" : opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {/* Plan filter */}
+                <Select value={planFilter} onValueChange={setPlanFilter}>
+                  <SelectTrigger className="w-48 bg-gray-800/50 border-gray-700 text-white">
+                    <SelectValue placeholder="Plan" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                    {planOptions.map((opt) => (
+                      <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" key={opt} value={opt}>{opt === "ALL" ? "Todos (plan)" : opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  onClick={resetFilters}
+                  className="border-gray-700 text-gray-200 hover:bg-gray-700"
+                  title="Limpiar búsqueda y filtros"
+                >
+                  Limpiar filtros
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -574,14 +918,26 @@ export default function StudentsPage() {
                           {student.membership ? (
                             (() => {
                               const info = getNextPayment(student)
-                              return info.date ? (
-                                <div className={`flex items-center text-sm ${info.overdue ? 'text-red-300' : 'text-white'}`}>
-                                  <Calendar className={`mr-2 h-4 w-4 ${info.overdue ? 'text-red-400' : 'text-gray-400'}`} />
-                                  {formatDate(info.date.toISOString())}
-                                  {info.overdue && <span className="ml-2 text-red-400">⚠️</span>}
+                              if (!info.date) return <span className="text-gray-500">-</span>
+                              const now = new Date()
+                              const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+                              const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+                              const dueThisMonth = (
+                                student.membership?.status === "ACTIVE" &&
+                                info.date >= startOfMonth &&
+                                info.date < startOfNextMonth
+                              )
+                              return (
+                                <div className={`flex items-center gap-2 text-sm ${info.overdue ? 'text-red-300' : 'text-white'}`}>
+                                  <div className="flex items-center">
+                                    <Calendar className={`mr-2 h-4 w-4 ${info.overdue ? 'text-red-400' : 'text-gray-400'}`} />
+                                    {formatDate(info.date.toISOString())}
+                                    {info.overdue && <span className="ml-2 text-red-400">⚠️</span>}
+                                  </div>
+                                  {dueThisMonth && (
+                                    <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30">Paga este mes</Badge>
+                                  )}
                                 </div>
-                              ) : (
-                                <span className="text-gray-500">-</span>
                               )
                             })()
                           ) : (
@@ -610,6 +966,14 @@ export default function StudentsPage() {
                               >
                                 <Pencil className="mr-2 h-4 w-4 text-blue-400" />
                                 <span>Editar</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleOpenResetPassword(student)}
+                                disabled={actionLoading}
+                                className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer text-white"
+                              >
+                                <Key className="mr-2 h-4 w-4 text-indigo-400" />
+                                <span>Resetear contraseña</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleSuspendStudent(student)}
@@ -708,6 +1072,50 @@ export default function StudentsPage() {
                 </Button>
                 <Button onClick={saveStudent} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700">
                   {saving ? "Guardando..." : "Crear"}
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reset Password Dialog */}
+        <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+          <DialogContent className="bg-gray-900 border-gray-700 text-white">
+            <DialogHeader>
+              <DialogTitle>Resetear contraseña</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Define una nueva contraseña para el estudiante seleccionado. Debe tener al menos 8 caracteres.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm text-gray-300">Nueva contraseña</label>
+                <Input
+                  type="password"
+                  value={resetForm.password}
+                  onChange={(e) => setResetForm((p) => ({ ...p, password: e.target.value }))}
+                  className="bg-gray-800/50 border-gray-700 text-white"
+                  placeholder="********"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm text-gray-300">Confirmar contraseña</label>
+                <Input
+                  type="password"
+                  value={resetForm.confirm}
+                  onChange={(e) => setResetForm((p) => ({ ...p, confirm: e.target.value }))}
+                  className="bg-gray-800/50 border-gray-700 text-white"
+                  placeholder="********"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <div className="flex items-center justify-end gap-3 w-full">
+                <Button variant="outline" onClick={() => setResetDialogOpen(false)} className="border-gray-700 text-gray-200 hover:bg-gray-800">
+                  Cancelar
+                </Button>
+                <Button onClick={saveResetPassword} disabled={resetSaving} className="bg-indigo-600 hover:bg-indigo-700">
+                  {resetSaving ? "Guardando..." : "Actualizar"}
                 </Button>
               </div>
             </DialogFooter>

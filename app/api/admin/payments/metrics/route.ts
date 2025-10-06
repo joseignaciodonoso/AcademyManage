@@ -19,44 +19,44 @@ export async function GET(request: NextRequest) {
 
     const academyId = session.user.academyId
 
+    // Define current month window [startOfMonth, startOfNextMonth)
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+
+    // KPIs restricted to current month
     const [paidSumAgg, totalCount, successCount, failedCount] = await Promise.all([
       prisma.payment.aggregate({
-        where: { academyId, status: "PAID" },
+        where: { academyId, status: "PAID", paidAt: { gte: startOfMonth, lt: startOfNextMonth } },
         _sum: { amount: true },
       }),
-      prisma.payment.count({ where: { academyId } }),
-      prisma.payment.count({ where: { academyId, status: "PAID" } }),
-      prisma.payment.count({ where: { academyId, status: "FAILED" } }),
+      prisma.payment.count({ where: { academyId, createdAt: { gte: startOfMonth, lt: startOfNextMonth } } }),
+      prisma.payment.count({ where: { academyId, status: "PAID", paidAt: { gte: startOfMonth, lt: startOfNextMonth } } }),
+      prisma.payment.count({ where: { academyId, status: "FAILED", createdAt: { gte: startOfMonth, lt: startOfNextMonth } } }),
     ])
 
     const totalRevenue = paidSumAgg._sum.amount || 0
-    const averageTransaction = totalCount > 0 ? totalRevenue / totalCount : 0
+    const averageTransaction = successCount > 0 ? totalRevenue / successCount : 0
 
-    // Simple monthly growth placeholder: compare last 30 days with previous 30 days
-    const now = new Date()
-    const start30 = new Date(now)
-    start30.setDate(start30.getDate() - 30)
-    const prevStart30 = new Date(now)
-    prevStart30.setDate(prevStart30.getDate() - 60)
+    // Monthly growth: compare current month vs previous month based on paid revenue
+    const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const startOfThisMonth = startOfMonth
+    const startOfNext = startOfNextMonth
 
-    const [last30, prev30] = await Promise.all([
+    const [currentMonthAgg, prevMonthAgg] = await Promise.all([
       prisma.payment.aggregate({
-        where: { academyId, status: "PAID", paidAt: { gte: start30 } },
+        where: { academyId, status: "PAID", paidAt: { gte: startOfThisMonth, lt: startOfNext } },
         _sum: { amount: true },
       }),
       prisma.payment.aggregate({
-        where: {
-          academyId,
-          status: "PAID",
-          paidAt: { gte: prevStart30, lt: start30 },
-        },
+        where: { academyId, status: "PAID", paidAt: { gte: startOfPrevMonth, lt: startOfThisMonth } },
         _sum: { amount: true },
       }),
     ])
 
-    const last = last30._sum.amount || 0
-    const prev = prev30._sum.amount || 0
-    const monthlyGrowth = prev > 0 ? ((last - prev) / prev) * 100 : 0
+    const curr = currentMonthAgg._sum.amount || 0
+    const prev = prevMonthAgg._sum.amount || 0
+    const monthlyGrowth = prev > 0 ? ((curr - prev) / prev) * 100 : 0
 
     return NextResponse.json({
       totalRevenue,

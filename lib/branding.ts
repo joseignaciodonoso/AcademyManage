@@ -1,4 +1,4 @@
-import type { Academy } from "@/lib/types"
+// Note: Do not rely on the app's generic Academy type; the Prisma model includes branding fields.
 
 export interface BrandingTheme {
   primary: string
@@ -41,14 +41,90 @@ export function applyBrandingToDocument(academyId: string, theme: BrandingTheme)
     document.head.appendChild(styleElement)
   }
 
+  // Helpers: HEX -> HSL string "h s% l%"
+  const hexToRgb = (hex: string) => {
+    const clean = hex.replace('#', '')
+    const bigint = Number.parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16)
+    const r = (bigint >> 16) & 255
+    const g = (bigint >> 8) & 255
+    const b = bigint & 255
+    return { r, g, b }
+  }
+
+  const rgbToHsl = (r: number, g: number, b: number) => {
+    r /= 255; g /= 255; b /= 255
+    const max = Math.max(r, g, b), min = Math.min(r, g, b)
+    let h = 0, s = 0, l = (max + min) / 2
+    if (max !== min) {
+      const d = max - min
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break
+        case g: h = (b - r) / d + 2; break
+        case b: h = (r - g) / d + 4; break
+      }
+      h /= 6
+    }
+    return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) }
+  }
+
+  const hexToHslString = (hex: string) => {
+    try {
+      const { r, g, b } = hexToRgb(hex)
+      const { h, s, l } = rgbToHsl(r, g, b)
+      return `${h} ${s}% ${l}%`
+    } catch {
+      return '210 40% 98%'
+    }
+  }
+
+  const primaryHsl = hexToHslString(theme.primary)
+  const secondaryHsl = hexToHslString(theme.secondary)
+  const accentHsl = hexToHslString(theme.accent)
+  const backgroundHsl = hexToHslString(theme.background)
+  const foregroundHsl = hexToHslString(theme.foreground)
+  const neutralHsl = hexToHslString(theme.neutral)
+
   styleElement.textContent = `
     :root[data-academy-id="${academyId}"] {
       ${generateCSSVariables(theme)}
-      --color-primary: var(--brand-primary);
-      --color-secondary: var(--brand-secondary);
-      --color-accent: var(--brand-accent);
-      --color-background: var(--brand-background);
-      --color-foreground: var(--brand-foreground);
+      /* Tailwind design tokens */
+      --background: ${backgroundHsl};
+      --foreground: ${foregroundHsl};
+      --primary: ${primaryHsl};
+      --primary-foreground: ${foregroundHsl};
+      --secondary: ${secondaryHsl};
+      --secondary-foreground: ${foregroundHsl};
+      --accent: ${accentHsl};
+      --accent-foreground: ${foregroundHsl};
+      --muted: ${neutralHsl};
+      --muted-foreground: ${foregroundHsl};
+      --border: ${neutralHsl};
+      --input: ${neutralHsl};
+      --ring: ${primaryHsl};
+    }
+
+    .dark[data-academy-id="${academyId}"] {
+      /* Override for dark mode using provided colors */
+      --background: ${hexToHslString('#0b1220')};
+      --foreground: ${foregroundHsl};
+      --card: ${hexToHslString('#0b1220')};
+      --card-foreground: ${foregroundHsl};
+      --popover: ${hexToHslString('#0b1220')};
+      --popover-foreground: ${foregroundHsl};
+      --primary: ${primaryHsl};
+      --primary-foreground: ${foregroundHsl};
+      --secondary: ${hexToHslString('#1f2937')};
+      --secondary-foreground: ${foregroundHsl};
+      --muted: ${hexToHslString('#1f2937')};
+      --muted-foreground: ${hexToHslString('#94a3b8')};
+      --accent: ${hexToHslString('#1f2937')};
+      --accent-foreground: ${foregroundHsl};
+      --destructive: ${hexToHslString('#7f1d1d')};
+      --destructive-foreground: ${foregroundHsl};
+      --border: ${hexToHslString('#1f2937')};
+      --input: ${hexToHslString('#1f2937')};
+      --ring: ${hexToHslString('#93c5fd')};
     }
   `
 }
@@ -107,7 +183,21 @@ export function getContrastRecommendation(ratio: number): {
   }
 }
 
-export function generateBrandingFromAcademy(academy: Academy): BrandingTheme {
+type AcademyBrandingSource = {
+  brandPrimary: string
+  brandSecondary: string
+  brandAccent: string
+  brandNeutral: string
+  brandBackground: string
+  brandForeground: string
+  logoUrl?: string | null
+  logoDarkUrl?: string | null
+  faviconUrl?: string | null
+  ogImageUrl?: string | null
+  defaultThemeMode: string
+}
+
+export function generateBrandingFromAcademy(academy: AcademyBrandingSource): BrandingTheme {
   return {
     primary: academy.brandPrimary,
     secondary: academy.brandSecondary,

@@ -61,12 +61,12 @@ export default async function AdminLayout({
       {/* Main Content */}
       <div className="flex flex-col">
         {/* Header */}
-        <header className="flex h-16 items-center gap-4 border-b border-slate-700/50 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 backdrop-blur-md px-4 lg:px-6 shadow-lg">
+        <header className="flex h-16 items-center gap-4 border-b border-border bg-gradient-to-r from-[hsl(var(--background))] via-[hsl(var(--muted))] to-[hsl(var(--background))] backdrop-blur-md px-4 lg:px-6 shadow-lg">
           <MobileAdminSidebar />
 
           {/* Academy Info */}
           <div className="flex items-center gap-3 flex-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] shadow-lg">
               <div className="h-6 w-6 rounded-full bg-white/20" />
             </div>
             <div className="flex flex-col">
@@ -103,16 +103,16 @@ export default async function AdminLayout({
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost" 
-                  className="flex items-center gap-2 h-10 px-3 rounded-xl hover:bg-slate-700 hover:shadow-md transition-all duration-200 group"
+                  className="flex items-center gap-2 h-10 px-3 rounded-xl hover:bg-[hsl(var(--background))] hover:shadow-md transition-all duration-200 group"
                 >
-                  <Avatar className="h-8 w-8 ring-2 ring-slate-600 group-hover:ring-blue-400 transition-all duration-200">
+                  <Avatar className="h-8 w-8 ring-2 ring-[hsl(var(--accent))] group-hover:ring-[hsl(var(--primary))] transition-all duration-200">
                     <AvatarImage src="/placeholder-avatar.jpg" alt={session.user.name || ""} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-semibold">
+                    <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white text-sm font-semibold">
                       {session.user.name?.charAt(0) || session.user.email.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden sm:flex flex-col items-start">
-                    <span className="text-sm font-semibold text-white leading-tight">
+                    <span className="text-sm font-semibold text-[hsl(var(--foreground))] leading-tight">
                       {session.user.name || session.user.email.split('@')[0]}
                     </span>
                     <span className="text-xs text-slate-300 leading-tight">
@@ -151,7 +151,7 @@ export default async function AdminLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex flex-1 flex-col">{children}</main>
+        <main className="flex flex-1 flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">{children}</main>
       </div>
     </div>
   )

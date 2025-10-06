@@ -133,6 +133,18 @@ export default function PaymentsPage() {
   const [plansOptions, setPlansOptions] = useState<{ id: string; name: string; price: number; currency: string; type?: "MONTHLY" | "QUARTERLY" | "YEARLY" | "UNLIMITED" }[]>([])
   const [plansLoading, setPlansLoading] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<{ id: string; name: string; price: number; currency: string; type?: "MONTHLY" | "QUARTERLY" | "YEARLY" | "UNLIMITED" } | null>(null)
+  // Edit payment dialog state
+  const [openEdit, setOpenEdit] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null)
+  const [editPayment, setEditPayment] = useState<{
+    amount: string
+    currency: string
+    method: "TRANSFER" | "CASH"
+    status: "PENDING" | "PROCESSING" | "PAID" | "FAILED" | "CANCELED" | "REFUNDED"
+    paidAt: string
+    transactionId: string
+  }>({ amount: "", currency: "CLP", method: "TRANSFER", status: "PAID", paidAt: "", transactionId: "" })
   
   const monthsForPlanType = (type?: string) => {
     switch (type) {
@@ -212,6 +224,43 @@ export default function PaymentsPage() {
       toast({ title: "Error", description: e.message || "No se pudo registrar el pago", variant: "destructive" })
     } finally {
       setSavingManual(false)
+    }
+  }
+
+  const submitEditPayment = async () => {
+    try {
+      if (!selectedPaymentId) return
+      const amt = Number(editPayment.amount)
+      if (isNaN(amt) || amt <= 0) {
+        toast({ title: "Monto inválido", description: "Ingresa un monto mayor a 0", variant: "destructive" })
+        return
+      }
+      setSavingEdit(true)
+      const res = await fetch(`/api/admin/payments/${selectedPaymentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: amt,
+          currency: editPayment.currency,
+          method: editPayment.method,
+          status: editPayment.status,
+          paidAt: editPayment.paidAt || null,
+          transactionId: editPayment.transactionId || null,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "No se pudo actualizar el pago")
+      }
+      toast({ title: "Pago actualizado" })
+      setOpenEdit(false)
+      setSelectedPaymentId(null)
+      await fetchPayments()
+      await fetchMetrics()
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "No se pudo actualizar el pago", variant: "destructive" })
+    } finally {
+      setSavingEdit(false)
     }
   }
 
@@ -658,6 +707,26 @@ export default function PaymentsPage() {
                             >
                               <Copy className="h-3 w-3" />
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700"
+                              onClick={() => {
+                                setSelectedPaymentId(payment.id)
+                                setEditPayment({
+                                  amount: String(payment.amount),
+                                  currency: payment.currency || "CLP",
+                                  method: (payment.method === "CASH" ? "CASH" : "TRANSFER") as any,
+                                  status: (payment.status as any),
+                                  paidAt: payment.paidAt ? new Date(payment.paidAt).toISOString().slice(0,16) : "",
+                                  transactionId: payment.transactionId || "",
+                                })
+                                setOpenEdit(true)
+                              }}
+                              title="Editar pago"
+                            >
+                              Editar
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -857,6 +926,95 @@ export default function PaymentsPage() {
               </Button>
               <Button onClick={submitManualPayment} disabled={savingManual} className="bg-green-600 hover:bg-green-700">
                 {savingManual ? "Guardando..." : "Registrar"}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Payment Dialog */}
+      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+        <DialogContent className="bg-gray-900 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Editar pago</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Actualiza los datos del pago manual (transferencia o efectivo).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-300">Monto</Label>
+              <Input
+                type="number"
+                min="0"
+                value={editPayment.amount}
+                onChange={(e) => setEditPayment((p) => ({ ...p, amount: e.target.value }))}
+                className="bg-gray-800/50 border-gray-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-300">Moneda</Label>
+              <Input
+                value={editPayment.currency}
+                onChange={(e) => setEditPayment((p) => ({ ...p, currency: e.target.value }))}
+                className="bg-gray-800/50 border-gray-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-300">Método</Label>
+              <Select value={editPayment.method} onValueChange={(v: any) => setEditPayment((p) => ({ ...p, method: v }))}>
+                <SelectTrigger className="bg-gray-800/50 border-gray-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectItem value="TRANSFER">Transferencia</SelectItem>
+                  <SelectItem value="CASH">Efectivo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-300">Estado</Label>
+              <Select value={editPayment.status} onValueChange={(v: any) => setEditPayment((p) => ({ ...p, status: v }))}>
+                <SelectTrigger className="bg-gray-800/50 border-gray-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectItem value="PAID">Pagado</SelectItem>
+                  <SelectItem value="PENDING">Pendiente</SelectItem>
+                  <SelectItem value="FAILED">Fallido</SelectItem>
+                  <SelectItem value="CANCELED">Cancelado</SelectItem>
+                  <SelectItem value="REFUNDED">Reembolsado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-300">Fecha de pago</Label>
+              <Input
+                type="datetime-local"
+                value={editPayment.paidAt}
+                onChange={(e) => setEditPayment((p) => ({ ...p, paidAt: e.target.value }))}
+                className="bg-gray-800/50 border-gray-700 text-white"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label className="text-sm text-gray-300">ID Transacción</Label>
+              <Input
+                value={editPayment.transactionId}
+                onChange={(e) => setEditPayment((p) => ({ ...p, transactionId: e.target.value }))}
+                placeholder="Opcional"
+                className="bg-gray-800/50 border-gray-700 text-white"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <div className="flex items-center justify-end gap-3 w-full">
+              <Button variant="outline" onClick={() => setOpenEdit(false)} className="border-gray-700 text-gray-200 hover:bg-gray-800">
+                Cancelar
+              </Button>
+              <Button onClick={submitEditPayment} disabled={savingEdit || !selectedPaymentId} className="bg-indigo-600 hover:bg-indigo-700">
+                {savingEdit ? "Guardando..." : "Guardar"}
               </Button>
             </div>
           </DialogFooter>

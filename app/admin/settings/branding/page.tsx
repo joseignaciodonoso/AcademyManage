@@ -28,13 +28,22 @@ export default async function BrandingSettingsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Configuración de Branding</h1>
-        <p className="text-muted-foreground">Personaliza la apariencia visual de tu academia</p>
-      </div>
+    <div className="min-h-screen w-full bg-gray-900 text-white p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+      {/* Fondo decorativo como otras pantallas */}
+      <div className="absolute inset-0 gradient-bg opacity-20"></div>
+      <div className="absolute top-10 -left-24 w-72 h-72 bg-blue-500 rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
+      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-purple-600 rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
 
-      <BrandingSettings academy={academy} />
+      <div className="relative z-10 space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Configuración de Branding</h1>
+            <p className="text-gray-400">Personaliza la apariencia visual de tu academia</p>
+          </div>
+        </div>
+
+        <BrandingSettings academy={academy} />
+      </div>
     </div>
   )
 }

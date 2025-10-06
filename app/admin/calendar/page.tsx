@@ -259,7 +259,7 @@ export default function AdminCalendarPage() {
 
   // Calendar modifiers for event markers
   const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-  const keyToDate = (key: string) => {
+  function keyToDate(key: string) {
     const [y, m, d] = key.split("-").map(Number)
     return new Date(y, (m as number) - 1, d)
   }

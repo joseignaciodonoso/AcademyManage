@@ -9,10 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Upload, Save, RefreshCw, AlertTriangle, CheckCircle } from "lucide-react"
-import { checkContrastRatio, getContrastRecommendation, applyBrandingToDocument } from "@/lib/branding"
+import { checkContrastRatio, getContrastRecommendation } from "@/lib/branding"
 import { useToast } from "@/hooks/use-toast"
 
 interface BrandingData {
+  name?: string
   brandPrimary: string
   brandSecondary: string
   brandAccent: string
@@ -25,12 +26,13 @@ interface BrandingData {
   defaultThemeMode: "light" | "dark" | "system"
 }
 
-export function BrandingSettings() {
+export function BrandingSettings({ academy }: { academy: { id: string; name?: string } }) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [data, setData] = useState<BrandingData>({
+    name: academy?.name || "",
     brandPrimary: "#0066cc",
     brandSecondary: "#666666",
     brandAccent: "#ff6b35",
@@ -51,10 +53,23 @@ export function BrandingSettings() {
   useEffect(() => {
     const loadBranding = async () => {
       try {
-        const response = await fetch("/api/admin/branding")
+        const response = await fetch(`/api/admin/branding?academyId=${academy.id}`)
         if (response.ok) {
           const branding = await response.json()
-          setData(branding)
+          setData((prev) => ({
+            ...prev,
+            name: branding.name || prev.name,
+            brandPrimary: branding.brandPrimary,
+            brandSecondary: branding.brandSecondary,
+            brandAccent: branding.brandAccent,
+            brandNeutral: branding.brandNeutral,
+            brandBackground: branding.brandBackground,
+            brandForeground: branding.brandForeground,
+            defaultThemeMode: branding.defaultThemeMode,
+            logoUrl: branding.logoUrl,
+            logoDarkUrl: branding.logoDarkUrl,
+            faviconUrl: branding.faviconUrl,
+          }))
         }
       } catch (error) {
         console.error("Error loading branding:", error)
@@ -64,7 +79,7 @@ export function BrandingSettings() {
     }
 
     loadBranding()
-  }, [])
+  }, [academy.id])
 
   // Check contrast when colors change
   useEffect(() => {
@@ -73,10 +88,7 @@ export function BrandingSettings() {
     setContrastCheck({ ratio, ...recommendation })
   }, [data.brandForeground, data.brandBackground])
 
-  // Apply live preview
-  useEffect(() => {
-    applyBrandingToDocument("admin", data)
-  }, [data])
+  // Do not apply branding globally here; global applier handles tokens after save
 
   const handleColorChange = (field: keyof BrandingData, value: string) => {
     setData((prev) => ({ ...prev, [field]: value }))
@@ -88,6 +100,7 @@ export function BrandingSettings() {
       const formData = new FormData()
       formData.append("file", file)
       formData.append("type", type)
+      formData.append("academyId", academy.id)
 
       const response = await fetch("/api/upload/branding", {
         method: "POST",
@@ -121,7 +134,7 @@ export function BrandingSettings() {
       const response = await fetch("/api/admin/branding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, academyId: academy.id }),
       })
 
       if (!response.ok) throw new Error("Error al guardar")
@@ -141,17 +154,61 @@ export function BrandingSettings() {
     }
   }
 
-  const resetToDefaults = () => {
-    setData({
-      brandPrimary: "#0066cc",
-      brandSecondary: "#666666",
-      brandAccent: "#ff6b35",
-      brandNeutral: "#f5f5f5",
-      brandBackground: "#ffffff",
-      brandForeground: "#000000",
-      defaultThemeMode: "system",
-    })
+  const resetToDefaults = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch("/api/admin/branding", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetToOriginal: true, academyId: academy.id }),
+      })
+      if (!res.ok) throw new Error("Error al restablecer")
+      // Reload branding from server to reflect defaults
+      const response = await fetch(`/api/admin/branding?academyId=${academy.id}`)
+      if (response.ok) {
+        const branding = await response.json()
+        setData((prev) => ({
+          ...prev,
+          name: branding.name || prev.name,
+          brandPrimary: branding.brandPrimary,
+          brandSecondary: branding.brandSecondary,
+          brandAccent: branding.brandAccent,
+          brandNeutral: branding.brandNeutral,
+          brandBackground: branding.brandBackground,
+          brandForeground: branding.brandForeground,
+          defaultThemeMode: branding.defaultThemeMode,
+          logoUrl: branding.logoUrl,
+          logoDarkUrl: branding.logoDarkUrl,
+          faviconUrl: branding.faviconUrl,
+        }))
+      }
+      toast({ title: "Restablecido", description: "Se restauró el look & feel original de la app." })
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo restablecer.", variant: "destructive" })
+    } finally {
+      setSaving(false)
+    }
   }
+
+  // Typed list of color fields for safer indexing
+  const colorOptions: { key: keyof BrandingData; label: string; placeholder: string }[] = [
+    { key: "brandPrimary", label: "Color Primario", placeholder: "#0066cc" },
+    { key: "brandSecondary", label: "Color Secundario", placeholder: "#666666" },
+    { key: "brandAccent", label: "Color de Acento", placeholder: "#ff6b35" },
+    { key: "brandNeutral", label: "Color Neutral", placeholder: "#f5f5f5" },
+    { key: "brandBackground", label: "Fondo", placeholder: "#ffffff" },
+    { key: "brandForeground", label: "Texto", placeholder: "#000000" },
+  ]
+
+  const logoOptions: Array<{
+    key: keyof Pick<BrandingData, "logoUrl" | "logoDarkUrl" | "faviconUrl">
+    label: string
+    type: "logo" | "logoDark" | "favicon"
+  }> = [
+    { key: "logoUrl", label: "Logo Principal", type: "logo" },
+    { key: "logoDarkUrl", label: "Logo Oscuro", type: "logoDark" },
+    { key: "faviconUrl", label: "Favicon", type: "favicon" },
+  ]
 
   if (loading) {
     return <div className="flex items-center justify-center p-8">Cargando configuración...</div>
@@ -165,9 +222,9 @@ export function BrandingSettings() {
           <p className="text-muted-foreground">Personaliza la apariencia visual de tu academia</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={resetToDefaults}>
+          <Button variant="outline" onClick={resetToDefaults} disabled={saving}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            Restablecer
+            Restablecer configuración
           </Button>
           <Button onClick={handleSave} disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
@@ -176,41 +233,70 @@ export function BrandingSettings() {
         </div>
       </div>
 
-      <Tabs defaultValue="colors" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="colors">Colores</TabsTrigger>
-          <TabsTrigger value="logos">Logos</TabsTrigger>
-          <TabsTrigger value="preview">Vista Previa</TabsTrigger>
+      <Tabs defaultValue="general" className="space-y-4">
+        <TabsList className="bg-gray-800/50 text-gray-300 border border-gray-700/50">
+          <TabsTrigger value="general" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">General</TabsTrigger>
+          <TabsTrigger value="colors" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">Colores</TabsTrigger>
+          <TabsTrigger value="logos" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">Logos</TabsTrigger>
+          <TabsTrigger value="preview" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">Vista Previa</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="general" className="space-y-4">
+          <Card className="glass-effect border-gray-700/50">
+            <CardHeader>
+              <CardTitle>Datos de la Academia</CardTitle>
+              <CardDescription>Nombre y preferencias generales</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nombre de la academia</Label>
+                <Input
+                  value={data.name || ""}
+                  onChange={(e) => setData((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="Tu Academia"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tema por Defecto</Label>
+                <Select
+                  value={data.defaultThemeMode}
+                  onValueChange={(value) => handleColorChange("defaultThemeMode", value)}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">Claro</SelectItem>
+                    <SelectItem value="dark">Oscuro</SelectItem>
+                    <SelectItem value="system">Automático</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="colors" className="space-y-4">
-          <Card>
+          <Card className="glass-effect border-gray-700/50">
             <CardHeader>
               <CardTitle>Paleta de Colores</CardTitle>
               <CardDescription>Define los colores principales de tu marca</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {[
-                  { key: "brandPrimary", label: "Color Primario", placeholder: "#0066cc" },
-                  { key: "brandSecondary", label: "Color Secundario", placeholder: "#666666" },
-                  { key: "brandAccent", label: "Color de Acento", placeholder: "#ff6b35" },
-                  { key: "brandNeutral", label: "Color Neutral", placeholder: "#f5f5f5" },
-                  { key: "brandBackground", label: "Fondo", placeholder: "#ffffff" },
-                  { key: "brandForeground", label: "Texto", placeholder: "#000000" },
-                ].map(({ key, label, placeholder }) => (
+                {colorOptions.map(({ key, label, placeholder }) => (
                   <div key={key} className="space-y-2">
                     <Label>{label}</Label>
                     <div className="flex gap-2">
                       <Input
                         type="color"
-                        value={data[key as keyof BrandingData] as string}
-                        onChange={(e) => handleColorChange(key as keyof BrandingData, e.target.value)}
+                        value={data[key] as string}
+                        onChange={(e) => handleColorChange(key, e.target.value)}
                         className="w-16 h-10 p-1"
                       />
                       <Input
-                        value={data[key as keyof BrandingData] as string}
-                        onChange={(e) => handleColorChange(key as keyof BrandingData, e.target.value)}
+                        value={data[key] as string}
+                        onChange={(e) => handleColorChange(key, e.target.value)}
                         placeholder={placeholder}
                       />
                     </div>
@@ -256,12 +342,8 @@ export function BrandingSettings() {
 
         <TabsContent value="logos" className="space-y-4">
           <div className="grid gap-4">
-            {[
-              { key: "logoUrl", label: "Logo Principal", type: "logo" as const },
-              { key: "logoDarkUrl", label: "Logo Oscuro", type: "logoDark" as const },
-              { key: "faviconUrl", label: "Favicon", type: "favicon" as const },
-            ].map(({ key, label, type }) => (
-              <Card key={key}>
+            {logoOptions.map(({ key, label, type }) => (
+              <Card key={key} className="glass-effect border-gray-700/50">
                 <CardHeader>
                   <CardTitle className="text-base">{label}</CardTitle>
                 </CardHeader>
@@ -270,7 +352,7 @@ export function BrandingSettings() {
                     {data[key] ? (
                       <div className="flex items-center gap-4">
                         <img
-                          src={data[key] || "/placeholder.svg"}
+                          src={(data[key] as string) || "/placeholder.svg"}
                           alt={label}
                           className={`h-12 w-auto ${type === "logoDark" ? "bg-gray-900 p-2 rounded" : ""}`}
                         />
@@ -313,7 +395,7 @@ export function BrandingSettings() {
         </TabsContent>
 
         <TabsContent value="preview" className="space-y-4">
-          <Card>
+          <Card className="glass-effect border-gray-700/50">
             <CardHeader>
               <CardTitle>Vista Previa del Branding</CardTitle>
               <CardDescription>Así se verá tu academia con la configuración actual</CardDescription>

@@ -54,15 +54,16 @@ export function BrandingStep({ data, onUpdate, academyId }: BrandingStepProps) {
   // Apply live preview
   useEffect(() => {
     applyBrandingToDocument(academyId, {
-      brandPrimary: data.brandPrimary || DEFAULT_COLORS.primary,
-      brandSecondary: data.brandSecondary || DEFAULT_COLORS.secondary,
-      brandAccent: data.brandAccent || DEFAULT_COLORS.accent,
-      brandNeutral: data.brandNeutral || DEFAULT_COLORS.neutral,
-      brandBackground: data.brandBackground || DEFAULT_COLORS.background,
-      brandForeground: data.brandForeground || DEFAULT_COLORS.foreground,
+      primary: data.brandPrimary || DEFAULT_COLORS.primary,
+      secondary: data.brandSecondary || DEFAULT_COLORS.secondary,
+      accent: data.brandAccent || DEFAULT_COLORS.accent,
+      neutral: data.brandNeutral || DEFAULT_COLORS.neutral,
+      background: data.brandBackground || DEFAULT_COLORS.background,
+      foreground: data.brandForeground || DEFAULT_COLORS.foreground,
       logoUrl: data.logoUrl,
       logoDarkUrl: data.logoDarkUrl,
       faviconUrl: data.faviconUrl,
+      ogImageUrl: undefined,
       defaultThemeMode: data.defaultThemeMode || "system",
     })
   }, [
