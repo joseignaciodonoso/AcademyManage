@@ -10,11 +10,13 @@
     "odoo:test": "node ./scripts/test-odoo-xmlrpc.mjs",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@auth/core": "0.34.2",
     "@auth/prisma-adapter": "^2.7.2",
+    "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^3.10.0",
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-accordion": "^1.2.2",
