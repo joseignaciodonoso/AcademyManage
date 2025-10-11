@@ -70,6 +70,7 @@ model Academy {
   channels     Channel[]
   contentPermissions ContentPermission[]
   classes      Class[]
+  classSchedules ClassSchedule[]
   events       Event[]
   auditLogs    AuditLog[]
   kpisCache    KpiCache[]
@@ -109,6 +110,7 @@ model Branch {
   events      Event[]
   enrollments Enrollment[]
   coaches     BranchCoach[]
+  classSchedules ClassSchedule[]
 
   @@map("branches")
 }
@@ -161,6 +163,8 @@ model User {
   classesAsCoach Class[] @relation("ClassCoach")
   contentPermissions ContentPermission[]
   branchesAsCoach BranchCoach[]
+  // Recurring schedules where this user is coach
+  classSchedulesAsCoach ClassSchedule[] @relation("ClassScheduleCoach")
 
   @@map("users")
 }
@@ -536,6 +540,11 @@ model Class {
   enrollments Enrollment[]
   attendances Attendance[]
 
+  // Optional link to recurring schedule generation
+  scheduleId  String?
+  schedule    ClassSchedule? @relation(fields: [scheduleId], references: [id])
+
+  @@unique([scheduleId, startTime])
   @@map("classes")
 }
 
@@ -691,4 +700,43 @@ model AuditLog {
   user    User?   @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
+}
+
+// === Recurring schedules (minimal) ===
+enum Weekday {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
+
+model ClassSchedule {
+  id             String   @id @default(cuid())
+  academyId      String
+  branchId       String
+  coachId        String
+  title          String
+  description    String?
+  discipline     String
+  level          String
+  weekday        Weekday
+  startTimeLocal String   // "HH:mm"
+  endTimeLocal   String   // "HH:mm"
+  timezone       String   @default("America/Santiago")
+  active         Boolean  @default(true)
+  startDate      DateTime?
+  endDate        DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  branch  Branch  @relation(fields: [branchId], references: [id])
+  coach   User    @relation("ClassScheduleCoach", fields: [coachId], references: [id])
+  classes Class[]
+
+  @@map("class_schedules")
 }

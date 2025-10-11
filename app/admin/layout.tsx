@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth-simple"
 import { AdminSidebar, MobileAdminSidebar } from "@/components/admin/layout/admin-sidebar"
+import { HeaderAcademyName } from "@/components/admin/layout/header-academy-name"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -37,19 +38,18 @@ export default async function AdminLayout({
     redirect("/auth/signin")
   }
 
-  // const academy = await prisma.academy.findUnique({
-  //   where: { id: session.user.academyId },
-  //   select: { onboardingCompleted: true, name: true },
-  // })
-
-  // if (!academy?.onboardingCompleted) {
-  //   redirect("/admin/onboarding")
-  // }
-
-  const academy = {
-    name: "Academia Demo",
-    onboardingCompleted: true,
-  }
+  // Try to get academy name from branding
+  let academyName = "Academia"
+  try {
+    const academyId = (session.user as any).academyId as string | undefined
+    if (academyId) {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/admin/branding?academyId=${academyId}`, { cache: "no-store" })
+      if (res.ok) {
+        const branding = await res.json()
+        if (branding?.name) academyName = branding.name as string
+      }
+    }
+  } catch {}
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -70,7 +70,7 @@ export default async function AdminLayout({
               <div className="h-6 w-6 rounded-full bg-white/20" />
             </div>
             <div className="flex flex-col">
-              <h2 className="text-lg font-bold text-white leading-tight">{academy.name}</h2>
+              <HeaderAcademyName initialName={academyName} />
               <p className="text-xs text-slate-300 font-medium">Panel de Administración</p>
             </div>
           </div>

@@ -34,6 +34,28 @@ export function BrandingApplier() {
 
   const canLoad = useMemo(() => status !== "loading" && !!academyId, [status, academyId])
 
+  // Ensure base tokens are present even without an academy (e.g., SUPER_ADMIN with no selection)
+  useEffect(() => {
+    if (status === "loading") return
+    if (academyId) return
+    const root = document.documentElement
+    const DEFAULT_ID = "default"
+    applyBrandingToDocument(DEFAULT_ID, {
+      primary: "#3b82f6",
+      secondary: "#64748b",
+      accent: "#8b5cf6",
+      neutral: "#1f2937",
+      background: "#0b1220",
+      foreground: "#e5e7eb",
+      logoUrl: undefined,
+      logoDarkUrl: undefined,
+      faviconUrl: undefined,
+      ogImageUrl: undefined,
+      defaultThemeMode: "dark",
+    })
+    root.classList.add("dark")
+  }, [status, academyId])
+
   useEffect(() => {
     if (!canLoad || !academyId) return
     let cancelled = false
@@ -59,24 +81,35 @@ export function BrandingApplier() {
             ogImageUrl: undefined,
             defaultThemeMode: data.defaultThemeMode,
           })
-        } else if (data.original) {
-          // Apply original app palette to preserve classic look & feel until academy config exists
-          applyBrandingToDocument(academyId, {
-            primary: data.original.brandPrimary,
-            secondary: data.original.brandSecondary,
-            accent: data.original.brandAccent,
-            neutral: data.original.brandNeutral,
-            background: data.original.brandBackground,
-            foreground: data.original.brandForeground,
-            logoUrl: undefined,
-            logoDarkUrl: undefined,
-            faviconUrl: undefined,
-            ogImageUrl: undefined,
-            defaultThemeMode: "system",
-          })
+        } else {
+          const root = document.documentElement
+          if (data.original) {
+            // Apply the app's ORIGINAL palette to match pre-branding UI
+            applyBrandingToDocument(academyId, {
+              primary: data.original.brandPrimary,
+              secondary: data.original.brandSecondary,
+              accent: data.original.brandAccent,
+              neutral: data.original.brandNeutral,
+              background: data.original.brandBackground,
+              foreground: data.original.brandForeground,
+              logoUrl: undefined,
+              logoDarkUrl: undefined,
+              faviconUrl: undefined,
+              ogImageUrl: undefined,
+              defaultThemeMode: "dark",
+            })
+            root.classList.add("dark")
+          } else {
+            // No branding info at all: clean tokens and force original dark baseline
+            root.removeAttribute("data-academy-id")
+            const styleId = `branding-${academyId}`
+            const styleEl = document.getElementById(styleId)
+            if (styleEl) styleEl.remove()
+            root.classList.add("dark")
+          }
         }
 
-        // Apply theme mode only if academy configured; otherwise keep default (app original)
+        // Apply theme mode only if academy configured; otherwise force original dark baseline
         if (data.configured) {
           const root = document.documentElement
           const applyMode = (mode: BrandingResponse["defaultThemeMode"]) => {

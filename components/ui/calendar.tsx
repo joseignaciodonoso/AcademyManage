@@ -218,6 +218,8 @@ function CalendarDayButton({
         "data-[range-end=true]:bg-indigo-600/30 data-[range-end=true]:text-white",
         // Today subtle ring
         modifiers.today && "ring-1 ring-indigo-500/30",
+        // Check-in window indicator (optional custom modifier)
+        modifiers.checkin_window && "ring-2 ring-emerald-500/40",
         // Event dot indicator (applies when modifiers.has_events is true)
         modifiers.has_events &&
           "after:content-[''] after:absolute after:bottom-2 after:left-1/2 after:-translate-x-1/2 after:h-2 after:w-2 after:rounded-full after:bg-gradient-to-r after:from-indigo-500 after:to-purple-500 after:opacity-90",

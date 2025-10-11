@@ -144,7 +144,7 @@ export default function ReportsPage() {
                 await fetchKPIs({ recalculate: true })
                 setRecalcLoading(false)
               }}
-              className="bg-indigo-600 hover:bg-indigo-700"
+              
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${recalcLoading ? "animate-spin" : ""}`} />
               {recalcLoading ? "Recalculando..." : "Recalcular"}

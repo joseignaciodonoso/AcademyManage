@@ -131,10 +131,10 @@ export default function DashboardPage() {
   ] : []
 
   return (
-    <div className="min-h-screen w-full bg-gray-900 text-white p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))] p-4 sm:p-6 lg:p-8 relative overflow-hidden">
       <div className="absolute inset-0 gradient-bg opacity-20"></div>
-      <div className="absolute top-10 -left-24 w-72 h-72 bg-blue-500 rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
-      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-purple-600 rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
+      <div className="absolute top-10 -left-24 w-72 h-72 bg-[hsl(var(--primary,210_90%_56%))] rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
+      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-[hsl(var(--accent,262_83%_58%))] rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
 
       <div className="relative z-10">
         <header className="flex items-center justify-between mb-8">
@@ -142,7 +142,7 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold tracking-tight">Dashboard de la Academia</h1>
             <p className="text-gray-400">Resumen del rendimiento y actividad reciente.</p>
           </div>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-lg shadow-indigo-500/30 transition-all duration-300 transform hover:scale-105">
+          <Button className="font-semibold transition-all duration-300 transform hover:scale-105">
             Generar Reporte
           </Button>
         </header>

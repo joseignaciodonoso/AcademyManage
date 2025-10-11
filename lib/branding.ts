@@ -97,6 +97,15 @@ export function applyBrandingToDocument(academyId: string, theme: BrandingTheme)
       --secondary-foreground: ${foregroundHsl};
       --accent: ${accentHsl};
       --accent-foreground: ${foregroundHsl};
+      /* Semantic tokens */
+      --success: ${hexToHslString('#16a34a')};
+      --success-foreground: ${foregroundHsl};
+      --warning: ${hexToHslString('#ca8a04')};
+      --warning-foreground: ${foregroundHsl};
+      --info: ${accentHsl};
+      --info-foreground: ${foregroundHsl};
+      --destructive: ${hexToHslString('#dc2626')};
+      --destructive-foreground: ${foregroundHsl};
       --muted: ${neutralHsl};
       --muted-foreground: ${foregroundHsl};
       --border: ${neutralHsl};
@@ -105,26 +114,33 @@ export function applyBrandingToDocument(academyId: string, theme: BrandingTheme)
     }
 
     .dark[data-academy-id="${academyId}"] {
-      /* Override for dark mode using provided colors */
-      --background: ${hexToHslString('#0b1220')};
+      /* Dark mode now respects academy branding tokens */
+      --background: ${backgroundHsl};
       --foreground: ${foregroundHsl};
-      --card: ${hexToHslString('#0b1220')};
+      --card: ${backgroundHsl};
       --card-foreground: ${foregroundHsl};
-      --popover: ${hexToHslString('#0b1220')};
+      --popover: ${backgroundHsl};
       --popover-foreground: ${foregroundHsl};
       --primary: ${primaryHsl};
       --primary-foreground: ${foregroundHsl};
-      --secondary: ${hexToHslString('#1f2937')};
+      --secondary: ${secondaryHsl};
       --secondary-foreground: ${foregroundHsl};
-      --muted: ${hexToHslString('#1f2937')};
-      --muted-foreground: ${hexToHslString('#94a3b8')};
-      --accent: ${hexToHslString('#1f2937')};
+      --muted: ${neutralHsl};
+      --muted-foreground: ${foregroundHsl};
+      --accent: ${accentHsl};
       --accent-foreground: ${foregroundHsl};
-      --destructive: ${hexToHslString('#7f1d1d')};
+      /* Semantic tokens */
+      --success: ${hexToHslString('#16a34a')};
+      --success-foreground: ${foregroundHsl};
+      --warning: ${hexToHslString('#ca8a04')};
+      --warning-foreground: ${foregroundHsl};
+      --info: ${accentHsl};
+      --info-foreground: ${foregroundHsl};
+      --destructive: ${hexToHslString('#dc2626')};
       --destructive-foreground: ${foregroundHsl};
-      --border: ${hexToHslString('#1f2937')};
-      --input: ${hexToHslString('#1f2937')};
-      --ring: ${hexToHslString('#93c5fd')};
+      --border: ${neutralHsl};
+      --input: ${neutralHsl};
+      --ring: ${primaryHsl};
     }
   `
 }

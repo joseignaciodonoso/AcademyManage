@@ -129,6 +129,14 @@ export default function AdminCalendarPage() {
   type WeekAttachment = { type: "youtube" | "link"; url: string; title: string }
   const [weeklyPrograms, setWeeklyPrograms] = useState<Record<string, { title: string; objectives: string; attachments: WeekAttachment[] }>>({})
   const [weekForm, setWeekForm] = useState<{ title: string; objectives: string; attachments: WeekAttachment[] }>({ title: "", objectives: "", attachments: [] })
+  const updateAttachment = (idx: number, patch: Partial<WeekAttachment>) => {
+    setWeekForm((f) => {
+      const list = [...f.attachments]
+      const current = list[idx] || { type: "link", url: "", title: "" }
+      list[idx] = { ...current, ...patch }
+      return { ...f, attachments: list }
+    })
+  }
 
   // Helpers
   const monthRange = useMemo(() => {
@@ -146,6 +154,10 @@ export default function AdminCalendarPage() {
         startDate: monthRange.start.toISOString(),
         endDate: monthRange.end.toISOString(),
       })
+      // Ensure recurring schedules are materialized as classes for this month
+      try {
+        await fetch(`/api/admin/class-schedules/ensure-classes?${params.toString()}`, { method: "POST" })
+      } catch {}
       const res = await fetch(`/api/classes?${params.toString()}`)
       if (!res.ok) return
       const data: ClassEvent[] = await res.json()
@@ -342,83 +354,78 @@ export default function AdminCalendarPage() {
 
   const statusBadge = (status: string) => {
     const map: Record<string, { label: string; cls: string }> = {
-      scheduled: { label: "Programada", cls: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
-      ongoing: { label: "En curso", cls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" },
-      completed: { label: "Completada", cls: "bg-gray-500/20 text-gray-300 border-gray-500/30" },
-      cancelled: { label: "Cancelada", cls: "bg-red-500/20 text-red-300 border-red-500/30" },
+      scheduled: { label: "Programada", cls: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
+      ongoing: { label: "En curso", cls: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30" },
+      completed: { label: "Completada", cls: "bg-slate-500/20 text-slate-300 border-slate-500/30" },
+      cancelled: { label: "Cancelada", cls: "bg-red-500/15 text-red-400 border-red-500/30" },
     }
-    const item = map[status] || { label: status, cls: "bg-gray-500/20 text-gray-300 border-gray-500/30" }
+    const item = map[status] || { label: status, cls: "bg-slate-500/20 text-slate-300 border-slate-500/30" }
     return <Badge className={`${item.cls} font-medium`}>{item.label}</Badge>
   }
 
   const eventTypeBadge = (type: string) => {
     const map: Record<string, { label: string; cls: string }> = {
-      championship: { label: "Campeonato", cls: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
-      seminar: { label: "Seminario", cls: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
-      holiday: { label: "Feriado", cls: "bg-gray-500/20 text-gray-300 border-gray-500/30" },
-      announcement: { label: "Anuncio", cls: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30" },
-      other: { label: "Evento", cls: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" },
+      championship: { label: "Campeonato", cls: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
+      seminar: { label: "Seminario", cls: "bg-sky-500/15 text-sky-300 border-sky-500/30" },
+      holiday: { label: "Feriado", cls: "bg-slate-500/20 text-slate-300 border-slate-500/30" },
+      announcement: { label: "Anuncio", cls: "bg-violet-500/15 text-violet-300 border-violet-500/30" },
+      other: { label: "Evento", cls: "bg-gray-500/20 text-gray-300 border-gray-500/30" },
     }
     const item = map[type] || { label: type, cls: "bg-gray-500/20 text-gray-300 border-gray-500/30" }
     return <Badge className={`${item.cls} font-medium`}>{item.label}</Badge>
   }
 
-  if (!mounted) {
-    return <div className="min-h-screen w-full bg-gray-900 text-white p-4 sm:p-6 lg:p-8" />
-  }
+  if (!mounted) return null
   return (
-    <div className="min-h-screen w-full bg-gray-900 text-white p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))] p-4 sm:p-6 lg:p-8 relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 gradient-bg opacity-20"></div>
-      <div className="absolute top-10 -left-24 w-72 h-72 bg-blue-500 rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
-      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-purple-600 rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
+      <div className="absolute top-10 -left-24 w-72 h-72 bg-[hsl(var(--primary))] rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
+      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-[hsl(var(--accent))] rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
 
       <div className="relative z-10 space-y-8">
         {/* Header */}
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Calendario de Clases</h1>
-            <p className="text-gray-400">Planifica y revisa la programación de tu academia</p>
+            <p className="text-[hsl(var(--foreground))]/70">Planifica y revisa la programación de tu academia</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="hidden sm:inline-flex items-center gap-0.5 rounded-lg border border-gray-700/50 p-0.5 bg-gray-900/40">
-              <Button size="sm" variant={viewMode === "month" ? "default" : "outline"} className={viewMode === "month" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-gray-800/50 border-gray-700 text-gray-300"} onClick={() => setViewMode("month")}>Mes</Button>
-              <Button size="sm" variant={viewMode === "week" ? "default" : "outline"} className={viewMode === "week" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-gray-800/50 border-gray-700 text-gray-300"} onClick={() => setViewMode("week")}>Semana</Button>
+            <div className="hidden sm:inline-flex items-center gap-0.5 rounded-lg border border-border p-0.5 bg-[hsl(var(--background))]/40">
+              <Button size="sm" variant={viewMode === "month" ? "default" : "outline"} onClick={() => setViewMode("month")}>Mes</Button>
+              <Button size="sm" variant={viewMode === "week" ? "default" : "outline"} onClick={() => setViewMode("week")}>Semana</Button>
             </div>
             <Button
               variant="outline"
-              className="bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700"
               onClick={() => setSelectedDate(new Date())}
             >
               Hoy
             </Button>
             <Button
               variant="outline"
-              className="bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700"
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
-              className="bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700"
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => { setEventForm((f) => ({ ...f, title: "", description: "" })); setOpenNewEvent(true) }}>Nuevo evento</Button>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white" onClick={() => setOpenNewClass(true)}>Nueva clase</Button>
-            <Button variant="outline" className="bg-purple-600/20 border-purple-500/30 text-purple-200 hover:bg-purple-600/30" onClick={() => setOpenPlanner(true)}>Plan curricular</Button>
+            <Button variant="default" onClick={() => { setEventForm((f) => ({ ...f, title: "", description: "" })); setOpenNewEvent(true) }}>Nuevo evento</Button>
+            <Button variant="default" onClick={() => setOpenNewClass(true)}>Nueva clase</Button>
+            <Button variant="outline" onClick={() => setOpenPlanner(true)}>Plan curricular</Button>
           </div>
         </header>
 
         {/* Filtros */}
         <div className="flex flex-wrap items-center gap-3">
           <Select value={filters.instructor} onValueChange={(v) => setFilters((f) => ({ ...f, instructor: v }))}>
-            <SelectTrigger size="sm" className="bg-gray-800/50 border-gray-700 text-gray-200 w-44">
+            <SelectTrigger size="sm" className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] w-44">
               <SelectValue placeholder="Instructor" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-900 border-gray-700">
+            <SelectContent className="bg-[hsl(var(--background))] border-border">
               <SelectItem value="all">Todos los instructores</SelectItem>
               {instructorOptions.map((opt) => (
                 <SelectItem key={opt} value={opt}>{opt}</SelectItem>
@@ -427,10 +434,10 @@ export default function AdminCalendarPage() {
           </Select>
 
           <Select value={filters.level} onValueChange={(v) => setFilters((f) => ({ ...f, level: v }))}>
-            <SelectTrigger size="sm" className="bg-gray-800/50 border-gray-700 text-gray-200 w-36">
+            <SelectTrigger size="sm" className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] w-36">
               <SelectValue placeholder="Nivel" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-900 border-gray-700">
+            <SelectContent className="bg-[hsl(var(--background))] border-border">
               <SelectItem value="all">Todos los niveles</SelectItem>
               {levelOptions.map((opt) => (
                 <SelectItem key={opt} value={opt}>{opt}</SelectItem>
@@ -439,10 +446,10 @@ export default function AdminCalendarPage() {
           </Select>
 
           <Select value={filters.status} onValueChange={(v) => setFilters((f) => ({ ...f, status: v }))}>
-            <SelectTrigger size="sm" className="bg-gray-800/50 border-gray-700 text-gray-200 w-40">
+            <SelectTrigger size="sm" className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] w-40">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-900 border-gray-700">
+            <SelectContent className="bg-[hsl(var(--background))] border-border">
               <SelectItem value="all">Todos los estados</SelectItem>
               {statusOptions.map((opt) => (
                 <SelectItem key={opt} value={opt}>{opt}</SelectItem>
@@ -451,10 +458,10 @@ export default function AdminCalendarPage() {
           </Select>
 
           <Select value={filters.location} onValueChange={(v) => setFilters((f) => ({ ...f, location: v }))}>
-            <SelectTrigger size="sm" className="bg-gray-800/50 border-gray-700 text-gray-200 w-40">
+            <SelectTrigger size="sm" className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] w-40">
               <SelectValue placeholder="Sede" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-900 border-gray-700">
+            <SelectContent className="bg-[hsl(var(--background))] border-border">
               <SelectItem value="all">Todas las sedes</SelectItem>
               {locationOptions.map((opt) => (
                 <SelectItem key={opt} value={opt}>{opt}</SelectItem>
@@ -465,7 +472,7 @@ export default function AdminCalendarPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-gray-300 hover:text-white hover:bg-gray-800/50"
+            className="text-[hsl(var(--foreground))]/70 hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/40"
             onClick={() => setFilters({ instructor: "all", level: "all", status: "all", location: "all" })}
           >
             Limpiar filtros
@@ -474,48 +481,48 @@ export default function AdminCalendarPage() {
 
         {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="glass-effect rounded-2xl border-gray-700/50 overflow-hidden">
-            <CardHeader className="flex items-center justify-between space-y-0 pb-2 bg-gradient-to-br from-blue-500 to-indigo-600 p-4">
+          <Card className="glass-effect rounded-2xl border-border overflow-hidden">
+            <CardHeader className="flex items-center justify-between space-y-0 pb-2 bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] p-4">
               <CardTitle className="text-sm font-medium text-white/90">Clases del mes</CardTitle>
               <CalendarDays className="h-5 w-5 text-white/80" />
             </CardHeader>
             <CardContent className="p-4">
               <div className="text-3xl font-bold text-white">{totalMonthClasses}</div>
-              <p className="text-xs text-gray-400 mt-1">Total programadas</p>
+              <p className="text-xs text-[hsl(var(--foreground))]/70 mt-1">Total programadas</p>
             </CardContent>
           </Card>
 
-          <Card className="glass-effect rounded-2xl border-gray-700/50 overflow-hidden">
-            <CardHeader className="flex items-center justify-between space-y-0 pb-2 bg-gradient-to-br from-emerald-500 to-green-600 p-4">
+          <Card className="glass-effect rounded-2xl border-border overflow-hidden">
+            <CardHeader className="flex items-center justify-between space-y-0 pb-2 bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] p-4">
               <CardTitle className="text-sm font-medium text-white/90">Ocupación promedio</CardTitle>
               <Users className="h-5 w-5 text-white/80" />
             </CardHeader>
             <CardContent className="p-4">
               <div className="text-3xl font-bold text-white">{occupancyAvg}%</div>
-              <Progress value={occupancyAvg} className="mt-4 h-2 bg-gray-700/50" indicatorClassName="bg-gradient-to-r from-emerald-500 to-green-600" />
+              <Progress value={occupancyAvg} className="mt-4 h-2 bg-[hsl(var(--muted))]/50" indicatorClassName="bg-[hsl(var(--primary,210_90%_56%))]" />
             </CardContent>
           </Card>
 
-          <Card className="glass-effect rounded-2xl border-gray-700/50 overflow-hidden">
-            <CardHeader className="flex items-center justify-between space-y-0 pb-2 bg-gradient-to-br from-red-500 to-rose-600 p-4">
+          <Card className="glass-effect rounded-2xl border-border overflow-hidden">
+            <CardHeader className="flex items-center justify-between space-y-0 pb-2 bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] p-4">
               <CardTitle className="text-sm font-medium text-white/90">Canceladas</CardTitle>
               <Info className="h-5 w-5 text-white/80" />
             </CardHeader>
             <CardContent className="p-4">
               <div className="text-3xl font-bold text-white">{cancelledCount}</div>
-              <p className="text-xs text-gray-400 mt-1">Este mes</p>
+              <p className="text-xs text-[hsl(var(--foreground))]/70 mt-1">Este mes</p>
             </CardContent>
           </Card>
 
-          <Card className="glass-effect rounded-2xl border-gray-700/50 overflow-hidden">
-            <CardHeader className="flex items-center justify-between space-y-0 pb-2 bg-gradient-to-br from-purple-500 to-violet-600 p-4">
+          <Card className="glass-effect rounded-2xl border-border overflow-hidden">
+            <CardHeader className="flex items-center justify-between space-y-0 pb-2 bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] p-4">
               <CardTitle className="text-sm font-medium text-white/90">Día seleccionado</CardTitle>
               <Clock className="h-5 w-5 text-white/80" />
             </CardHeader>
             <CardContent className="p-4">
-              <div className="text-base text-gray-300 capitalize">{formatDateLong(selectedDate)}</div>
+              <div className="text-base text-[hsl(var(--foreground))]/70 capitalize">{formatDateLong(selectedDate)}</div>
               <div className="text-3xl font-bold text-white mt-1">{dayEvents.length + dayClasses.length}</div>
-              <p className="text-xs text-gray-400 mt-1">Actividades del día · Eventos: {dayEvents.length} · Clases: {dayClasses.length}</p>
+              <p className="text-xs text-[hsl(var(--foreground))]/60 mt-1">Actividades del día · Eventos: {dayEvents.length} · Clases: {dayClasses.length}</p>
             </CardContent>
           </Card>
         </div>
@@ -523,13 +530,13 @@ export default function AdminCalendarPage() {
         {/* Main */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* Calendar: Month */}
-          <Card className={`glass-effect rounded-2xl border-gray-700/50 lg:col-span-3 ${viewMode === "month" ? "" : "hidden"}`}>
+          <Card className={`glass-effect rounded-2xl border-border lg:col-span-3 ${viewMode === "month" ? "" : "hidden"}`}>
             <CardHeader className="flex-row items-center justify-between">
               <div>
                 <CardTitle>Calendario</CardTitle>
-                <CardDescription className="text-gray-400">Selecciona una fecha para ver eventos y clases</CardDescription>
+                <CardDescription className="text-[hsl(var(--foreground))]/70">Selecciona una fecha para ver eventos y clases</CardDescription>
               </div>
-              <Button size="sm" className="bg-purple-600 hover:bg-purple-700" onClick={() => { setEventForm((f) => ({ ...f, date: dateKey(selectedDate) })); setOpenNewEvent(true) }}>
+              <Button size="sm" variant="default" onClick={() => { setEventForm((f) => ({ ...f, date: dateKey(selectedDate) })); setOpenNewEvent(true) }}>
                 Crear evento el {fmt(selectedDate)}
               </Button>
             </CardHeader>
@@ -547,34 +554,34 @@ export default function AdminCalendarPage() {
                 />
               </div>
               {/* Leyenda */}
-              <div className="px-6 pb-4 pt-0 text-xs text-gray-400 flex items-center gap-4">
+              <div className="px-6 pb-4 pt-0 text-xs text-[hsl(var(--foreground))]/60 flex items-center gap-4">
                 <span className="inline-flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 inline-block" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] inline-block" />
                   Con eventos/clases
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 inline-block" />
+                  <span className="h-2 w-2 rounded-full bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] inline-block" />
                   Alta ocupación
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500 inline-block" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--destructive))] inline-block" />
                   Con cancelaciones
                 </span>
               </div>
               {/* Importantes del mes */}
               {monthImportantEvents.length > 0 && (
                 <div className="px-6 pb-6">
-                  <div className="text-sm text-gray-300 font-medium mb-2">Importantes del mes</div>
+                  <div className="text-sm text-[hsl(var(--foreground))]/70 font-medium mb-2">Importantes del mes</div>
                   <div className="space-y-2">
                     {monthImportantEvents.slice(0, 6).map((ev) => (
-                      <button key={ev.id} className="w-full text-left text-sm p-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 hover:bg-yellow-500/20 transition"
+                      <button key={ev.id} className="w-full text-left text-sm p-2 rounded-lg border border-[hsl(var(--accent))]/30 bg-[hsl(var(--accent))]/10 hover:bg-[hsl(var(--accent))]/20 transition"
                         onClick={() => { const d = keyToDate(ev.date); setSelectedDate(d) }}>
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-yellow-300">★</span>
-                            <span className="text-white font-medium">{ev.title}</span>
+                            <span className="text-[hsl(var(--accent))]">★</span>
+                            <span className="text-[hsl(var(--foreground))] font-medium">{ev.title}</span>
                           </div>
-                          <span className="text-xs text-gray-300">{fmt(keyToDate(ev.date))}</span>
+                          <span className="text-xs text-[hsl(var(--foreground))]/70">{fmt(keyToDate(ev.date))}</span>
                         </div>
                       </button>
                     ))}
@@ -585,16 +592,16 @@ export default function AdminCalendarPage() {
         </Card>
 
           {/* Calendar: Week overview */}
-          <Card className={`glass-effect rounded-2xl border-gray-700/50 lg:col-span-5 ${viewMode === "week" ? "" : "hidden"}`}>
+          <Card className={`glass-effect rounded-2xl border-border lg:col-span-5 ${viewMode === "week" ? "" : "hidden"}`}>
             <CardHeader className="flex-row items-center justify-between">
               <div>
                 <CardTitle>Semana</CardTitle>
-                <CardDescription className="text-gray-400">{weekRangeLabel}</CardDescription>
+                <CardDescription className="text-[hsl(var(--foreground))]/70">{weekRangeLabel}</CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" className="bg-gray-800/50 border-gray-700 text-gray-300" onClick={() => setSelectedDate(addDays(selectedDate, -7))}>Semana anterior</Button>
-                <Button variant="outline" className="bg-gray-800/50 border-gray-700 text-gray-300" onClick={() => setSelectedDate(addDays(selectedDate, 7))}>Siguiente semana</Button>
-                <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => { setWeekForm({ title: "", objectives: "", attachments: [] }); setOpenWeekProgram(true) }}>Programar semana</Button>
+                <Button variant="outline" onClick={() => setSelectedDate(addDays(selectedDate, -7))}>Semana anterior</Button>
+                <Button variant="outline" onClick={() => setSelectedDate(addDays(selectedDate, 7))}>Siguiente semana</Button>
+                <Button variant="default" onClick={() => { setWeekForm({ title: "", objectives: "", attachments: [] }); setOpenWeekProgram(true) }}>Programar semana</Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -604,11 +611,11 @@ export default function AdminCalendarPage() {
                     .filter((c) => sameDay(new Date(c.startTime), d))
                     .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
                   return (
-                    <div key={d.toISOString()} className="rounded-xl border border-gray-700/50 bg-gray-800/30 p-3">
-                      <div className="text-sm font-medium text-white capitalize mb-2">{d.toLocaleDateString("es-CL", { weekday: "short", day: "2-digit" })}</div>
+                    <div key={d.toISOString()} className="rounded-xl border border-border bg-[hsl(var(--muted))]/30 p-3">
+                      <div className="text-sm font-medium text-[hsl(var(--foreground))] capitalize mb-2">{d.toLocaleDateString("es-CL", { weekday: "short", day: "2-digit" })}</div>
                       <div className="space-y-2">
                         {dClasses.length === 0 ? (
-                          <div className="text-xs text-gray-400">Sin clases</div>
+                          <div className="text-xs text-[hsl(var(--foreground))]/60">Sin clases</div>
                         ) : (
                           dClasses.map((cls) => {
                             const start = formatTime(cls.startTime)
@@ -616,13 +623,13 @@ export default function AdminCalendarPage() {
                             const capacity = cls.capacity ?? 0
                             const occupancy = capacity > 0 ? Math.round((cls.enrolled / capacity) * 100) : 0
                             return (
-                              <div key={cls.id} className="rounded-lg border border-gray-700/50 bg-gray-900/40 p-2">
-                                <div className="text-xs text-white font-medium truncate">{cls.title}</div>
-                                <div className="text-[11px] text-gray-400 flex items-center justify-between">
+                              <div key={cls.id} className="rounded-lg border border-border bg-[hsl(var(--background))]/40 p-2">
+                                <div className="text-xs text-[hsl(var(--foreground))] font-medium truncate">{cls.title}</div>
+                                <div className="text-[11px] text-[hsl(var(--foreground))]/70 flex items-center justify-between">
                                   <span>{start} - {end}</span>
                                   {capacity > 0 && <span>{cls.enrolled}/{capacity}</span>}
                                 </div>
-                                {capacity > 0 && <Progress value={Math.min(100, occupancy)} className="h-1.5 bg-gray-700/50 mt-1" />}
+                                {capacity > 0 && <Progress value={Math.min(100, occupancy)} className="h-1.5 bg-[hsl(var(--muted))]/50 mt-1" />}
                               </div>
                             )
                           })
@@ -636,43 +643,43 @@ export default function AdminCalendarPage() {
           </Card>
 
           {/* Day panel */}
-          <Card className={`glass-effect rounded-2xl border-gray-700/50 lg:col-span-2 ${viewMode === "week" ? "hidden" : ""}`}>
+          <Card className={`glass-effect rounded-2xl border-border lg:col-span-2 ${viewMode === "week" ? "hidden" : ""}`}>
             <CardHeader>
               <CardTitle>Actividades del día</CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (
                 <div className="flex items-center justify-center py-16">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[hsl(var(--primary))]"></div>
                 </div>
               ) : (dayEvents.length === 0 && dayClasses.length === 0) ? (
                 <div className="text-center py-16">
-                  <p className="text-gray-400">No hay eventos ni clases programados para este día.</p>
+                  <p className="text-[hsl(var(--foreground))]/60">No hay eventos ni clases programados para este día.</p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   {/* Importantes */}
                   {dayEvents.filter((ev) => ev.important).length > 0 && (
                     <div className="space-y-2">
-                      <div className="text-sm text-gray-400 font-medium flex items-center gap-1">Importantes <span className="text-yellow-300">★</span></div>
+                      <div className="text-sm text-[hsl(var(--foreground))]/70 font-medium flex items-center gap-1">Importantes <span className="text-[hsl(var(--accent))]">★</span></div>
                       <div className="space-y-3">
                         {dayEvents.filter((ev) => ev.important).map((ev) => (
-                          <div key={ev.id} className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
+                          <div key={ev.id} className="rounded-xl border border-[hsl(var(--accent))]/30 bg-[hsl(var(--accent))]/10 p-4">
                             <div className="flex items-start justify-between gap-4">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <h3 className="text-lg font-semibold text-white">{ev.title}</h3>
+                                  <h3 className="text-lg font-semibold text-[hsl(var(--foreground))]">{ev.title}</h3>
                                   {eventTypeBadge(ev.type)}
                                 </div>
-                                <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-gray-300">
-                                  <span className="flex items-center gap-1"><Clock className="h-4 w-4 text-gray-400" /> {ev.allDay ? "Todo el día" : `${ev.startTime} - ${ev.endTime}`}</span>
+                                <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-[hsl(var(--foreground))]/70">
+                                  <span className="flex items-center gap-1"><Clock className="h-4 w-4 text-[hsl(var(--foreground))]/60" /> {ev.allDay ? "Todo el día" : `${ev.startTime} - ${ev.endTime}`}</span>
                                 </div>
                               </div>
                             </div>
                             {ev.description && (
                               <>
-                                <Separator className="my-3 bg-gray-700/50" />
-                                <p className="text-sm text-gray-300">{ev.description}</p>
+                                <Separator className="my-3 bg-[hsl(var(--muted))]/50" />
+                                <p className="text-sm text-[hsl(var(--foreground))]/70">{ev.description}</p>
                               </>
                             )}
                           </div>
@@ -684,25 +691,25 @@ export default function AdminCalendarPage() {
                   {/* Anuncios */}
                   {dayEvents.filter((ev) => ev.type === "announcement" && !ev.important).length > 0 && (
                     <div className="space-y-2">
-                      <div className="text-sm text-gray-400 font-medium">Anuncios</div>
+                      <div className="text-sm text-[hsl(var(--foreground))]/70 font-medium">Anuncios</div>
                       <div className="space-y-3">
                         {dayEvents.filter((ev) => ev.type === "announcement" && !ev.important).map((ev) => (
-                          <div key={ev.id} className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4">
+                          <div key={ev.id} className="rounded-xl border border-[hsl(var(--primary))]/30 bg-[hsl(var(--primary))]/10 p-4">
                             <div className="flex items-start justify-between gap-4">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <h3 className="text-lg font-semibold text-white">{ev.title}</h3>
+                                  <h3 className="text-lg font-semibold text-[hsl(var(--foreground))]">{ev.title}</h3>
                                   {eventTypeBadge(ev.type)}
                                 </div>
-                                <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-gray-300">
-                                  <span className="flex items-center gap-1"><Clock className="h-4 w-4 text-gray-400" /> {ev.allDay ? "Todo el día" : `${ev.startTime} - ${ev.endTime}`}</span>
+                                <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-[hsl(var(--foreground))]/70">
+                                  <span className="flex items-center gap-1"><Clock className="h-4 w-4 text-[hsl(var(--foreground))]/60" /> {ev.allDay ? "Todo el día" : `${ev.startTime} - ${ev.endTime}`}</span>
                                 </div>
                               </div>
                             </div>
                             {ev.description && (
                               <>
-                                <Separator className="my-3 bg-gray-700/50" />
-                                <p className="text-sm text-gray-300">{ev.description}</p>
+                                <Separator className="my-3 bg-[hsl(var(--muted))]/50" />
+                                <p className="text-sm text-[hsl(var(--foreground))]/70">{ev.description}</p>
                               </>
                             )}
                           </div>
@@ -714,25 +721,25 @@ export default function AdminCalendarPage() {
                   {/* Eventos */}
                   {dayEvents.filter((ev) => ev.type !== "announcement" && !ev.important).length > 0 && (
                     <div className="space-y-2">
-                      <div className="text-sm text-gray-400 font-medium">Eventos</div>
+                      <div className="text-sm text-[hsl(var(--foreground))]/70 font-medium">Eventos</div>
                       <div className="space-y-3">
                         {dayEvents.filter((ev) => ev.type !== "announcement" && !ev.important).map((ev) => (
-                          <div key={ev.id} className="rounded-xl border border-gray-700/50 bg-gray-800/30 p-4 relative overflow-hidden before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-gradient-to-b before:from-purple-500 before:to-indigo-600">
+                          <div key={ev.id} className="rounded-xl border border-border bg-[hsl(var(--background))]/40 p-4 relative overflow-hidden before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-gradient-to-b before:from-[hsl(var(--primary))] before:to-[hsl(var(--accent))]">
                             <div className="flex items-start justify-between gap-4">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <h3 className="text-lg font-semibold text-white">{ev.title}</h3>
+                                  <h3 className="text-lg font-semibold text-[hsl(var(--foreground))]">{ev.title}</h3>
                                   {eventTypeBadge(ev.type)}
                                 </div>
-                                <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-gray-300">
-                                  <span className="flex items-center gap-1"><Clock className="h-4 w-4 text-gray-400" /> {ev.allDay ? "Todo el día" : `${ev.startTime} - ${ev.endTime}`}</span>
+                                <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-[hsl(var(--foreground))]/70">
+                                  <span className="flex items-center gap-1"><Clock className="h-4 w-4 text-[hsl(var(--foreground))]/60" /> {ev.allDay ? "Todo el día" : `${ev.startTime} - ${ev.endTime}`}</span>
                                 </div>
                               </div>
                             </div>
                             {ev.description && (
                               <>
-                                <Separator className="my-3 bg-gray-700/50" />
-                                <p className="text-sm text-gray-300">{ev.description}</p>
+                                <Separator className="my-3 bg-[hsl(var(--muted))]/50" />
+                                <p className="text-sm text-[hsl(var(--foreground))]/70">{ev.description}</p>
                               </>
                             )}
                           </div>
@@ -744,7 +751,7 @@ export default function AdminCalendarPage() {
                   {/* Clases */}
                   {dayClasses.length > 0 && (
                     <div className="space-y-2">
-                      <div className="text-sm text-gray-400 font-medium">Clases</div>
+                      <div className="text-sm text-[hsl(var(--foreground))]/70 font-medium">Clases</div>
                       <div className="space-y-4">
                         {dayClasses.map((cls) => {
                           const start = formatTime(cls.startTime)
@@ -752,30 +759,30 @@ export default function AdminCalendarPage() {
                           const capacity = cls.capacity ?? 0
                           const occupancy = capacity > 0 ? Math.round((cls.enrolled / capacity) * 100) : 0
                           return (
-                            <div key={cls.id} className="rounded-xl border border-gray-700/50 bg-gray-800/30 p-4 relative overflow-hidden before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-gradient-to-b before:from-indigo-500 before:to-purple-600">
+                            <div key={cls.id} className="rounded-xl border border-border bg-[hsl(var(--background))]/40 p-4 relative overflow-hidden before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-gradient-to-b before:from-[hsl(var(--primary))] before:to-[hsl(var(--accent))]">
                               <div className="flex items-start justify-between gap-4">
                                 <div>
                                   <div className="flex items-center gap-2">
-                                    <h3 className="text-lg font-semibold text-white">{cls.title}</h3>
+                                    <h3 className="text-lg font-semibold text-[hsl(var(--foreground))]">{cls.title}</h3>
                                     {statusBadge(cls.status)}
                                   </div>
-                                  <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-gray-300">
-                                    <span className="flex items-center gap-1"><Clock className="h-4 w-4 text-gray-400" /> {start} - {end}</span>
-                                    <span className="flex items-center gap-1"><MapPin className="h-4 w-4 text-gray-400" /> {cls.location}</span>
-                                    <span className="flex items-center gap-1"><Users className="h-4 w-4 text-gray-400" /> {cls.enrolled}{capacity ? ` / ${capacity}` : ""}</span>
+                                  <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-[hsl(var(--foreground))]/75">
+                                    <span className="flex items-center gap-1"><Clock className="h-4 w-4 text-[hsl(var(--foreground))]/60" /> {start} - {end}</span>
+                                    <span className="flex items-center gap-1"><MapPin className="h-4 w-4 text-[hsl(var(--foreground))]/60" /> {cls.location}</span>
+                                    <span className="flex items-center gap-1"><Users className="h-4 w-4 text-[hsl(var(--foreground))]/60" /> {cls.enrolled}{capacity ? ` / ${capacity}` : ""}</span>
                                   </div>
                                 </div>
                               </div>
                               {capacity > 0 && (
                                 <div className="mt-3">
-                                  <Progress value={Math.min(100, occupancy)} className="h-2 bg-gray-700/50" indicatorClassName="bg-gradient-to-r from-indigo-500 to-purple-600" />
-                                  <div className="mt-1 text-xs text-gray-400">Ocupación: {occupancy}%</div>
+                                  <Progress value={Math.min(100, occupancy)} className="h-2 bg-[hsl(var(--muted))]/50" indicatorClassName="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]" />
+                                  <div className="mt-1 text-xs text-[hsl(var(--foreground))]/65">Ocupación: {occupancy}%</div>
                                 </div>
                               )}
                               {cls.description && (
                                 <>
-                                  <Separator className="my-3 bg-gray-700/50" />
-                                  <p className="text-sm text-gray-300">{cls.description}</p>
+                                  <Separator className="my-3 bg-[hsl(var(--muted))]/50" />
+                                  <p className="text-sm text-[hsl(var(--foreground))]/75">{cls.description}</p>
                                 </>
                               )}
                             </div>
@@ -790,38 +797,38 @@ export default function AdminCalendarPage() {
           </Card>
           {/* Dialog: Nueva clase */}
           <Dialog open={openNewClass} onOpenChange={setOpenNewClass}>
-            <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-lg">
+            <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))] max-w-lg">
               <DialogHeader>
                 <DialogTitle>Crear clase</DialogTitle>
-                <DialogDescription className="text-gray-400">Define los detalles y programa la clase</DialogDescription>
+                <DialogDescription className="text-[hsl(var(--foreground))]/70">Define los detalles y programa la clase</DialogDescription>
               </DialogHeader>
               <div className="grid gap-3">
                 <div className="grid gap-1">
                   <Label>Título</Label>
-                  <Input value={form.title} onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                  <Input value={form.title} onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="grid gap-1">
                     <Label>Fecha</Label>
-                    <Input type="date" value={form.date} onChange={(e) => setForm(f => ({ ...f, date: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                    <Input type="date" value={form.date} onChange={(e) => setForm(f => ({ ...f, date: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                   </div>
                   <div className="grid gap-1">
                     <Label>Inicio</Label>
-                    <Input type="time" value={form.startTime} onChange={(e) => setForm(f => ({ ...f, startTime: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                    <Input type="time" value={form.startTime} onChange={(e) => setForm(f => ({ ...f, startTime: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                   </div>
                   <div className="grid gap-1">
                     <Label>Fin</Label>
-                    <Input type="time" value={form.endTime} onChange={(e) => setForm(f => ({ ...f, endTime: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                    <Input type="time" value={form.endTime} onChange={(e) => setForm(f => ({ ...f, endTime: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="grid gap-1">
                     <Label>Sede</Label>
                     <Select value={form.locationId} onValueChange={(v) => setForm(f => ({ ...f, locationId: v, instructorId: "" }))}>
-                      <SelectTrigger className="bg-gray-800 border-gray-700">
+                      <SelectTrigger className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                         <SelectValue placeholder="Selecciona sede" />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectContent className="bg-[hsl(var(--background))] border-border">
                         {branches.map((b) => (
                           <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
                         ))}
@@ -831,10 +838,10 @@ export default function AdminCalendarPage() {
                   <div className="grid gap-1">
                     <Label>Instructor</Label>
                     <Select value={form.instructorId} onValueChange={(v) => setForm(f => ({ ...f, instructorId: v }))}>
-                      <SelectTrigger className="bg-gray-800 border-gray-700">
+                      <SelectTrigger className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                         <SelectValue placeholder="Selecciona instructor" />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectContent className="bg-[hsl(var(--background))] border-border">
                         {coaches.map((c) => (
                           <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                         ))}
@@ -845,20 +852,20 @@ export default function AdminCalendarPage() {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="grid gap-1">
                     <Label>Nivel</Label>
-                    <Input value={form.level} onChange={(e) => setForm(f => ({ ...f, level: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                    <Input value={form.level} onChange={(e) => setForm(f => ({ ...f, level: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                   </div>
                   <div className="grid gap-1">
                     <Label>Disciplina</Label>
-                    <Input value={form.discipline} onChange={(e) => setForm(f => ({ ...f, discipline: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                    <Input value={form.discipline} onChange={(e) => setForm(f => ({ ...f, discipline: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                   </div>
                   <div className="grid gap-1">
                     <Label>Cupo</Label>
-                    <Input type="number" min={0} value={form.capacity} onChange={(e) => setForm(f => ({ ...f, capacity: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                    <Input type="number" min={0} value={form.capacity} onChange={(e) => setForm(f => ({ ...f, capacity: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                   </div>
                 </div>
                 <div className="grid gap-1">
                   <Label>Descripción</Label>
-                  <Textarea rows={3} value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                  <Textarea rows={3} value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                 </div>
               </div>
               <DialogFooter>
@@ -895,7 +902,7 @@ export default function AdminCalendarPage() {
                     }
                   }}
                   disabled={savingClass || !form.title || !form.date || !form.startTime || !form.endTime || !form.locationId || !form.instructorId}
-                  className="bg-indigo-600 hover:bg-indigo-700"
+                  className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white"
                 >
                   {savingClass ? "Guardando..." : "Crear clase"}
                 </Button>
@@ -905,24 +912,24 @@ export default function AdminCalendarPage() {
 
           {/* Dialog: Nuevo evento */}
           <Dialog open={openNewEvent} onOpenChange={setOpenNewEvent}>
-            <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-lg">
+            <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))] max-w-lg">
               <DialogHeader>
                 <DialogTitle>Nuevo evento</DialogTitle>
-                <DialogDescription className="text-gray-400">Crea un evento visible para alumnos y entrenadores</DialogDescription>
+                <DialogDescription className="text-[hsl(var(--foreground))]/70">Crea un evento visible para alumnos y entrenadores</DialogDescription>
               </DialogHeader>
               <div className="grid gap-3">
                 <div className="grid gap-1">
                   <Label>Título</Label>
-                  <Input value={eventForm.title} onChange={(e) => setEventForm(f => ({ ...f, title: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                  <Input value={eventForm.title} onChange={(e) => setEventForm(f => ({ ...f, title: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="grid gap-1">
                     <Label>Tipo</Label>
                     <Select value={eventForm.type} onValueChange={(v) => setEventForm(f => ({ ...f, type: v as any }))}>
-                      <SelectTrigger className="bg-gray-800 border-gray-700">
+                      <SelectTrigger className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                         <SelectValue placeholder="Selecciona tipo" />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectContent className="bg-[hsl(var(--background))] border-border">
                         <SelectItem value="championship">Campeonato</SelectItem>
                         <SelectItem value="seminar">Seminario</SelectItem>
                         <SelectItem value="holiday">Feriado</SelectItem>
@@ -940,24 +947,24 @@ export default function AdminCalendarPage() {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="grid gap-1">
                     <Label>Fecha</Label>
-                    <Input type="date" value={eventForm.date} onChange={(e) => setEventForm(f => ({ ...f, date: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                    <Input type="date" value={eventForm.date} onChange={(e) => setEventForm(f => ({ ...f, date: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                   </div>
                   {!eventForm.allDay && (
                     <>
                       <div className="grid gap-1">
                         <Label>Inicio</Label>
-                        <Input type="time" value={eventForm.startTime} onChange={(e) => setEventForm(f => ({ ...f, startTime: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                        <Input type="time" value={eventForm.startTime} onChange={(e) => setEventForm(f => ({ ...f, startTime: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                       </div>
                       <div className="grid gap-1">
                         <Label>Fin</Label>
-                        <Input type="time" value={eventForm.endTime} onChange={(e) => setEventForm(f => ({ ...f, endTime: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                        <Input type="time" value={eventForm.endTime} onChange={(e) => setEventForm(f => ({ ...f, endTime: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                       </div>
                     </>
                   )}
                 </div>
                 <div className="grid gap-1">
                   <Label>Descripción</Label>
-                  <Textarea rows={3} value={eventForm.description} onChange={(e) => setEventForm(f => ({ ...f, description: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                  <Textarea rows={3} value={eventForm.description} onChange={(e) => setEventForm(f => ({ ...f, description: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="grid gap-1">
@@ -973,7 +980,7 @@ export default function AdminCalendarPage() {
                 </div>
               </div>
               {eventError && (
-                <div className="text-sm text-red-400 px-1">{eventError}</div>
+                <div className="text-sm text-[hsl(var(--destructive))] px-1">{eventError}</div>
               )}
               <DialogFooter>
                 <Button
@@ -1009,7 +1016,7 @@ export default function AdminCalendarPage() {
                       setSavingEvent(false)
                     }
                   }}
-                  className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60"
+                  className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white disabled:opacity-60"
                   disabled={savingEvent}
                 >
                   {savingEvent ? "Guardando..." : "Guardar"}
@@ -1020,42 +1027,42 @@ export default function AdminCalendarPage() {
 
           {/* Dialog: Programar semana */}
           <Dialog open={openWeekProgram} onOpenChange={setOpenWeekProgram}>
-            <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-2xl">
+            <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))] max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Programación semanal</DialogTitle>
-                <DialogDescription className="text-gray-400">Define tema, objetivos y materiales de la semana ({weekRangeLabel}).</DialogDescription>
+                <DialogDescription className="text-[hsl(var(--foreground))]/70">Define tema, objetivos y materiales de la semana ({weekRangeLabel}).</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid gap-1">
                   <Label>Tema</Label>
-                  <Input value={weekForm.title} onChange={(e) => setWeekForm((f) => ({ ...f, title: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                  <Input value={weekForm.title} onChange={(e) => setWeekForm((f) => ({ ...f, title: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                 </div>
                 <div className="grid gap-1">
                   <Label>Objetivos</Label>
-                  <Textarea rows={4} value={weekForm.objectives} onChange={(e) => setWeekForm((f) => ({ ...f, objectives: e.target.value }))} className="bg-gray-800 border-gray-700" />
+                  <Textarea rows={4} value={weekForm.objectives} onChange={(e) => setWeekForm((f) => ({ ...f, objectives: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="mb-0">Materiales</Label>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="bg-gray-800/50 border-gray-700 text-gray-200" onClick={() => setWeekForm((f) => ({ ...f, attachments: [...f.attachments, { type: "youtube", url: "", title: "" }] }))}>Añadir YouTube</Button>
-                      <Button size="sm" variant="outline" className="bg-gray-800/50 border-gray-700 text-gray-200" onClick={() => setWeekForm((f) => ({ ...f, attachments: [...f.attachments, { type: "link", url: "", title: "" }] }))}>Añadir enlace</Button>
+                      <Button size="sm" variant="outline" className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]" onClick={() => setWeekForm((f) => ({ ...f, attachments: [...f.attachments, { type: "youtube", url: "", title: "" }] }))}>Añadir YouTube</Button>
+                      <Button size="sm" variant="outline" className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]" onClick={() => setWeekForm((f) => ({ ...f, attachments: [...f.attachments, { type: "link", url: "", title: "" }] }))}>Añadir enlace</Button>
                     </div>
                   </div>
                   <div className="space-y-2 max-h-64 overflow-auto">
                     {weekForm.attachments.length === 0 ? (
-                      <div className="text-sm text-gray-400">Aún no hay materiales.</div>
+                      <div className="text-sm text-[hsl(var(--foreground))]/70">Aún no hay materiales.</div>
                     ) : weekForm.attachments.map((att, idx) => (
                       <div key={idx} className="grid grid-cols-5 gap-2 items-center">
-                        <Select value={att.type} onValueChange={(v: any) => setWeekForm((f) => { const list = [...f.attachments]; list[idx] = { ...list[idx], type: v }; return { ...f, attachments: list } })}>
-                          <SelectTrigger className="bg-gray-800 border-gray-700"><SelectValue /></SelectTrigger>
-                          <SelectContent className="bg-gray-800 border-gray-700">
+                        <Select value={att.type} onValueChange={(v: any) => updateAttachment(idx, { type: v as "youtube" | "link" })}>
+                          <SelectTrigger className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]"><SelectValue /></SelectTrigger>
+                          <SelectContent className="bg-[hsl(var(--background))] border-border">
                             <SelectItem value="youtube">YouTube</SelectItem>
                             <SelectItem value="link">Enlace</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Input placeholder={att.type === "youtube" ? "URL de YouTube" : "URL"} value={att.url} onChange={(e) => setWeekForm((f) => { const list = [...f.attachments]; list[idx] = { ...list[idx], url: e.target.value }; return { ...f, attachments: list } })} className="col-span-2 bg-gray-800 border-gray-700" />
-                        <Input placeholder="Título" value={att.title} onChange={(e) => setWeekForm((f) => { const list = [...f.attachments]; list[idx] = { ...list[idx], title: e.target.value }; return { ...f, attachments: list } })} className="col-span-2 bg-gray-800 border-gray-700" />
+                        <Input placeholder={att.type === "youtube" ? "URL de YouTube" : "URL"} value={att.url} onChange={(e) => updateAttachment(idx, { url: e.target.value })} className="col-span-2 bg-[hsl(var(--muted))]/50 border-border" />
+                        <Input placeholder="Título" value={att.title} onChange={(e) => updateAttachment(idx, { title: e.target.value })} className="col-span-2 bg-[hsl(var(--muted))]/50 border-border" />
                       </div>
                     ))}
                   </div>
@@ -1070,42 +1077,42 @@ export default function AdminCalendarPage() {
                     await fetch("/api/admin/weekly-programs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ weekKey: key, ...weekForm }) })
                   } catch {}
                   setOpenWeekProgram(false)
-                }} className="bg-indigo-600 hover:bg-indigo-700">Guardar</Button>
+                }} className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white">Guardar</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
 
           {/* Dialog: Plan curricular (MVP) */}
           <Dialog open={openPlanner} onOpenChange={setOpenPlanner}>
-            <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-2xl">
+            <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))] max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Plan curricular</DialogTitle>
-                <DialogDescription className="text-gray-400">Crea módulos y lecciones. Puedes agendar una lección como clase.</DialogDescription>
+                <DialogDescription className="text-[hsl(var(--foreground))]/70">Crea módulos y lecciones. Puedes agendar una lección como clase.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 {/* Crear módulo */}
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
                     <Label className="mb-1 block">Nuevo módulo</Label>
-                    <Input id="new-module-title" placeholder="Ej: Guardias y pases" className="bg-gray-800 border-gray-700" />
+                    <Input id="new-module-title" placeholder="Ej: Guardias y pases" className="bg-[hsl(var(--muted))]/50 border-border" />
                   </div>
                   <Button onClick={() => {
                     const el = document.getElementById("new-module-title") as HTMLInputElement | null
                     const val = el?.value?.trim()
                     if (val) { addModule(val); if (el) el.value = "" }
-                  }} className="bg-purple-600 hover:bg-purple-700">Agregar</Button>
+                  }} className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white">Agregar</Button>
                 </div>
                 {/* Lista módulos */}
                 <div className="space-y-3 max-h-80 overflow-auto pr-1">
                   {modules.length === 0 ? (
-                    <div className="text-gray-400 text-sm">Aún no hay módulos. Crea el primero.</div>
+                    <div className="text-[hsl(var(--foreground))]/70 text-sm">Aún no hay módulos. Crea el primero.</div>
                   ) : modules.map((mod) => (
-                    <div key={mod.id} className="rounded-lg border border-gray-700/50 bg-gray-800/30 p-3">
-                      <div className="font-semibold text-white mb-2">{mod.title}</div>
+                    <div key={mod.id} className="rounded-lg border border-border bg-[hsl(var(--background))]/40 p-3">
+                      <div className="font-semibold text-[hsl(var(--foreground))] mb-2">{mod.title}</div>
                       {/* Agregar lección */}
                       <div className="grid grid-cols-3 gap-2 mb-2">
-                        <Input id={`lesson-${mod.id}`} placeholder="Título de la lección" className="col-span-1 bg-gray-800 border-gray-700" />
-                        <Input id={`notes-${mod.id}`} placeholder="Notas (opcional)" className="col-span-2 bg-gray-800 border-gray-700" />
+                        <Input id={`lesson-${mod.id}`} placeholder="Título de la lección" className="col-span-1 bg-[hsl(var(--muted))]/50 border-border" />
+                        <Input id={`notes-${mod.id}`} placeholder="Notas (opcional)" className="col-span-2 bg-[hsl(var(--muted))]/50 border-border" />
                         <div className="col-span-3 flex gap-2">
                           <Button size="sm" onClick={() => {
                             const l = document.getElementById(`lesson-${mod.id}`) as HTMLInputElement | null
@@ -1116,17 +1123,17 @@ export default function AdminCalendarPage() {
                         </div>
                       </div>
                       {mod.lessons.length === 0 ? (
-                        <div className="text-gray-400 text-xs">Sin lecciones aún.</div>
+                        <div className="text-[hsl(var(--foreground))]/70 text-xs">Sin lecciones aún.</div>
                       ) : (
                         <div className="space-y-2">
                           {mod.lessons.map((lsn) => (
-                            <div key={lsn.id} className="flex items-center justify-between rounded-md border border-gray-700/50 bg-gray-900/40 px-3 py-2">
+                            <div key={lsn.id} className="flex items-center justify-between rounded-md border border-border bg-[hsl(var(--background))]/40 px-3 py-2">
                               <div>
-                                <div className="text-sm text-white font-medium">{lsn.title}</div>
-                                {lsn.notes && <div className="text-xs text-gray-400">{lsn.notes}</div>}
+                                <div className="text-sm text-[hsl(var(--foreground))] font-medium">{lsn.title}</div>
+                                {lsn.notes && <div className="text-xs text-[hsl(var(--foreground))]/70">{lsn.notes}</div>}
                               </div>
                               <div className="flex items-center gap-2">
-                                <Button size="sm" variant="outline" className="bg-gray-800/50 border-gray-700 text-gray-200" onClick={() => scheduleLesson(lsn.title, lsn.notes)}>Agendar</Button>
+                                <Button size="sm" variant="outline" className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]" onClick={() => scheduleLesson(lsn.title, lsn.notes)}>Agendar</Button>
                               </div>
                             </div>
                           ))}

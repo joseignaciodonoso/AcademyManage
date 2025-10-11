@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { applyBrandingToDocument } from "@/lib/branding"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,6 +32,7 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [activeTab, setActiveTab] = useState<"general" | "colors" | "logos" | "preview">("general")
   const [data, setData] = useState<BrandingData>({
     name: academy?.name || "",
     brandPrimary: "#0066cc",
@@ -48,6 +50,79 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
     message: string
     suggestion?: string
   } | null>(null)
+
+  // --- Guardrails helpers (simple 3-color mode) ---
+  const hexToRgb = (hex: string) => {
+    const clean = hex.replace('#', '')
+    const full = clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean
+    const bigint = Number.parseInt(full, 16)
+    return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 }
+  }
+  const rgbToHex = (r: number, g: number, b: number) => {
+    const toHex = (n: number) => n.toString(16).padStart(2, '0')
+    return `#${toHex(Math.max(0, Math.min(255, Math.round(r))))}${toHex(Math.max(0, Math.min(255, Math.round(g))))}${toHex(Math.max(0, Math.min(255, Math.round(b))))}`
+  }
+  const rgbToHsl = (r: number, g: number, b: number) => {
+    r /= 255; g /= 255; b /= 255
+    const max = Math.max(r, g, b), min = Math.min(r, g, b)
+    let h = 0, s = 0, l = (max + min) / 2
+    if (max !== min) {
+      const d = max - min
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break
+        case g: h = (b - r) / d + 2; break
+        case b: h = (r - g) / d + 4; break
+      }
+      h /= 6
+    }
+    return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) }
+  }
+  const hslToRgb = (h: number, s: number, l: number) => {
+    s /= 100; l /= 100
+    const k = (n: number) => (n + h / 30) % 12
+    const a = s * Math.min(l, 1 - l)
+    const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))
+    return {
+      r: Math.round(255 * f(0)), g: Math.round(255 * f(8)), b: Math.round(255 * f(4))
+    }
+  }
+  const hslToHex = (h: number, s: number, l: number) => {
+    const { r, g, b } = hslToRgb(h, s, l)
+    return rgbToHex(r, g, b)
+  }
+  const shiftHue = (hex: string, delta: number) => {
+    const { r, g, b } = hexToRgb(hex)
+    const { h, s, l } = rgbToHsl(r, g, b)
+    const nh = (h + delta + 360) % 360
+    return hslToHex(nh, s, l)
+  }
+  const bestForegroundFor = (bgHex: string) => {
+    const whiteRatio = checkContrastRatio('#FFFFFF', bgHex)
+    const blackRatio = checkContrastRatio('#000000', bgHex)
+    return whiteRatio >= blackRatio ? '#FFFFFF' : '#000000'
+  }
+  const deriveFromSimple = () => {
+    const primary = data.brandPrimary
+    const accent = data.brandAccent
+    const neutral = data.brandNeutral
+    const secondary = shiftHue(primary, 12)
+    const { r, g, b } = hexToRgb(neutral)
+    const { h } = rgbToHsl(r, g, b)
+    const background = data.defaultThemeMode === 'dark'
+      ? hslToHex(h, 14, 12)
+      : hslToHex(h, 12, 98)
+    const foreground = bestForegroundFor(background)
+    setData(prev => ({
+      ...prev,
+      brandPrimary: primary,
+      brandAccent: accent,
+      brandSecondary: secondary,
+      brandNeutral: neutral,
+      brandBackground: background,
+      brandForeground: foreground,
+    }))
+  }
 
   // Load current branding settings
   useEffect(() => {
@@ -131,17 +206,80 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
   const handleSave = async () => {
     setSaving(true)
     try {
+      // Build payload with only fields relevant to the current tab
+      const basePayload: any = { academyId: academy.id }
+      let payload: any = { ...basePayload }
+
+      if (activeTab === "general") {
+        payload = {
+          ...basePayload,
+          name: data.name,
+          defaultThemeMode: data.defaultThemeMode,
+        }
+      } else if (activeTab === "colors") {
+        payload = {
+          ...basePayload,
+          brandPrimary: data.brandPrimary,
+          brandSecondary: data.brandSecondary,
+          brandAccent: data.brandAccent,
+          brandNeutral: data.brandNeutral,
+          brandBackground: data.brandBackground,
+          brandForeground: data.brandForeground,
+          defaultThemeMode: data.defaultThemeMode,
+        }
+      } else if (activeTab === "logos") {
+        payload = {
+          ...basePayload,
+          logoUrl: data.logoUrl ?? null,
+          logoDarkUrl: data.logoDarkUrl ?? null,
+          faviconUrl: data.faviconUrl ?? null,
+        }
+      } else {
+        // Preview tab: nothing specific to save
+        toast({ title: "Nada que guardar", description: "La pestaña Vista Previa no tiene campos de configuración." })
+        setSaving(false)
+        return
+      }
+
       const response = await fetch("/api/admin/branding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, academyId: academy.id }),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) throw new Error("Error al guardar")
 
+      // Re-aplicar inmediatamente el branding en el documento para que todas las vistas lo reflejen
+      try {
+        const res = await fetch(`/api/admin/branding?academyId=${academy.id}`, { cache: "no-store" })
+        if (res.ok) {
+          const b = await res.json()
+          applyBrandingToDocument(academy.id, {
+            primary: b.brandPrimary,
+            secondary: b.brandSecondary,
+            accent: b.brandAccent,
+            neutral: b.brandNeutral,
+            background: b.brandBackground,
+            foreground: b.brandForeground,
+            logoUrl: b.logoUrl,
+            logoDarkUrl: b.logoDarkUrl,
+            faviconUrl: b.faviconUrl,
+            ogImageUrl: undefined,
+            defaultThemeMode: b.defaultThemeMode,
+          })
+          try {
+            window.dispatchEvent(new CustomEvent("branding:updated", { detail: { name: b.name } }))
+          } catch {}
+        }
+      } catch {}
+
       toast({
         title: "Configuración guardada",
-        description: "Los cambios de branding se han aplicado correctamente",
+        description: activeTab === "general"
+          ? "Se guardaron los datos de la academia."
+          : activeTab === "colors"
+            ? "Se guardaron los colores de la marca."
+            : "Se guardaron los logos y favicon.",
       })
     } catch (error) {
       toast({
@@ -157,13 +295,41 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
   const resetToDefaults = async () => {
     setSaving(true)
     try {
+      // Build per-tab reset payload
+      const base: any = { academyId: academy.id }
+      let payload: any = { ...base }
+
+      if (activeTab === "general") {
+        // Reset only general fields
+        payload = { ...base, defaultThemeMode: "system" }
+      } else if (activeTab === "colors") {
+        // Reset only color fields to Prisma defaults (same used in API GET comments)
+        payload = {
+          ...base,
+          brandPrimary: "#000000",
+          brandSecondary: "#666666",
+          brandAccent: "#0066cc",
+          brandNeutral: "#f5f5f5",
+          brandBackground: "#ffffff",
+          brandForeground: "#000000",
+          defaultThemeMode: "system",
+        }
+      } else if (activeTab === "logos") {
+        // Reset only logos
+        payload = { ...base, logoUrl: null, logoDarkUrl: null, faviconUrl: null }
+      } else {
+        setSaving(false)
+        return
+      }
+
       const res = await fetch("/api/admin/branding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resetToOriginal: true, academyId: academy.id }),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error("Error al restablecer")
-      // Reload branding from server to reflect defaults
+
+      // Reload branding and apply
       const response = await fetch(`/api/admin/branding?academyId=${academy.id}`)
       if (response.ok) {
         const branding = await response.json()
@@ -181,8 +347,42 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
           logoDarkUrl: branding.logoDarkUrl,
           faviconUrl: branding.faviconUrl,
         }))
+        try {
+          applyBrandingToDocument(academy.id, {
+            primary: branding.brandPrimary,
+            secondary: branding.brandSecondary,
+            accent: branding.brandAccent,
+            neutral: branding.brandNeutral,
+            background: branding.brandBackground,
+            foreground: branding.brandForeground,
+            logoUrl: branding.logoUrl,
+            logoDarkUrl: branding.logoDarkUrl,
+            faviconUrl: branding.faviconUrl,
+            ogImageUrl: undefined,
+            defaultThemeMode: branding.defaultThemeMode,
+          })
+          const root = document.documentElement
+          if (branding.defaultThemeMode === "dark") root.classList.add("dark")
+          else if (branding.defaultThemeMode === "light") root.classList.remove("dark")
+          else {
+            const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+            if (prefersDark) root.classList.add("dark")
+            else root.classList.remove("dark")
+          }
+          try {
+            window.dispatchEvent(new CustomEvent("branding:updated", { detail: { name: branding.name } }))
+          } catch {}
+        } catch {}
       }
-      toast({ title: "Restablecido", description: "Se restauró el look & feel original de la app." })
+
+      toast({
+        title: "Restablecido",
+        description: activeTab === "general"
+          ? "Se restablecieron los datos generales."
+          : activeTab === "colors"
+            ? "Se restablecieron los colores de la marca."
+            : "Se restablecieron los logos.",
+      })
     } catch (e) {
       toast({ title: "Error", description: "No se pudo restablecer.", variant: "destructive" })
     } finally {
@@ -233,12 +433,20 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
         </div>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="bg-gray-800/50 text-gray-300 border border-gray-700/50">
-          <TabsTrigger value="general" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">General</TabsTrigger>
-          <TabsTrigger value="colors" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">Colores</TabsTrigger>
-          <TabsTrigger value="logos" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">Logos</TabsTrigger>
-          <TabsTrigger value="preview" className="data-[state=active]:bg-gray-900 data-[state=active]:text-white">Vista Previa</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={(v)=>setActiveTab(v as typeof activeTab)} className="space-y-4">
+        <TabsList className="bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))]/70 border border-border">
+          <TabsTrigger value="general" className="data-[state=active]:bg-[hsl(var(--background))] data-[state=active]:text-[hsl(var(--foreground))]">
+            General
+          </TabsTrigger>
+          <TabsTrigger value="colors" className="data-[state=active]:bg-[hsl(var(--background))] data-[state=active]:text-[hsl(var(--foreground))]">
+            Colores
+          </TabsTrigger>
+          <TabsTrigger value="logos" className="data-[state=active]:bg-[hsl(var(--background))] data-[state=active]:text-[hsl(var(--foreground))]">
+            Logos
+          </TabsTrigger>
+          <TabsTrigger value="preview" className="data-[state=active]:bg-[hsl(var(--background))] data-[state=active]:text-[hsl(var(--foreground))]">
+            Vista Previa
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
@@ -283,6 +491,28 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
               <CardDescription>Define los colores principales de tu marca</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Modo simple recomendado */}
+              <div className="rounded-lg border border-border p-4 bg-[hsl(var(--background))]">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="font-medium">Modo Simple (3 colores)</h4>
+                    <p className="text-sm text-[hsl(var(--foreground))]/70">Elige Primario, Acento y Neutral. Derivaremos fondo y texto automáticamente según el modo del tema.</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={deriveFromSimple}>Aplicar reglas recomendadas</Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[{key:'brandPrimary',label:'Primario'},{key:'brandAccent',label:'Acento'},{key:'brandNeutral',label:'Neutral'}].map(({key,label}: any) => (
+                    <div key={key} className="space-y-2">
+                      <Label>{label}</Label>
+                      <div className="flex gap-2">
+                        <Input type="color" value={(data as any)[key]} onChange={(e)=>handleColorChange(key as any, e.target.value)} className="w-16 h-10 p-1"/>
+                        <Input value={(data as any)[key]} onChange={(e)=>handleColorChange(key as any, e.target.value)} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {colorOptions.map(({ key, label, placeholder }) => (
                   <div key={key} className="space-y-2">

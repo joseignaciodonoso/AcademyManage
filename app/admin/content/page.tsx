@@ -196,28 +196,28 @@ export default function AdminContentPage() {
 
   // --- UI ---
   return (
-    <div className="min-h-screen w-full bg-gray-900 text-white p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))] p-4 sm:p-6 lg:p-8 relative overflow-hidden">
       <div className="absolute inset-0 gradient-bg opacity-20" />
-      <div className="absolute top-10 -left-24 w-72 h-72 bg-blue-500 rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float" />
-      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-purple-600 rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000" />
+      <div className="absolute top-10 -left-24 w-72 h-72 bg-[hsl(var(--primary))] rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float" />
+      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-[hsl(var(--accent))] rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000" />
 
       <div className="relative z-10 space-y-6">
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Gestión de Contenido</h1>
-            <p className="text-gray-400">Define permisos, modera publicaciones y organiza la biblioteca</p>
+            <p className="text-[hsl(var(--foreground))]/70">Define permisos, modera publicaciones y organiza la biblioteca</p>
           </div>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-lg shadow-indigo-500/30 transition-all">Nueva publicación</Button>
+          <Button className="font-semibold transition-all">Nueva publicación</Button>
         </header>
 
-        <Card className="glass-effect rounded-2xl border-gray-700/50">
+        <Card className="glass-effect rounded-2xl border-border">
           <CardHeader>
             <CardTitle>Centro de Contenido</CardTitle>
-            <CardDescription className="text-gray-400">Configura y administra el contenido de tu academia</CardDescription>
+            <CardDescription className="text-[hsl(var(--foreground))]/70">Configura y administra el contenido de tu academia</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="bg-gray-800/50 border border-gray-700">
+              <TabsList className="bg-[hsl(var(--muted))]/50 border border-border">
                 <TabsTrigger value="permissions">Permisos</TabsTrigger>
                 <TabsTrigger value="library">Biblioteca</TabsTrigger>
                 <TabsTrigger value="moderation">Moderación</TabsTrigger>
@@ -228,13 +228,13 @@ export default function AdminContentPage() {
               {/* Permisos */}
               <TabsContent value="permissions" className="mt-4">
                 <div className="flex items-center gap-2 mb-4">
-                  <Search className="h-4 w-4 text-gray-400" />
-                  <Input placeholder="Buscar coach..." value={query} onChange={(e) => setQuery(e.target.value)} className="max-w-sm bg-gray-800/50 border-gray-700 text-white" />
+                  <Search className="h-4 w-4 text-[hsl(var(--foreground))]/60" />
+                  <Input placeholder="Buscar coach..." value={query} onChange={(e) => setQuery(e.target.value)} className="max-w-sm bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground))]/60" />
                 </div>
-                <div className="rounded-xl border border-gray-700/50 overflow-hidden bg-gray-800/30">
+                <div className="rounded-xl border border-border overflow-hidden bg-[hsl(var(--background))]/40">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-800/50">
+                      <TableRow className="bg-[hsl(var(--muted))]/40">
                         <TableHead>Coach</TableHead>
                         <TableHead className="text-center"><span className="inline-flex items-center gap-1"><Video className="h-4 w-4" />Video</span></TableHead>
                         <TableHead className="text-center"><span className="inline-flex items-center gap-1"><Megaphone className="h-4 w-4" />Anuncio</span></TableHead>
@@ -245,11 +245,11 @@ export default function AdminContentPage() {
                     </TableHeader>
                     <TableBody>
                       {filteredCoaches.map((c) => (
-                        <TableRow key={c.id} className="hover:bg-gray-800/30">
+                        <TableRow key={c.id} className="hover:bg-[hsl(var(--background))]/30">
                           <TableCell>
                             <div className="space-y-1">
-                              <div className="font-medium text-white">{c.name}</div>
-                              <div className="text-sm text-gray-400">{c.email}</div>
+                              <div className="font-medium text-[hsl(var(--foreground))]">{c.name}</div>
+                              <div className="text-sm text-[hsl(var(--foreground))]/70">{c.email}</div>
                             </div>
                           </TableCell>
                           <TableCell className="text-center"><Switch checked={c.canVideo} onCheckedChange={() => toggleCoach(c.id, "canVideo")} /></TableCell>
@@ -268,14 +268,14 @@ export default function AdminContentPage() {
               <TabsContent value="library" className="mt-4 space-y-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-2">
-                    <Search className="h-4 w-4 text-gray-400" />
-                    <Input placeholder="Buscar contenido..." className="bg-gray-800/50 border-gray-700 text-white" />
+                    <Search className="h-4 w-4 text-[hsl(var(--foreground))]/60" />
+                    <Input placeholder="Buscar contenido..." className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground))]/60" />
                   </div>
                   <Select value={libType} onValueChange={setLibType}>
-                    <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700 text-white">
+                    <SelectTrigger className="w-40 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                       <SelectValue placeholder="Tipo" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectContent className="bg-[hsl(var(--background))] border-border">
                       <SelectItem value="ALL">Todos</SelectItem>
                       <SelectItem value="VIDEO">Video</SelectItem>
                       <SelectItem value="ANNOUNCEMENT">Anuncio</SelectItem>
@@ -284,10 +284,10 @@ export default function AdminContentPage() {
                     </SelectContent>
                   </Select>
                   <Select value={libStatus} onValueChange={setLibStatus}>
-                    <SelectTrigger className="w-44 bg-gray-800/50 border-gray-700 text-white">
+                    <SelectTrigger className="w-44 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                       <SelectValue placeholder="Estado" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectContent className="bg-[hsl(var(--background))] border-border">
                       <SelectItem value="ALL">Todos</SelectItem>
                       <SelectItem value="DRAFT">Borrador</SelectItem>
                       <SelectItem value="PENDING">Pendiente</SelectItem>
@@ -299,28 +299,28 @@ export default function AdminContentPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredLibrary.map((item) => (
-                    <Card key={item.id} className="border-gray-700/50 bg-gray-800/30">
+                    <Card key={item.id} className="border-border bg-[hsl(var(--background))]/40">
                       <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-white text-base truncate">{item.title}</CardTitle>
+                          <CardTitle className="text-[hsl(var(--foreground))] text-base truncate">{item.title}</CardTitle>
                           <Badge className={
-                            item.status === "PUBLISHED" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" :
-                            item.status === "PENDING" ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/30" :
-                            item.status === "DRAFT" ? "bg-gray-500/20 text-gray-300 border-gray-500/30" :
-                            "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                            item.status === "PUBLISHED" ? "bg-[hsl(var(--success))]/20 text-[hsl(var(--success))] border-[hsl(var(--success))]/30" :
+                            item.status === "PENDING" ? "bg-[hsl(var(--warning))]/20 text-[hsl(var(--warning))] border-[hsl(var(--warning))]/30" :
+                            item.status === "DRAFT" ? "bg-[hsl(var(--muted))]/40 text-[hsl(var(--foreground))]/70 border-[hsl(var(--muted))]/50" :
+                            "bg-[hsl(var(--info))]/20 text-[hsl(var(--info))] border-[hsl(var(--info))]/30"
                           }>
                             {item.status}
                           </Badge>
                         </div>
-                        <CardDescription className="text-gray-400 mt-1">
+                        <CardDescription className="text-[hsl(var(--foreground))]/70 mt-1">
                           {item.type} · {item.channel} · {item.author}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="flex items-center justify-between pt-0">
-                        <div className="text-sm text-gray-400">{new Date(item.createdAt).toLocaleDateString("es-CL")}</div>
+                        <div className="text-sm text-[hsl(var(--foreground))]/70">{new Date(item.createdAt).toLocaleDateString("es-CL")}</div>
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" className="bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-blue-600 hover:text-white">Editar</Button>
-                          <Button variant="outline" size="sm" className="bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-indigo-600 hover:text-white">Mover</Button>
+                          <Button variant="outline" size="sm" className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]">Editar</Button>
+                          <Button variant="outline" size="sm" className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]">Mover</Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -330,10 +330,10 @@ export default function AdminContentPage() {
 
               {/* Moderación */}
               <TabsContent value="moderation" className="mt-4">
-                <div className="rounded-xl border border-gray-700/50 overflow-hidden bg-gray-800/30">
+                <div className="rounded-xl border border-border overflow-hidden bg-[hsl(var(--background))]/40">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-800/50">
+                      <TableRow className="bg-[hsl(var(--muted))]/40">
                         <TableHead>Título</TableHead>
                         <TableHead>Tipo</TableHead>
                         <TableHead>Autor</TableHead>
@@ -345,19 +345,19 @@ export default function AdminContentPage() {
                     <TableBody>
                       {pending.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-10 text-gray-400">No hay contenidos pendientes de aprobación.</TableCell>
+                          <TableCell colSpan={6} className="text-center py-10 text-[hsl(var(--foreground))]/70">No hay contenidos pendientes de aprobación.</TableCell>
                         </TableRow>
                       ) : (
                         pending.map((p) => (
-                          <TableRow key={p.id} className="hover:bg-gray-800/30">
-                            <TableCell className="text-white">{p.title}</TableCell>
+                          <TableRow key={p.id} className="hover:bg-[hsl(var(--background))]/30">
+                            <TableCell className="text-[hsl(var(--foreground))]">{p.title}</TableCell>
                             <TableCell>{p.type}</TableCell>
                             <TableCell>{p.author}</TableCell>
                             <TableCell>{p.channel}</TableCell>
                             <TableCell>{new Date(p.createdAt).toLocaleDateString("es-CL")}</TableCell>
                             <TableCell className="text-right space-x-2">
-                              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700"><CheckCircle className="h-4 w-4 mr-1" /> Aprobar</Button>
-                              <Button size="sm" variant="outline" className="bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-red-600 hover:text-white" onClick={() => rejectItem(p.id)}><XCircle className="h-4 w-4 mr-1" /> Rechazar</Button>
+                              <Button size="sm" className="bg-[hsl(var(--success))] text-white hover:opacity-90"><CheckCircle className="h-4 w-4 mr-1" /> Aprobar</Button>
+                              <Button size="sm" variant="outline" className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]" onClick={() => rejectItem(p.id)}><XCircle className="h-4 w-4 mr-1" /> Rechazar</Button>
                             </TableCell>
                           </TableRow>
                         ))
@@ -370,24 +370,24 @@ export default function AdminContentPage() {
               {/* Canales */}
               <TabsContent value="channels" className="mt-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-gray-400">Organiza el contenido por canales temáticos</div>
+                  <div className="text-[hsl(var(--foreground))]/70">Organiza el contenido por canales temáticos</div>
                   <Dialog open={openCreate} onOpenChange={setOpenCreate}>
                     <DialogTrigger asChild>
-                      <Button className="bg-indigo-600 hover:bg-indigo-700"><Plus className="h-4 w-4 mr-1" /> Nuevo canal</Button>
+                      <Button className="font-semibold"><Plus className="h-4 w-4 mr-1" /> Nuevo canal</Button>
                     </DialogTrigger>
-                    <DialogContent className="bg-gray-800 border-gray-700 text-white">
+                    <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
                       <DialogHeader>
                         <DialogTitle>Crear canal</DialogTitle>
-                        <DialogDescription className="text-gray-400">Define el nombre, slug y visibilidad</DialogDescription>
+                        <DialogDescription className="text-[hsl(var(--foreground))]/70">Define el nombre, slug y visibilidad</DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-3 py-2">
-                        <Input placeholder="Nombre" value={newChannel.name} onChange={(e) => setNewChannel(n => ({ ...n, name: e.target.value }))} className="bg-gray-700 border-gray-600" />
-                        <Input placeholder="Slug" value={newChannel.slug} onChange={(e) => setNewChannel(n => ({ ...n, slug: e.target.value }))} className="bg-gray-700 border-gray-600" />
+                        <Input placeholder="Nombre" value={newChannel.name} onChange={(e) => setNewChannel(n => ({ ...n, name: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
+                        <Input placeholder="Slug" value={newChannel.slug} onChange={(e) => setNewChannel(n => ({ ...n, slug: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
                         <Select value={newChannel.visibility} onValueChange={(v: any) => setNewChannel(n => ({ ...n, visibility: v }))}>
-                          <SelectTrigger className="bg-gray-700 border-gray-600">
+                          <SelectTrigger className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                             <SelectValue placeholder="Visibilidad" />
                           </SelectTrigger>
-                          <SelectContent className="bg-gray-700 border-gray-600">
+                          <SelectContent className="bg-[hsl(var(--background))] border-border">
                             <SelectItem value="PUBLIC">Pública</SelectItem>
                             <SelectItem value="STUDENTS">Solo estudiantes</SelectItem>
                             <SelectItem value="COACHES">Solo coaches</SelectItem>
@@ -395,17 +395,17 @@ export default function AdminContentPage() {
                         </Select>
                       </div>
                       <DialogFooter>
-                        <Button onClick={handleCreateChannel} disabled={creating || !newChannel.name || !newChannel.slug} className="bg-indigo-600 hover:bg-indigo-700">
+                        <Button onClick={handleCreateChannel} disabled={creating || !newChannel.name || !newChannel.slug}>
                           {creating ? "Creando..." : "Crear"}
                         </Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
                 </div>
-                <div className="rounded-xl border border-gray-700/50 overflow-hidden bg-gray-800/30">
+                <div className="rounded-xl border border-border overflow-hidden bg-[hsl(var(--background))]/40">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-800/50">
+                      <TableRow className="bg-[hsl(var(--muted))]/40">
                         <TableHead><span className="inline-flex items-center gap-1"><Folder className="h-4 w-4" /> Canal</span></TableHead>
                         <TableHead>Slug</TableHead>
                         <TableHead>Visibilidad</TableHead>
@@ -415,20 +415,20 @@ export default function AdminContentPage() {
                     </TableHeader>
                     <TableBody>
                       {channels.map((ch) => (
-                        <TableRow key={ch.id} className="hover:bg-gray-800/30">
-                          <TableCell className="text-white">{ch.name}</TableCell>
+                        <TableRow key={ch.id} className="hover:bg-[hsl(var(--background))]/30">
+                          <TableCell className="text-[hsl(var(--foreground))]">{ch.name}</TableCell>
                           <TableCell>{ch.slug}</TableCell>
                           <TableCell>
                             <Badge className={
-                              ch.visibility === "PUBLIC" ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" :
-                              ch.visibility === "STUDENTS" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" :
-                              "bg-gray-500/20 text-gray-300 border-gray-500/30"
+                              ch.visibility === "PUBLIC" ? "bg-[hsl(var(--info))]/20 text-[hsl(var(--info))] border-[hsl(var(--info))]/30" :
+                              ch.visibility === "STUDENTS" ? "bg-[hsl(var(--success))]/20 text-[hsl(var(--success))] border-[hsl(var(--success))]/30" :
+                              "bg-[hsl(var(--warning))]/20 text-[hsl(var(--warning))] border-[hsl(var(--warning))]/30"
                             }>{ch.visibility}</Badge>
                           </TableCell>
-                          <TableCell className="text-gray-300">{ch.description || "-"}</TableCell>
+                          <TableCell className="text-[hsl(var(--foreground))]/75">{ch.description || "-"}</TableCell>
                           <TableCell className="text-right space-x-2">
-                            <Button variant="outline" size="sm" className="bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-blue-600 hover:text-white">Editar</Button>
-                            <Button variant="outline" size="sm" className="bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-red-600 hover:text-white">Eliminar</Button>
+                            <Button variant="outline" size="sm" className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]">Editar</Button>
+                            <Button variant="outline" size="sm" className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]">Eliminar</Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -439,28 +439,28 @@ export default function AdminContentPage() {
 
               {/* Configuración */}
               <TabsContent value="settings" className="mt-4 space-y-6">
-                <Card className="border-gray-700/50 bg-gray-800/30">
+                <Card className="border-border bg-[hsl(var(--background))]/40">
                   <CardHeader>
                     <CardTitle className="inline-flex items-center gap-2"><Settings className="h-5 w-5" /> Políticas de publicación</CardTitle>
-                    <CardDescription className="text-gray-400">Ajustes globales para coaches y moderación</CardDescription>
+                    <CardDescription className="text-[hsl(var(--foreground))]/70">Ajustes globales para coaches y moderación</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-medium text-white">Requerir aprobación por defecto</div>
-                        <div className="text-sm text-gray-400">Si está activo, todo nuevo contenido pasa por moderación</div>
+                        <div className="font-medium text-[hsl(var(--foreground))]">Requerir aprobación por defecto</div>
+                        <div className="text-sm text-[hsl(var(--foreground))]/70">Si está activo, todo nuevo contenido pasa por moderación</div>
                       </div>
                       <Switch checked={settings.requireApprovalByDefault} onCheckedChange={(v) => setSettings(s => ({ ...s, requireApprovalByDefault: v }))} />
                     </div>
-                    <Separator className="bg-gray-700/50" />
+                    <Separator className="bg-[hsl(var(--muted))]/50" />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <div className="text-sm text-gray-400 mb-1">Tamaño máximo por archivo (MB)</div>
-                        <Input type="number" value={settings.maxUploadMB} onChange={(e) => setSettings(s => ({ ...s, maxUploadMB: Number(e.target.value) }))} className="bg-gray-800/50 border-gray-700 text-white" />
+                        <div className="text-sm text-[hsl(var(--foreground))]/70 mb-1">Tamaño máximo por archivo (MB)</div>
+                        <Input type="number" value={settings.maxUploadMB} onChange={(e) => setSettings(s => ({ ...s, maxUploadMB: Number(e.target.value) }))} className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]" />
                       </div>
                       <div>
-                        <div className="text-sm text-gray-400 mb-1">Cuota mensual por coach (ítems)</div>
-                        <Input type="number" value={settings.monthlyQuota} onChange={(e) => setSettings(s => ({ ...s, monthlyQuota: Number(e.target.value) }))} className="bg-gray-800/50 border-gray-700 text-white" />
+                        <div className="text-sm text-[hsl(var(--foreground))]/70 mb-1">Cuota mensual por coach (ítems)</div>
+                        <Input type="number" value={settings.monthlyQuota} onChange={(e) => setSettings(s => ({ ...s, monthlyQuota: Number(e.target.value) }))} className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]" />
                       </div>
                     </div>
                   </CardContent>
@@ -472,31 +472,31 @@ export default function AdminContentPage() {
 
         {/* Mini-analytics (placeholder) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="glass-effect rounded-2xl border-gray-700/50 overflow-hidden">
+          <Card className="glass-effect rounded-2xl border-border overflow-hidden">
             <CardHeader>
               <CardTitle>Resumen</CardTitle>
-              <CardDescription className="text-gray-400">Últimos 30 días</CardDescription>
+              <CardDescription className="text-[hsl(var(--foreground))]/70">Últimos 30 días</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-3 gap-4">
               <div>
-                <div className="text-2xl font-bold text-white">{library.length}</div>
-                <div className="text-xs text-gray-400">Contenidos</div>
+                <div className="text-2xl font-bold text-[hsl(var(--foreground))]">{library.length}</div>
+                <div className="text-xs text-[hsl(var(--foreground))]/70">Contenidos</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{pending.length}</div>
-                <div className="text-xs text-gray-400">Pendientes</div>
+                <div className="text-2xl font-bold text-[hsl(var(--foreground))]">{pending.length}</div>
+                <div className="text-xs text-[hsl(var(--foreground))]/70">Pendientes</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{coaches.filter(c => c.canVideo || c.canAnnouncement || c.canDoc || c.canLink).length}</div>
-                <div className="text-xs text-gray-400">Coaches habilitados</div>
+                <div className="text-2xl font-bold text-[hsl(var(--foreground))]">{coaches.filter(c => c.canVideo || c.canAnnouncement || c.canDoc || c.canLink).length}</div>
+                <div className="text-xs text-[hsl(var(--foreground))]/70">Coaches habilitados</div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="glass-effect rounded-2xl border-gray-700/50 overflow-hidden lg:col-span-2">
+          <Card className="glass-effect rounded-2xl border-border overflow-hidden lg:col-span-2">
             <CardHeader>
               <CardTitle>Capacidad de publicación</CardTitle>
-              <CardDescription className="text-gray-400">Uso aproximado de cuotas</CardDescription>
+              <CardDescription className="text-[hsl(var(--foreground))]/70">Uso aproximado de cuotas</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -505,10 +505,10 @@ export default function AdminContentPage() {
                   return (
                     <div key={c.id}>
                       <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="text-gray-300">{c.name}</span>
-                        <span className="text-gray-400">{used}%</span>
+                        <span className="text-[hsl(var(--foreground))]/80">{c.name}</span>
+                        <span className="text-[hsl(var(--foreground))]/70">{used}%</span>
                       </div>
-                      <Progress value={used} className="h-2 bg-gray-700/50" />
+                      <Progress value={used} className="h-2 bg-[hsl(var(--muted))]/50" />
                     </div>
                   )
                 })}

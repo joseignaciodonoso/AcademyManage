@@ -49,6 +49,11 @@ const navigation = [
     icon: Calendar,
   },
   {
+    name: "Asistencia",
+    href: "/admin/attendance",
+    icon: Calendar,
+  },
+  {
     name: "Contenido",
     href: "/admin/content",
     icon: BookOpen,
@@ -86,44 +91,43 @@ function SidebarContent() {
   const pathname = usePathname()
 
   return (
-    <div className="flex h-full flex-col bg-gradient-to-b from-slate-900 to-slate-800">
+    <div className="flex h-full flex-col bg-[hsl(var(--background))]">
       {/* Header */}
-      <div className="flex h-16 items-center border-b border-border px-6 bg-[hsl(var(--background))]/50 backdrop-blur-sm">
+      <div className="flex h-16 items-center border-b border-border px-6 bg-[hsl(var(--background))]">
         <Link href="/admin/dashboard" className="flex items-center gap-3 font-bold text-white group transition-all duration-200 hover:scale-105">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] shadow-lg transition-all duration-200">
             <GraduationCap className="h-5 w-5 text-white" />
           </div>
-          <span className="text-lg bg-gradient-to-r from-[hsl(var(--foreground))] to-white/70 bg-clip-text text-transparent">Academia Admin</span>
+          <span className="text-lg text-[hsl(var(--foreground))]">Academia Admin</span>
         </Link>
       </div>
-
       <ScrollArea className="flex-1">
         <div className="space-y-6 py-6 px-4">
           {/* Main Navigation */}
           <div className="space-y-2">
             {navigation.map((item) => {
-              const isActive = pathname === item.href
+              const isActive = usePathname() === item.href
               return (
                 <Link key={item.name} href={item.href} className="block">
                   <div
                     className={cn(
                       "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 overflow-hidden isolate",
                       isActive
-                        ? "bg-gradient-to-r from-[hsl(var(--primary))]/20 to-[hsl(var(--accent))]/20 text-white shadow-lg border border-[hsl(var(--primary))]/30"
-                        : "text-slate-300 hover:text-white hover:bg-[hsl(var(--muted))]/50 hover:shadow-md"
+                        ? "bg-gradient-to-r from-[hsl(var(--primary))]/20 to-[hsl(var(--accent))]/20 text-[hsl(var(--foreground))] shadow-lg border border-[hsl(var(--primary))]/30"
+                        : "text-[hsl(var(--foreground))]/70 hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/50 hover:shadow-md"
                     )}
                   >
                     <div className={cn(
                       "flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200",
                       isActive 
                         ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white shadow-lg" 
-                        : "bg-[hsl(var(--muted))]/50 text-slate-400 group-hover:bg-[hsl(var(--muted))] group-hover:text-white"
+                        : "bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))]/60 group-hover:bg-[hsl(var(--muted))] group-hover:text-[hsl(var(--foreground))]"
                     )}>
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-4 w-4 text-[hsl(var(--foreground))]/60 group-hover:text-[hsl(var(--foreground))]" />
                     </div>
                     <span className="flex-1">{item.name}</span>
                     {isActive && (
-                      <ChevronRight className="h-4 w-4 text-blue-400" />
+                      <ChevronRight className="h-4 w-4 text-[hsl(var(--accent))]" />
                     )}
                     {isActive && (
                       <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[hsl(var(--primary))] to-[hsl(var(--accent))] rounded-r-full" />
@@ -138,31 +142,31 @@ function SidebarContent() {
           <div className="space-y-3">
             <div className="px-4">
               <div className="flex items-center gap-2">
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-600 to-transparent" />
-                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Configuración</h3>
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-600 to-transparent" />
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[hsl(var(--muted))] to-transparent" />
+                <h3 className="text-xs font-semibold text-[hsl(var(--foreground))]/60 uppercase tracking-wider">Configuración</h3>
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[hsl(var(--muted))] to-transparent" />
               </div>
             </div>
             <div className="space-y-2">
               {settingsNavigation.map((item) => {
-                const isActive = pathname === item.href
+                const isActive = usePathname() === item.href
                 return (
                   <Link key={item.name} href={item.href} className="block">
                     <div
                       className={cn(
                         "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 overflow-hidden isolate",
                         isActive
-                          ? "bg-gradient-to-r from-[hsl(var(--primary))]/20 to-[hsl(var(--accent))]/20 text-white border border-[hsl(var(--primary))]/30"
-                          : "text-slate-300 hover:text-white hover:bg-[hsl(var(--muted))]/50 hover:shadow-md"
+                          ? "bg-gradient-to-r from-[hsl(var(--primary))]/20 to-[hsl(var(--accent))]/20 text-[hsl(var(--foreground))] border border-[hsl(var(--primary))]/30"
+                          : "text-[hsl(var(--foreground))]/70 hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/50 hover:shadow-md"
                       )}
                     >
                       <div className={cn(
                         "flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200",
                         isActive 
                           ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white shadow-lg" 
-                          : "bg-[hsl(var(--muted))]/50 text-slate-400 group-hover:bg-[hsl(var(--muted))] group-hover:text-white"
+                          : "bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))]/60 group-hover:bg-[hsl(var(--muted))] group-hover:text-[hsl(var(--foreground))]"
                       )}>
-                        <item.icon className="h-4 w-4" />
+                        <item.icon className="h-4 w-4 text-[hsl(var(--foreground))]/60 group-hover:text-[hsl(var(--foreground))]" />
                       </div>
                       <span className="flex-1">{item.name}</span>
                       {isActive && (

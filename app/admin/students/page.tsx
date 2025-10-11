@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { 
   Table, 
   TableBody, 
@@ -32,6 +33,7 @@ import {
   Key,
   Info,
   Check,
+  AlertTriangle,
 } from "lucide-react"
 import {
   Dialog,
@@ -82,6 +84,9 @@ interface Student {
   phone?: string
   status: string
   createdAt: string
+  image?: string
+  photoUrl?: string
+  avatarUrl?: string
   membership?: {
     id: string
     status: string
@@ -127,6 +132,7 @@ export default function StudentsPage() {
     active: true,
     monthly: true,
     projected: true,
+    due: true,
     new: true,
   })
   const [searchTerm, setSearchTerm] = useState("")
@@ -147,6 +153,30 @@ export default function StudentsPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null)
   const [editSaving, setEditSaving] = useState(false)
+
+  // Solid avatar colors (varied)
+  const avatarPalette = [
+    "bg-blue-600",
+    "bg-emerald-600",
+    "bg-amber-600",
+    "bg-purple-600",
+    "bg-pink-600",
+    "bg-cyan-600",
+    "bg-indigo-600",
+    "bg-teal-600",
+    "bg-rose-600",
+    "bg-lime-600",
+  ] as const
+
+  const avatarBgFor = (key: string) => {
+    let hash = 0
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash << 5) - hash + key.charCodeAt(i)
+      hash |= 0
+    }
+    const idx = Math.abs(hash) % avatarPalette.length
+    return avatarPalette[idx]
+  }
   const [editForm, setEditForm] = useState<{ name: string; email: string; phone: string }>({ name: "", email: "", phone: "" })
   // Reset password dialog state
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
@@ -463,15 +493,30 @@ export default function StudentsPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    const statusMap = {
-      ACTIVE: { label: "Activo", color: "bg-green-500/20 text-green-300 border-green-500/30" },
-      INACTIVE: { label: "Inactivo", color: "bg-gray-500/20 text-gray-300 border-gray-500/30" },
-      CANCELLED: { label: "Cancelado", color: "bg-red-500/20 text-red-300 border-red-500/30" },
-      PENDING: { label: "Pendiente", color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30" }
+    const statusMap: Record<string, { label: string; className: string }> = {
+      ACTIVE: {
+        label: "Activo",
+        className: "bg-green-500/15 text-green-400 border-green-500/30",
+      },
+      INACTIVE: {
+        label: "Inactivo",
+        className: "bg-gray-500/20 text-gray-300 border-gray-500/30",
+      },
+      CANCELLED: {
+        label: "Cancelado",
+        className: "bg-red-500/15 text-red-400 border-red-500/30",
+      },
+      PENDING: {
+        label: "Pendiente",
+        className: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+      },
     }
-    
-    const statusInfo = statusMap[status as keyof typeof statusMap] || { label: status, color: "bg-gray-500/20 text-gray-300 border-gray-500/30" }
-    return <Badge className={`${statusInfo.color} font-medium`}>{statusInfo.label}</Badge>
+
+    const statusInfo = statusMap[status] || {
+      label: status,
+      className: "bg-slate-500/20 text-slate-300 border-slate-500/30",
+    }
+    return <Badge className={`${statusInfo.className} font-medium`}>{statusInfo.label}</Badge>
   }
 
   const formatCurrency = (amount: number, currency: string = "CLP") => {
@@ -659,6 +704,19 @@ export default function StudentsPage() {
       ),
     },
     {
+      id: 'due',
+      title: 'Por cobrar este mes',
+      value: formatCurrency(dueThisMonth),
+      change: 'Pendiente de recaudar',
+      icon: AlertTriangle,
+      color: 'from-amber-500 to-orange-600',
+      progress: (() => {
+        const total = paidThisMonth + dueThisMonth
+        if (total <= 0) return 0
+        return Math.min((dueThisMonth / total) * 100, 100)
+      })(),
+    },
+    {
       id: 'new',
       title: 'Nuevos Este Mes',
       value: metrics.newStudentsThisMonth,
@@ -681,11 +739,11 @@ export default function StudentsPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gray-900 text-white p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))] p-4 sm:p-6 lg:p-8 relative overflow-hidden">
       {/* Elementos decorativos de fondo */}
       <div className="absolute inset-0 gradient-bg opacity-20"></div>
-      <div className="absolute top-10 -left-24 w-72 h-72 bg-blue-500 rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
-      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-purple-600 rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
+      <div className="absolute top-10 -left-24 w-72 h-72 bg-[hsl(var(--primary))] rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
+      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-[hsl(var(--accent))] rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
 
       <div className="relative z-10 space-y-8">
         {/* Header */}
@@ -696,15 +754,16 @@ export default function StudentsPage() {
           </div>
           <div className="flex items-center gap-2">
             <DropdownMenu>
-              <DropdownMenuTrigger className="px-3 py-2 rounded-md bg-gray-800/60 border border-gray-700 text-white text-sm hover:bg-gray-700">
+              <DropdownMenuTrigger className="px-3 py-2 rounded-md bg-[hsl(var(--muted))]/60 border border-border text-[hsl(var(--foreground))] text-sm hover:bg-[hsl(var(--muted))]">
                 KPIs
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-gray-800 border border-gray-700 text-white">
+              <DropdownMenuContent align="end" className="bg-[hsl(var(--background))] border border-border text-[hsl(var(--foreground))]">
                 {[
                   { id: 'total', label: 'Total Estudiantes' },
                   { id: 'active', label: 'Suscripciones Activas' },
                   { id: 'monthly', label: 'Ingresos Mensuales' },
                   { id: 'projected', label: 'Ingresos Proyectados (mes)' },
+                  { id: 'due', label: 'Por cobrar este mes' },
                   { id: 'new', label: 'Nuevos Este Mes' },
                 ].map((opt) => {
                   const visible = (kpiVisibility as any)[opt.id]
@@ -712,7 +771,7 @@ export default function StudentsPage() {
                     <DropdownMenuItem
                       key={opt.id}
                       onClick={() => setKpiVisibility((v) => ({ ...v, [opt.id]: !visible }))}
-                      className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer text-white flex items-center justify-between"
+                      className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))] cursor-pointer text-[hsl(var(--foreground))] flex items-center justify-between"
                     >
                       <span>{opt.label}</span>
                       {visible && <Check className="h-4 w-4 text-green-400" />}
@@ -721,7 +780,7 @@ export default function StudentsPage() {
                 })}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button onClick={handleOpenCreate} className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-lg shadow-indigo-500/30 transition-all duration-300 transform hover:scale-105">
+            <Button onClick={handleOpenCreate} className="font-semibold transition-all duration-300 transform hover:scale-105">
               <UserPlus className="mr-2 h-4 w-4" />
               Agregar Estudiante
             </Button>
@@ -731,7 +790,7 @@ export default function StudentsPage() {
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {kpiCardData.filter(k => (kpiVisibility as any)[k.id]).map((kpi, index) => (
-            <Card key={index} className="glass-effect rounded-2xl border-gray-700/50 overflow-hidden transition-all duration-300 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10">
+            <Card key={index} className="glass-effect rounded-2xl border-border overflow-hidden transition-all duration-300 hover:border-[hsl(var(--primary))]/50 hover:shadow-2xl hover:shadow-[hsl(var(--primary))]/10">
               <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-br ${kpi.color} p-4`}>
                 <div className="flex items-center gap-2">
                   <CardTitle className="text-sm font-medium text-white/90">{kpi.title}</CardTitle>
@@ -743,7 +802,7 @@ export default function StudentsPage() {
                             <Info className="h-4 w-4" />
                           </button>
                         </TooltipTrigger>
-                        <TooltipContent className="bg-gray-900 border border-gray-700 text-white">
+                        <TooltipContent className="bg-[hsl(var(--background))] border border-border text-[hsl(var(--foreground))]">
                           {kpi.tooltipContent}
                         </TooltipContent>
                       </Tooltip>
@@ -754,8 +813,15 @@ export default function StudentsPage() {
               </CardHeader>
               <CardContent className="p-4">
                 <div className="text-3xl font-bold text-white">{kpi.value}</div>
-                <p className="text-xs text-gray-400 mt-1">{kpi.change}</p>
-                <Progress value={kpi.progress} className="mt-4 h-2 bg-gray-700/50" indicatorClassName={`bg-gradient-to-r ${kpi.color}`} />
+                <p className="text-xs text-gray-300 mt-1">{kpi.change}</p>
+                <Progress
+                  value={kpi.progress}
+                  className="mt-4 h-2 bg-[hsl(var(--muted))]/50"
+                  indicatorClassName={(() => {
+                    const fromClass = (kpi.color || "").split(" ").find((c: string) => c.startsWith("from-"))
+                    return fromClass ? fromClass.replace("from-", "bg-") : "bg-[hsl(var(--primary,210_90%_56%))]"
+                  })()}
+                />
                 {kpi.extraAction}
               </CardContent>
             </Card>
@@ -763,12 +829,12 @@ export default function StudentsPage() {
         </div>
 
         {/* Search and Students Table */}
-        <Card className="glass-effect rounded-2xl border-gray-700/50">
+        <Card className="glass-effect rounded-2xl border-border">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-white">Lista de Estudiantes</CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardTitle className="text-[hsl(var(--foreground))]">Lista de Estudiantes</CardTitle>
+                <CardDescription className="text-gray-300">
                   Busca y gestiona todos los estudiantes de tu academia
                 </CardDescription>
               </div>
@@ -779,48 +845,48 @@ export default function StudentsPage() {
                     placeholder="Buscar por nombre o email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-indigo-500"
+                    className="max-w-sm bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
                   />
                 </div>
                 {/* Estado de pago */}
                 <Select value={debtFilter} onValueChange={setDebtFilter}>
-                  <SelectTrigger className="w-48 bg-gray-800/50 border-gray-700 text-white">
+                  <SelectTrigger className="w-48 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                     <SelectValue placeholder="Estado de pago" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                    <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" value="ALL">Todos (estado de pago)</SelectItem>
-                    <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" value="UP_TO_DATE">Al día</SelectItem>
-                    <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" value="OVERDUE">Atrasado</SelectItem>
-                    <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" value="DUE_THIS_MONTH">Pagan este mes</SelectItem>
-                    <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" value="NO_PLAN">Sin plan</SelectItem>
+                  <SelectContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
+                    <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" value="ALL">Todos (estado de pago)</SelectItem>
+                    <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" value="UP_TO_DATE">Al día</SelectItem>
+                    <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" value="OVERDUE">Atrasado</SelectItem>
+                    <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" value="DUE_THIS_MONTH">Pagan este mes</SelectItem>
+                    <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" value="NO_PLAN">Sin plan</SelectItem>
                   </SelectContent>
                 </Select>
                 {/* Status filter */}
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700 text-white">
+                  <SelectTrigger className="w-40 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                     <SelectValue placeholder="Estado" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                  <SelectContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
                     {statusOptions.map((opt) => (
-                      <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" key={opt} value={opt}>{opt === "ALL" ? "Todos (estado)" : opt}</SelectItem>
+                      <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" key={opt} value={opt}>{opt === "ALL" ? "Todos (estado)" : opt}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {/* Plan filter */}
                 <Select value={planFilter} onValueChange={setPlanFilter}>
-                  <SelectTrigger className="w-48 bg-gray-800/50 border-gray-700 text-white">
+                  <SelectTrigger className="w-48 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                     <SelectValue placeholder="Plan" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                  <SelectContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
                     {planOptions.map((opt) => (
-                      <SelectItem className="text-white hover:bg-gray-700 focus:bg-gray-700" key={opt} value={opt}>{opt === "ALL" ? "Todos (plan)" : opt}</SelectItem>
+                      <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" key={opt} value={opt}>{opt === "ALL" ? "Todos (plan)" : opt}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <Button
                   variant="outline"
                   onClick={resetFilters}
-                  className="border-gray-700 text-gray-200 hover:bg-gray-700"
+                  className="border-border"
                   title="Limpiar búsqueda y filtros"
                 >
                   Limpiar filtros
@@ -829,16 +895,16 @@ export default function StudentsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border border-gray-700/50 overflow-hidden bg-gray-800/30 backdrop-blur-sm">
+            <div className="rounded-lg border border-border overflow-hidden bg-[hsl(var(--muted))]/30 backdrop-blur-sm">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-800/50 hover:bg-gray-800/70 border-gray-700/50">
-                    <TableHead className="font-semibold text-gray-300">Estudiante</TableHead>
-                    <TableHead className="font-semibold text-gray-300">Plan</TableHead>
-                    <TableHead className="font-semibold text-gray-300">Estado</TableHead>
-                    <TableHead className="font-semibold text-gray-300">Próximo Pago</TableHead>
-                    <TableHead className="font-semibold text-gray-300">Registro</TableHead>
-                    <TableHead className="text-right font-semibold text-gray-300">Acciones</TableHead>
+                  <TableRow className="bg-[hsl(var(--muted))]/40 hover:bg-[hsl(var(--muted))]/60 border-border">
+                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Estudiante</TableHead>
+                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Plan</TableHead>
+                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Estado</TableHead>
+                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Próximo Pago</TableHead>
+                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Registro</TableHead>
+                    <TableHead className="text-right font-semibold text-[hsl(var(--foreground))]/80">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -846,15 +912,15 @@ export default function StudentsPage() {
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-12">
                         <div className="flex flex-col items-center space-y-4">
-                          <div className="p-4 bg-gray-800/50 rounded-full">
-                            <Users className="h-12 w-12 text-gray-500" />
+                          <div className="p-4 bg-[hsl(var(--muted))]/50 rounded-full">
+                            <Users className="h-12 w-12 text-[hsl(var(--foreground))]/50" />
                           </div>
                           <div className="space-y-2">
-                            <p className="text-lg font-medium text-gray-400">
+                            <p className="text-lg font-medium text-[hsl(var(--foreground))]/70">
                               {searchTerm ? "No se encontraron estudiantes" : "No hay estudiantes registrados"}
                             </p>
                             {!searchTerm && (
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-[hsl(var(--foreground))]/60">
                                 Los estudiantes aparecerán aquí cuando se registren con un plan
                               </p>
                             )}
@@ -864,27 +930,28 @@ export default function StudentsPage() {
                     </TableRow>
                   ) : (
                     filteredStudents.map((student) => (
-                      <TableRow key={student.id} className="hover:bg-gray-800/30 transition-colors border-gray-700/30">
+                      <TableRow key={student.id} className="hover:bg-[hsl(var(--muted))]/30 transition-colors border-border/30">
                         <TableCell className="py-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                              {student.name.charAt(0).toUpperCase()}
-                            </div>
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={(student.image || student.photoUrl || student.avatarUrl) ?? undefined} alt={student.name} />
+                              <AvatarFallback className={`${avatarBgFor(student.id || student.email || student.name)} text-white font-semibold text-sm`}>{student.name.charAt(0).toUpperCase()}</AvatarFallback>
+                            </Avatar>
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
-                                <div className="font-medium text-white">{student.name}</div>
+                                <div className="font-medium text-[hsl(var(--foreground))]">{student.name}</div>
                                 {student.status === "SUSPENDED" && (
-                                  <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-xs">
+                                  <Badge className="bg-[hsl(var(--destructive))]/20 text-[hsl(var(--destructive))] border-[hsl(var(--destructive))]/30 text-xs">
                                     Suspendido
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex items-center text-sm text-gray-400">
+                              <div className="flex items-center text-sm text-[hsl(var(--foreground))]/70">
                                 <Mail className="mr-1 h-3 w-3" />
                                 {student.email}
                               </div>
                               {student.phone && (
-                                <div className="flex items-center text-sm text-gray-400">
+                                <div className="flex items-center text-sm text-[hsl(var(--foreground))]/70">
                                   <Phone className="mr-1 h-3 w-3" />
                                   {student.phone}
                                 </div>
@@ -895,15 +962,15 @@ export default function StudentsPage() {
                         <TableCell className="py-4">
                           {student.membership ? (
                             <div className="space-y-1">
-                              <div className="font-medium text-white">{student.membership.plan.name}</div>
-                              <div className="text-sm text-gray-400">
+                              <div className="font-medium text-[hsl(var(--foreground))]">{student.membership.plan.name}</div>
+                              <div className="text-sm text-[hsl(var(--foreground))]/70">
                                 {formatCurrency(student.membership.plan.price)} / {student.membership.plan.type === "MONTHLY" ? "mes" : "año"}
                               </div>
                             </div>
                           ) : (
                             <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                              <span className="text-gray-400">Sin plan</span>
+                              <div className="w-2 h-2 bg-[hsl(var(--muted))] rounded-full"></div>
+                              <span className="text-[hsl(var(--foreground))]/60">Sin plan</span>
                             </div>
                           )}
                         </TableCell>
@@ -911,7 +978,7 @@ export default function StudentsPage() {
                           {student.membership ? (
                             getStatusBadge(student.membership.status)
                           ) : (
-                            <Badge className="bg-gray-500/20 text-gray-300 border-gray-500/30">Sin suscripción</Badge>
+                            <Badge className="bg-[hsl(var(--muted))]/40 text-[hsl(var(--foreground))]/70 border-[hsl(var(--muted))]/50">Sin suscripción</Badge>
                           )}
                         </TableCell>
                         <TableCell className="py-4">
@@ -928,14 +995,14 @@ export default function StudentsPage() {
                                 info.date < startOfNextMonth
                               )
                               return (
-                                <div className={`flex items-center gap-2 text-sm ${info.overdue ? 'text-red-300' : 'text-white'}`}>
+                                <div className={`flex items-center gap-2 text-sm ${info.overdue ? 'text-[hsl(var(--destructive))]/80' : 'text-[hsl(var(--foreground))]'}`}>
                                   <div className="flex items-center">
-                                    <Calendar className={`mr-2 h-4 w-4 ${info.overdue ? 'text-red-400' : 'text-gray-400'}`} />
+                                    <Calendar className={`mr-2 h-4 w-4 ${info.overdue ? 'text-[hsl(var(--destructive))]' : 'text-[hsl(var(--foreground))]/60'}`} />
                                     {formatDate(info.date.toISOString())}
-                                    {info.overdue && <span className="ml-2 text-red-400">⚠️</span>}
+                                    {info.overdue && <span className="ml-2 text-[hsl(var(--destructive))]">⚠️</span>}
                                   </div>
                                   {dueThisMonth && (
-                                    <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30">Paga este mes</Badge>
+                                    <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">Paga este mes</Badge>
                                   )}
                                 </div>
                               )
@@ -945,49 +1012,49 @@ export default function StudentsPage() {
                           )}
                         </TableCell>
                         <TableCell className="py-4">
-                          <div className="text-sm text-gray-400">
+                          <div className="text-sm text-[hsl(var(--foreground))]/70">
                             {formatDate(student.createdAt)}
                           </div>
                         </TableCell>
                         <TableCell className="text-right py-4">
                           <DropdownMenu>
                             <DropdownMenuTrigger 
-                              className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md text-gray-400 hover:text-white hover:bg-gray-800 focus:outline-none"
+                              className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md text-[hsl(var(--foreground))]/60 hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] focus:outline-none"
                             >
                               <MoreVertical className="h-4 w-4" />
                               <span className="sr-only">Abrir menú</span>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 text-white z-50">
-                              <DropdownMenuLabel className="text-gray-300">Acciones</DropdownMenuLabel>
-                              <DropdownMenuSeparator className="bg-gray-700" />
+                            <DropdownMenuContent align="end" className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))] z-50">
+                              <DropdownMenuLabel className="text-[hsl(var(--foreground))]/70">Acciones</DropdownMenuLabel>
+                              <DropdownMenuSeparator className="bg-[hsl(var(--muted))]" />
                               <DropdownMenuItem 
                                 onClick={() => handleOpenEdit(student)}
-                                className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer text-white"
+                                className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))] cursor-pointer"
                               >
-                                <Pencil className="mr-2 h-4 w-4 text-blue-400" />
+                                <Pencil className="mr-2 h-4 w-4 text-[hsl(var(--primary))]" />
                                 <span>Editar</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleOpenResetPassword(student)}
                                 disabled={actionLoading}
-                                className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer text-white"
+                                className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))] cursor-pointer"
                               >
-                                <Key className="mr-2 h-4 w-4 text-indigo-400" />
+                                <Key className="mr-2 h-4 w-4 text-[hsl(var(--primary))]" />
                                 <span>Resetear contraseña</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => handleSuspendStudent(student)}
                                 disabled={actionLoading}
-                                className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer text-white"
+                                className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))] cursor-pointer"
                               >
                                 {student.status === "SUSPENDED" ? (
                                   <>
-                                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                    <CheckCircle className="mr-2 h-4 w-4 text-[hsl(var(--primary))]" />
                                     <span>Activar</span>
                                   </>
                                 ) : (
                                   <>
-                                    <Ban className="mr-2 h-4 w-4 text-yellow-500" />
+                                    <Ban className="mr-2 h-4 w-4 text-[hsl(var(--accent))]" />
                                     <span>Suspender</span>
                                   </>
                                 )}
@@ -998,7 +1065,7 @@ export default function StudentsPage() {
                                   setDeleteDialogOpen(true)
                                 }}
                                 disabled={actionLoading}
-                                className="hover:bg-red-900/50 focus:bg-red-900/50 cursor-pointer text-red-400"
+                                className="hover:bg-[hsl(var(--destructive))]/20 focus:bg-[hsl(var(--destructive))]/20 cursor-pointer text-[hsl(var(--destructive))]"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 <span>Eliminar</span>
@@ -1017,49 +1084,49 @@ export default function StudentsPage() {
 
         {/* Create Student Dialog */}
         <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-          <DialogContent className="bg-gray-900 border-gray-700 text-white">
+          <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
             <DialogHeader>
               <DialogTitle>Nuevo estudiante</DialogTitle>
-              <DialogDescription className="text-gray-400">
+              <DialogDescription className="text-[hsl(var(--foreground))]/70">
                 Ingresa los datos básicos para registrar al estudiante.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm text-gray-300">Nombre</label>
+                <label className="text-sm text-[hsl(var(--foreground))]/80">Nombre</label>
                 <Input
                   value={newStudent.name}
                   onChange={(e) => setNewStudent((p) => ({ ...p, name: e.target.value }))}
-                  className="bg-gray-800/50 border-gray-700 text-white"
+                  className="bg-[hsl(var(--muted))]/50 border-border"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-gray-300">Email</label>
+                <label className="text-sm text-[hsl(var(--foreground))]/80">Email</label>
                 <Input
                   type="email"
                   value={newStudent.email}
                   onChange={(e) => setNewStudent((p) => ({ ...p, email: e.target.value }))}
-                  className="bg-gray-800/50 border-gray-700 text-white"
+                  className="bg-[hsl(var(--muted))]/50 border-border"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-gray-300">Teléfono (opcional)</label>
+                <label className="text-sm text-[hsl(var(--foreground))]/80">Teléfono (opcional)</label>
                 <Input
                   type="tel"
                   value={newStudent.phone}
                   onChange={(e) => setNewStudent((p) => ({ ...p, phone: e.target.value }))}
-                  className="bg-gray-800/50 border-gray-700 text-white"
+                  className="bg-[hsl(var(--muted))]/50 border-border"
                 />
               </div>
               {((session?.user as any)?.role === "SUPER_ADMIN" && !(session?.user as any)?.academyId) && (
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-300">Academia ID</label>
+                  <label className="text-sm text-[hsl(var(--foreground))]/80">Academia ID</label>
                   <Input
                     value={createAcademyId}
                     onChange={(e) => setCreateAcademyId(e.target.value)}
                     placeholder="ID de la academia"
-                    className="bg-gray-800/50 border-gray-700 text-white"
+                    className="bg-[hsl(var(--muted))]/50 border-border"
                   />
                 </div>
               )}
@@ -1067,10 +1134,10 @@ export default function StudentsPage() {
 
             <DialogFooter>
               <div className="flex items-center justify-end gap-3 w-full">
-                <Button variant="outline" onClick={() => setOpenCreate(false)} className="border-gray-700 text-gray-200 hover:bg-gray-800">
+                <Button variant="outline" onClick={() => setOpenCreate(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={saveStudent} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700">
+                <Button onClick={saveStudent} disabled={saving}>
                   {saving ? "Guardando..." : "Crear"}
                 </Button>
               </div>
@@ -1080,41 +1147,41 @@ export default function StudentsPage() {
 
         {/* Reset Password Dialog */}
         <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-          <DialogContent className="bg-gray-900 border-gray-700 text-white">
+          <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
             <DialogHeader>
               <DialogTitle>Resetear contraseña</DialogTitle>
-              <DialogDescription className="text-gray-400">
+              <DialogDescription className="text-[hsl(var(--foreground))]/70">
                 Define una nueva contraseña para el estudiante seleccionado. Debe tener al menos 8 caracteres.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm text-gray-300">Nueva contraseña</label>
+                <label className="text-sm text-[hsl(var(--foreground))]/80">Nueva contraseña</label>
                 <Input
                   type="password"
                   value={resetForm.password}
                   onChange={(e) => setResetForm((p) => ({ ...p, password: e.target.value }))}
-                  className="bg-gray-800/50 border-gray-700 text-white"
+                  className="bg-[hsl(var(--muted))]/50 border-border"
                   placeholder="********"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-gray-300">Confirmar contraseña</label>
+                <label className="text-sm text-[hsl(var(--foreground))]/80">Confirmar contraseña</label>
                 <Input
                   type="password"
                   value={resetForm.confirm}
                   onChange={(e) => setResetForm((p) => ({ ...p, confirm: e.target.value }))}
-                  className="bg-gray-800/50 border-gray-700 text-white"
+                  className="bg-[hsl(var(--muted))]/50 border-border"
                   placeholder="********"
                 />
               </div>
             </div>
             <DialogFooter>
               <div className="flex items-center justify-end gap-3 w-full">
-                <Button variant="outline" onClick={() => setResetDialogOpen(false)} className="border-gray-700 text-gray-200 hover:bg-gray-800">
+                <Button variant="outline" onClick={() => setResetDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={saveResetPassword} disabled={resetSaving} className="bg-indigo-600 hover:bg-indigo-700">
+                <Button onClick={saveResetPassword} disabled={resetSaving}>
                   {resetSaving ? "Guardando..." : "Actualizar"}
                 </Button>
               </div>
@@ -1124,49 +1191,49 @@ export default function StudentsPage() {
 
         {/* Edit Student Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="bg-gray-900 border-gray-700 text-white">
+          <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
             <DialogHeader>
               <DialogTitle>Editar estudiante</DialogTitle>
-              <DialogDescription className="text-gray-400">
+              <DialogDescription className="text-[hsl(var(--foreground))]/70">
                 Actualiza los datos del estudiante.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm text-gray-300">Nombre</label>
+                <label className="text-sm text-[hsl(var(--foreground))]/80">Nombre</label>
                 <Input
                   value={editForm.name}
                   onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
-                  className="bg-gray-800/50 border-gray-700 text-white"
+                  className="bg-[hsl(var(--muted))]/50 border-border"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-gray-300">Email</label>
+                <label className="text-sm text-[hsl(var(--foreground))]/80">Email</label>
                 <Input
                   type="email"
                   value={editForm.email}
                   onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))}
-                  className="bg-gray-800/50 border-gray-700 text-white"
+                  className="bg-[hsl(var(--muted))]/50 border-border"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-gray-300">Teléfono</label>
+                <label className="text-sm text-[hsl(var(--foreground))]/80">Teléfono</label>
                 <Input
                   type="tel"
                   value={editForm.phone}
                   onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))}
-                  className="bg-gray-800/50 border-gray-700 text-white"
+                  className="bg-[hsl(var(--muted))]/50 border-border"
                 />
               </div>
             </div>
 
             <DialogFooter>
               <div className="flex items-center justify-end gap-3 w-full">
-                <Button variant="outline" onClick={() => setEditDialogOpen(false)} className="border-gray-700 text-gray-200 hover:bg-gray-800">
+                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={saveEditStudent} disabled={editSaving} className="bg-indigo-600 hover:bg-indigo-700">
+                <Button onClick={saveEditStudent} disabled={editSaving}>
                   {editSaving ? "Guardando..." : "Guardar"}
                 </Button>
               </div>
@@ -1176,22 +1243,22 @@ export default function StudentsPage() {
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent className="bg-gray-900 border-gray-700 text-white">
+          <AlertDialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
             <AlertDialogHeader>
               <AlertDialogTitle>¿Eliminar estudiante?</AlertDialogTitle>
-              <AlertDialogDescription className="text-gray-400">
+              <AlertDialogDescription className="text-[hsl(var(--foreground))]/70">
                 Esta acción no se puede deshacer. Se eliminará permanentemente a{" "}
                 <span className="font-semibold text-white">{selectedStudent?.name}</span> y todos sus datos asociados.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700">
+              <AlertDialogCancel className="border-border">
                 Cancelar
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteStudent}
                 disabled={actionLoading}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive))]/80 text-[hsl(var(--destructive-foreground))]"
               >
                 {actionLoading ? "Eliminando..." : "Eliminar"}
               </AlertDialogAction>

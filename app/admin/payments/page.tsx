@@ -439,7 +439,7 @@ export default function PaymentsPage() {
       },
       PENDING: { 
         label: "Pendiente", 
-        color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
+        color: "bg-amber-500/20 text-amber-300 border-amber-500/30",
         icon: Clock
       },
       FAILED: { 
@@ -449,19 +449,19 @@ export default function PaymentsPage() {
       },
       CANCELED: { 
         label: "Cancelado", 
-        color: "bg-gray-500/20 text-gray-300 border-gray-500/30",
+        color: "bg-red-500/15 text-red-300 border-red-500/25",
         icon: XCircle
       },
       REFUNDED: { 
         label: "Reembolsado", 
-        color: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+        color: "bg-sky-500/20 text-sky-300 border-sky-500/30",
         icon: RefreshCw
       }
     }
     
-    const statusInfo = statusMap[status as keyof typeof statusMap] || { 
+    const statusInfo = (statusMap as any)[status] || { 
       label: status, 
-      color: "bg-gray-500/20 text-gray-300 border-gray-500/30",
+      color: "bg-slate-500/20 text-slate-300 border-slate-500/30",
       icon: AlertTriangle
     }
     
@@ -512,45 +512,45 @@ export default function PaymentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-gray-900 text-white flex items-center justify-center">
+      <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))] flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
-          <p className="text-gray-400">Cargando pagos...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--primary))]"></div>
+          <p className="text-[hsl(var(--foreground))]/70">Cargando pagos...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen w-full bg-gray-900 text-white p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))] p-4 sm:p-6 lg:p-8 relative overflow-hidden">
       {/* Elementos decorativos de fondo */}
       <div className="absolute inset-0 gradient-bg opacity-20"></div>
-      <div className="absolute top-10 -left-24 w-72 h-72 bg-blue-500 rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
-      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-purple-600 rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
+      <div className="absolute top-10 -left-24 w-72 h-72 bg-[hsl(var(--primary,210_90%_56%))] rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
+      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-[hsl(var(--accent,262_83%_58%))] rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
 
       <div className="relative z-10 space-y-8">
         {/* Header */}
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Gestión de Pagos</h1>
-            <p className="text-gray-400">Monitorea y administra todas las transacciones de tu academia</p>
+            <p className="text-[hsl(var(--foreground))]/70">Monitorea y administra todas las transacciones de tu academia</p>
           </div>
           <div className="flex items-center space-x-3">
             <Button 
               variant="outline" 
-              className="bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-300"
+              className="bg-[hsl(var(--muted))]/60 border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-all duration-300"
               onClick={fetchPayments}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Actualizar
             </Button>
             <Button 
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold shadow-lg shadow-green-500/20 transition-all duration-300 transform hover:scale-105"
+              className="font-semibold transition-all duration-300 transform hover:scale-105"
               onClick={() => setOpenManual(true)}
             >
               Registrar Pago
             </Button>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-lg shadow-indigo-500/30 transition-all duration-300 transform hover:scale-105">
+            <Button variant="outline" className="font-semibold transition-all duration-300 transform hover:scale-105">
               <Download className="mr-2 h-4 w-4" />
               Exportar
             </Button>
@@ -560,38 +560,45 @@ export default function PaymentsPage() {
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {kpiCardData.map((kpi, index) => (
-            <Card key={index} className="glass-effect rounded-2xl border-gray-700/50 overflow-hidden transition-all duration-300 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10">
+            <Card key={index} className="glass-effect rounded-2xl border-border overflow-hidden transition-all duration-300 hover:border-[hsl(var(--primary,210_90%_56%))]/50 hover:shadow-2xl hover:shadow-[hsl(var(--primary,210_90%_56%))]/10">
               <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-br ${kpi.color} p-4`}>
                 <CardTitle className="text-sm font-medium text-white/90">{kpi.title}</CardTitle>
                 <kpi.icon className="h-5 w-5 text-white/80" />
               </CardHeader>
               <CardContent className="p-4">
                 <div className="text-3xl font-bold text-white">{kpi.value}</div>
-                <p className="text-xs text-gray-400 mt-1">{kpi.change}</p>
-                <Progress value={kpi.progress} className="mt-4 h-2 bg-gray-700/50" indicatorClassName={`bg-gradient-to-r ${kpi.color}`} />
+                <p className="text-xs text-[hsl(var(--foreground))]/70 mt-1">{kpi.change}</p>
+                <Progress
+                  value={kpi.progress}
+                  className="mt-4 h-2 bg-[hsl(var(--muted,215_20%_18%))]/50"
+                  indicatorClassName={(() => {
+                    const fromClass = (kpi.color || "").split(" ").find((c: string) => c.startsWith("from-"))
+                    return fromClass ? fromClass.replace("from-", "bg-") : "bg-[hsl(var(--primary,210_90%_56%))]"
+                  })()}
+                />
               </CardContent>
             </Card>
           ))}
         </div>
 
         {/* Payments Table */}
-        <Card className="glass-effect rounded-2xl border-gray-700/50">
+        <Card className="glass-effect rounded-2xl border-border">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-white">Historial de Pagos</CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardTitle className="text-[hsl(var(--foreground))]">Historial de Pagos</CardTitle>
+                <CardDescription className="text-[hsl(var(--foreground))]/70">
                   Todas las transacciones y su estado actual
                 </CardDescription>
               </div>
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
-                  <Filter className="h-4 w-4 text-gray-400" />
+                  <Filter className="h-4 w-4 text-[hsl(var(--foreground))]/60" />
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700 text-white">
+                    <SelectTrigger className="w-40 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectContent className="bg-[hsl(var(--background))] border-border">
                       <SelectItem value="ALL">Todos</SelectItem>
                       <SelectItem value="PAID">Pagados</SelectItem>
                       <SelectItem value="PENDING">Pendientes</SelectItem>
@@ -602,34 +609,34 @@ export default function PaymentsPage() {
                   </Select>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Search className="h-4 w-4 text-gray-400" />
+                  <Search className="h-4 w-4 text-[hsl(var(--foreground))]/60" />
                   <Input
                     ref={inputRef}
                     placeholder="Buscar pagos..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-400 focus:border-indigo-500"
+                    className="max-w-sm bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
                   />
                 </div>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border border-gray-700/50 overflow-hidden bg-gray-800/30 backdrop-blur-sm">
+            <div className="rounded-lg border border-border overflow-hidden bg-[hsl(var(--background))]/40 backdrop-blur-sm">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-800/50 hover:bg-gray-800/70 border-gray-700/50">
-                    <TableHead className="font-semibold text-gray-300">Cliente</TableHead>
-                    <TableHead className="font-semibold text-gray-300">Plan</TableHead>
-                    <TableHead onClick={() => toggleSort("amount")} className="font-semibold text-gray-300 cursor-pointer select-none">
+                  <TableRow className="bg-[hsl(var(--muted))]/40 hover:bg-[hsl(var(--muted))]/60 border-border">
+                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Cliente</TableHead>
+                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Plan</TableHead>
+                    <TableHead onClick={() => toggleSort("amount")} className="font-semibold text-[hsl(var(--foreground))]/80 cursor-pointer select-none">
                       Monto {renderSortIcon("amount")}
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-300">Estado</TableHead>
-                    <TableHead className="font-semibold text-gray-300">Método</TableHead>
-                    <TableHead onClick={() => toggleSort("date")} className="font-semibold text-gray-300 cursor-pointer select-none">
+                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Estado</TableHead>
+                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Método</TableHead>
+                    <TableHead onClick={() => toggleSort("date")} className="font-semibold text-[hsl(var(--foreground))]/80 cursor-pointer select-none">
                       Fecha {renderSortIcon("date")}
                     </TableHead>
-                    <TableHead className="text-right font-semibold text-gray-300">ID Transacción</TableHead>
+                    <TableHead className="text-right font-semibold text-[hsl(var(--foreground))]/80">ID Transacción</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -637,15 +644,15 @@ export default function PaymentsPage() {
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-12">
                         <div className="flex flex-col items-center space-y-4">
-                          <div className="p-4 bg-gray-800/50 rounded-full">
-                            <CreditCard className="h-12 w-12 text-gray-500" />
+                          <div className="p-4 bg-[hsl(var(--muted))]/50 rounded-full">
+                            <CreditCard className="h-12 w-12 text-[hsl(var(--foreground))]/50" />
                           </div>
                           <div className="space-y-2">
-                            <p className="text-lg font-medium text-gray-400">
+                            <p className="text-lg font-medium text-[hsl(var(--foreground))]/70">
                               {searchTerm || statusFilter !== "ALL" ? "No se encontraron pagos" : "No hay pagos registrados"}
                             </p>
                             {!searchTerm && statusFilter === "ALL" && (
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-[hsl(var(--foreground))]/60">
                                 Los pagos aparecerán aquí cuando los estudiantes realicen transacciones
                               </p>
                             )}
@@ -655,28 +662,28 @@ export default function PaymentsPage() {
                     </TableRow>
                   ) : (
                     sortedPayments.map((payment: Payment) => (
-                      <TableRow key={payment.id} className="hover:bg-gray-800/30 transition-colors border-gray-700/30">
+                      <TableRow key={payment.id} className="hover:bg-[hsl(var(--background))]/30 transition-colors border-border/50">
                         <TableCell className="py-4">
                           <div className="space-y-1">
-                            <div className="font-medium text-white">{payment.user.name}</div>
-                            <div className="text-sm text-gray-400">{payment.user.email}</div>
+                            <div className="font-medium text-[hsl(var(--foreground))]">{payment.user.name}</div>
+                            <div className="text-sm text-[hsl(var(--foreground))]/70">{payment.user.email}</div>
                           </div>
                         </TableCell>
                         <TableCell className="py-4">
                           {payment.membership ? (
                             <div className="space-y-1">
-                              <div className="font-medium text-white">{payment.membership.plan.name}</div>
-                              <div className="text-sm text-gray-400">
+                              <div className="font-medium text-[hsl(var(--foreground))]">{payment.membership.plan.name}</div>
+                              <div className="text-sm text-[hsl(var(--foreground))]/70">
                                 {payment.membership.plan.type === "MONTHLY" ? "Mensual" : 
                                  payment.membership.plan.type === "QUARTERLY" ? "Trimestral" : "Anual"}
                               </div>
                             </div>
                           ) : (
-                            <span className="text-gray-400">-</span>
+                            <span className="text-[hsl(var(--foreground))]/70">-</span>
                           )}
                         </TableCell>
                         <TableCell className="py-4">
-                          <div className="font-medium text-white">
+                          <div className="font-medium text-[hsl(var(--foreground))]">
                             {formatCurrency(payment.amount, payment.currency)}
                           </div>
                         </TableCell>
@@ -684,20 +691,20 @@ export default function PaymentsPage() {
                           {getStatusBadge(payment.status)}
                         </TableCell>
                         <TableCell className="py-4">
-                          <div className="text-white">{formatMethod(payment.method)}</div>
+                          <div className="text-[hsl(var(--foreground))]">{formatMethod(payment.method)}</div>
                         </TableCell>
                         <TableCell className="py-4">
-                          <div className="text-sm text-gray-300">
+                          <div className="text-sm text-[hsl(var(--foreground))]/75">
                             {payment.paidAt ? formatDate(payment.paidAt) : formatDate(payment.createdAt)}
                           </div>
                         </TableCell>
                         <TableCell className="text-right py-4">
-                          <div className="flex items-center justify-end gap-2 text-sm text-gray-400 font-mono">
+                          <div className="flex items-center justify-end gap-2 text-sm text-[hsl(var(--foreground))]/70 font-mono">
                             <span>{payment.transactionId || payment.id.slice(-8)}</span>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 px-2 bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700"
+                              className="h-7 px-2 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
                               onClick={() => {
                                 navigator.clipboard.writeText(payment.transactionId || payment.id)
                                 setCopiedId(payment.id)
@@ -710,7 +717,7 @@ export default function PaymentsPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 px-2 bg-gray-800/50 border-gray-700 text-gray-300 hover:bg-gray-700"
+                              className="h-7 px-2 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
                               onClick={() => {
                                 setSelectedPaymentId(payment.id)
                                 setEditPayment({
@@ -740,36 +747,36 @@ export default function PaymentsPage() {
       </div>
       {/* Manual Payment Dialog */}
       <Dialog open={openManual} onOpenChange={setOpenManual}>
-        <DialogContent className="bg-gray-900 border-gray-700 text-white">
+        <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
           <DialogHeader>
             <DialogTitle>Registrar pago manual</DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogDescription className="text-[hsl(var(--foreground))]/70">
               Ingresa los datos del pago recibido por transferencia o efectivo.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm text-gray-300">Alumno</Label>
+              <Label className="text-sm text-[hsl(var(--foreground))]/80">Alumno</Label>
               <Popover open={studentPopoverOpen} onOpenChange={setStudentPopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     role="combobox"
                     aria-expanded={studentPopoverOpen}
-                    className="w-full justify-between bg-gray-800/50 border-gray-700 text-white"
+                    className="w-full justify-between bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]"
                   >
                     {selectedStudent ? (
                       <span className="truncate text-left font-medium">{selectedStudent.name}</span>
                     ) : (
-                      <span className="text-gray-400">Selecciona un alumno...</span>
+                      <span className="text-[hsl(var(--foreground))]/60">Selecciona un alumno...</span>
                     )}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="p-0 w-[360px] bg-gray-900 border-gray-700 text-white">
-                  <Command className="bg-gray-900 text-white [&_*[data-slot=command-input-wrapper]]:h-12 [&_*[data-slot=command-input-wrapper]]:border-gray-700 [&_*[data-slot=command-empty]]:text-gray-400 [&_*[data-slot=command-group]]:px-2 [&_*[data-slot=command-item]]:px-2 [&_*[data-slot=command-item]]:py-3">
-                    <CommandInput placeholder="Buscar alumno..." className="text-white placeholder:text-gray-400" />
+                <PopoverContent className="p-0 w-[360px] bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
+                  <Command className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))] [&_*[data-slot=command-input-wrapper]]:h-12 [&_*[data-slot=command-input-wrapper]]:border-border [&_*[data-slot=command-empty]]:text-[hsl(var(--foreground))]/70 [&_*[data-slot=command-group]]:px-2 [&_*[data-slot=command-item]]:px-2 [&_*[data-slot=command-item]]:py-3">
+                    <CommandInput placeholder="Buscar alumno..." className="text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground))]/60" />
                     <CommandList>
                       <CommandEmpty>
                         {studentsLoading ? "Cargando..." : "No se encontraron alumnos"}
@@ -778,15 +785,15 @@ export default function PaymentsPage() {
                         {studentsOptions.map((s) => (
                           <CommandItem
                             key={s.id}
-                            className="data-[selected=true]:bg-gray-800 data-[selected=true]:text-white"
+                            className="data-[selected=true]:bg-[hsl(var(--muted))] data-[selected=true]:text-[hsl(var(--foreground))]"
                             onSelect={() => {
                               setSelectedStudent({ id: s.id, name: s.name, email: s.email })
                               setStudentPopoverOpen(false)
                             }}
                           >
                             <div className="flex flex-col">
-                              <span className="text-sm text-white font-medium">{s.name}</span>
-                              <span className="text-xs text-gray-400">{s.email}</span>
+                              <span className="text-sm text-[hsl(var(--foreground))] font-medium">{s.name}</span>
+                              <span className="text-xs text-[hsl(var(--foreground))]/70">{s.email}</span>
                             </div>
                           </CommandItem>
                         ))}

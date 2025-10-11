@@ -281,26 +281,26 @@ export default function BranchesPage() {
   const empty = !loading && branches.length === 0
 
   return (
-    <div className="min-h-screen w-full bg-gray-900 text-white p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))] p-4 sm:p-6 lg:p-8 relative overflow-hidden">
       <div className="absolute inset-0 gradient-bg opacity-20" />
-      <div className="absolute top-10 -left-24 w-72 h-72 bg-blue-500 rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float" />
-      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-purple-600 rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000" />
+      <div className="absolute top-10 -left-24 w-72 h-72 bg-[hsl(var(--primary))] rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float" />
+      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-[hsl(var(--accent))] rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000" />
 
       <div className="relative z-10 space-y-8">
         {/* Header */}
         <header className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2"><Building2 className="h-7 w-7" /> Sedes</h1>
-            <p className="text-gray-400">Gestiona múltiples sedes de tu academia. Define horarios, datos de contacto y más.</p>
+            <p className="text-[hsl(var(--foreground))]/70">Gestiona múltiples sedes de tu academia. Define horarios, datos de contacto y más.</p>
           </div>
           <div className="flex items-center gap-3">
             <Input
               placeholder="Buscar por nombre, dirección, email o teléfono"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-gray-800/50 border-gray-700 text-white w-72"
+              className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] w-72"
             />
-            <Button onClick={handleOpenCreate} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={handleOpenCreate} className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white">
               <Plus className="h-4 w-4 mr-2" /> Nueva sede
             </Button>
           </div>
@@ -309,63 +309,63 @@ export default function BranchesPage() {
         {/* Content */}
         {loading ? (
           <div className="flex items-center justify-center py-24">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--primary))]"></div>
           </div>
         ) : empty ? (
-          <Card className="border-gray-700/50 bg-gray-800/30">
+          <Card className="border-border bg-[hsl(var(--background))]/40">
             <CardHeader>
               <CardTitle>No tienes sedes aún</CardTitle>
-              <CardDescription className="text-gray-400">Crea tu primera sede para empezar a agendar clases y matricular alumnos.</CardDescription>
+              <CardDescription className="text-[hsl(var(--foreground))]/70">Crea tu primera sede para empezar a agendar clases y matricular alumnos.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={handleOpenCreate} className="bg-indigo-600 hover:bg-indigo-700"><Plus className="h-4 w-4 mr-2" />Crear sede</Button>
+              <Button onClick={handleOpenCreate} className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white"><Plus className="h-4 w-4 mr-2" />Crear sede</Button>
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-gray-700/50 bg-gray-800/30">
+          <Card className="border-border bg-[hsl(var(--background))]/40">
             <CardHeader>
               <CardTitle>Listado de sedes</CardTitle>
-              <CardDescription className="text-gray-400">Edita datos de contacto, horarios y elimina sedes sin actividad.</CardDescription>
+              <CardDescription className="text-[hsl(var(--foreground))]/70">Edita datos de contacto, horarios y elimina sedes sin actividad.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-xl border border-gray-700/50 overflow-hidden">
+              <div className="rounded-xl border border-border overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-gray-300">Sede</TableHead>
-                      <TableHead className="text-gray-300">Contacto</TableHead>
-                      <TableHead className="text-gray-300">Dirección</TableHead>
-                      <TableHead className="text-gray-300">Horario</TableHead>
-                      <TableHead className="text-right text-gray-300">Acciones</TableHead>
+                      <TableHead className="text-[hsl(var(--foreground))]/80">Sede</TableHead>
+                      <TableHead className="text-[hsl(var(--foreground))]/80">Contacto</TableHead>
+                      <TableHead className="text-[hsl(var(--foreground))]/80">Dirección</TableHead>
+                      <TableHead className="text-[hsl(var(--foreground))]/80">Horario</TableHead>
+                      <TableHead className="text-right text-[hsl(var(--foreground))]/80">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filtered.map((b) => (
-                      <TableRow key={b.id} className="hover:bg-gray-800/40">
+                      <TableRow key={b.id} className="hover:bg-[hsl(var(--background))]/40">
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="font-semibold text-white">{b.name}</span>
-                            <span className="text-xs text-gray-400">ID: {b.id.slice(0, 8)}...</span>
+                            <span className="font-semibold text-[hsl(var(--foreground))]">{b.name}</span>
+                            <span className="text-xs text-[hsl(var(--foreground))]/60">ID: {b.id.slice(0, 8)}...</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1 text-sm">
-                            {b.email && (<div className="flex items-center gap-2 text-gray-300"><Mail className="h-3.5 w-3.5" /> {b.email}</div>)}
-                            {b.phone && (<div className="flex items-center gap-2 text-gray-300"><Phone className="h-3.5 w-3.5" /> {b.phone}</div>)}
+                            {b.email && (<div className="flex items-center gap-2 text-[hsl(var(--foreground))]/75"><Mail className="h-3.5 w-3.5" /> {b.email}</div>)}
+                            {b.phone && (<div className="flex items-center gap-2 text-[hsl(var(--foreground))]/75"><Phone className="h-3.5 w-3.5" /> {b.phone}</div>)}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-start gap-2 text-gray-300"><MapPin className="h-3.5 w-3.5 mt-0.5" /> <span>{b.address}</span></div>
+                          <div className="flex items-start gap-2 text-[hsl(var(--foreground))]/75"><MapPin className="h-3.5 w-3.5 mt-0.5" /> <span>{b.address}</span></div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2 text-gray-300"><Clock className="h-3.5 w-3.5" /> <span>{hoursSummary(b)}</span></div>
+                          <div className="flex items-center gap-2 text-[hsl(var(--foreground))]/75"><Clock className="h-3.5 w-3.5" /> <span>{hoursSummary(b)}</span></div>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button variant="outline" size="sm" onClick={() => openAssignDialog(b)} className="border-gray-700 text-gray-200 hover:bg-gray-800">
+                            <Button variant="outline" size="sm" onClick={() => openAssignDialog(b)} className="border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/40">
                               <Users className="h-3.5 w-3.5 mr-2" /> Coaches
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => handleOpenEdit(b)} className="border-gray-700 text-gray-200 hover:bg-gray-800">
+                            <Button variant="outline" size="sm" onClick={() => handleOpenEdit(b)} className="border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/40">
                               <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
                             </Button>
                             <AlertDialog>
@@ -374,7 +374,7 @@ export default function BranchesPage() {
                                   <Trash2 className="h-3.5 w-3.5 mr-2" /> Eliminar
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent className="bg-gray-900 border-gray-700 text-white">
+                              <AlertDialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>¿Eliminar sede?</AlertDialogTitle>
                                   <AlertDialogDescription>
@@ -400,10 +400,10 @@ export default function BranchesPage() {
 
         {/* Create/Edit Dialog */}
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogContent className="bg-gray-900 border-gray-700 text-white">
+          <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
             <DialogHeader>
               <DialogTitle>{editing ? "Editar sede" : "Nueva sede"}</DialogTitle>
-              <DialogDescription className="text-gray-400">
+              <DialogDescription className="text-[hsl(var(--foreground))]/70">
                 Define datos básicos y horarios de apertura/cierre. Deja en blanco para marcar como cerrado.
               </DialogDescription>
             </DialogHeader>
@@ -411,31 +411,31 @@ export default function BranchesPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-300">Nombre</label>
-                  <Input value={form.name || ""} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} className="bg-gray-800/50 border-gray-700 text-white" />
+                  <label className="text-sm text-[hsl(var(--foreground))]/80">Nombre</label>
+                  <Input value={form.name || ""} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-300">Email</label>
-                  <Input type="email" value={form.email || ""} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} className="bg-gray-800/50 border-gray-700 text-white" />
+                  <label className="text-sm text-[hsl(var(--foreground))]/80">Email</label>
+                  <Input type="email" value={form.email || ""} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm text-gray-300">Dirección</label>
-                  <Input value={form.address || ""} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} className="bg-gray-800/50 border-gray-700 text-white" />
+                  <label className="text-sm text-[hsl(var(--foreground))]/80">Dirección</label>
+                  <Input value={form.address || ""} onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-300">Teléfono</label>
-                  <Input value={form.phone || ""} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} className="bg-gray-800/50 border-gray-700 text-white" />
+                  <label className="text-sm text-[hsl(var(--foreground))]/80">Teléfono</label>
+                  <Input value={form.phone || ""} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]" />
                 </div>
               </div>
 
-              <Separator className="bg-gray-700" />
+              <Separator className="bg-[hsl(var(--muted))]/50" />
 
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold">Horarios</h3>
-                  <p className="text-sm text-gray-400">Usa formato 24h. Deja vacío para marcar como cerrado.</p>
+                  <p className="text-sm text-[hsl(var(--foreground))]/70">Usa formato 24h. Deja vacío para marcar como cerrado.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={copyMonToWeekdays} className="border-gray-700 text-gray-200 hover:bg-gray-800">
+                <Button variant="outline" size="sm" onClick={copyMonToWeekdays} className="border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/40">
                   <Copy className="h-3.5 w-3.5 mr-2" /> Copiar Lunes a L–V
                 </Button>
               </div>
@@ -443,18 +443,18 @@ export default function BranchesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {dayKeys.map((d) => (
                   <div key={String(d.key)} className="grid grid-cols-[110px_1fr_1fr] items-center gap-3">
-                    <div className="text-sm text-gray-300">{d.label}</div>
+                    <div className="text-sm text-[hsl(var(--foreground))]/80">{d.label}</div>
                     <Input
                       type="time"
                       value={(form[d.open] as string) || ""}
                       onChange={(e) => setForm((p) => ({ ...p, [d.open]: e.target.value }))}
-                      className="bg-gray-800/50 border-gray-700 text-white"
+                      className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]"
                     />
                     <Input
                       type="time"
                       value={(form[d.close] as string) || ""}
                       onChange={(e) => setForm((p) => ({ ...p, [d.close]: e.target.value }))}
-                      className="bg-gray-800/50 border-gray-700 text-white"
+                      className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]"
                     />
                   </div>
                 ))}
@@ -463,10 +463,10 @@ export default function BranchesPage() {
 
             <DialogFooter>
               <div className="flex items-center justify-end gap-3 w-full">
-                <Button variant="outline" onClick={() => setOpenDialog(false)} className="border-gray-700 text-gray-200 hover:bg-gray-800">
+                <Button variant="outline" onClick={() => setOpenDialog(false)} className="border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/40">
                   Cancelar
                 </Button>
-                <Button onClick={saveBranch} className="bg-indigo-600 hover:bg-indigo-700">
+                <Button onClick={saveBranch} className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white">
                   {editing ? "Guardar cambios" : "Crear sede"}
                 </Button>
               </div>
@@ -476,10 +476,10 @@ export default function BranchesPage() {
 
         {/* Assign Coaches Dialog */}
         <Dialog open={openAssign} onOpenChange={setOpenAssign}>
-          <DialogContent className="bg-gray-900 border-gray-700 text-white">
+          <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
             <DialogHeader>
               <DialogTitle>Asignar coaches {assignBranch ? `— ${assignBranch.name}` : ""}</DialogTitle>
-              <DialogDescription className="text-gray-400">
+              <DialogDescription className="text-[hsl(var(--foreground))]/70">
                 Selecciona los coaches que podrán trabajar en esta sede.
               </DialogDescription>
             </DialogHeader>
@@ -489,27 +489,27 @@ export default function BranchesPage() {
                 placeholder="Buscar coach por nombre o email"
                 value={coachSearch}
                 onChange={(e) => setCoachSearch(e.target.value)}
-                className="bg-gray-800/50 border-gray-700 text-white"
+                className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]"
               />
 
               {assignLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[hsl(var(--primary))]"></div>
                 </div>
               ) : (
-                <ScrollArea className="h-72 rounded-md border border-gray-700/50 p-3 bg-gray-800/30">
+                <ScrollArea className="h-72 rounded-md border border-border p-3 bg-[hsl(var(--background))]/40">
                   <div className="space-y-3">
                     {filteredCoaches.length === 0 ? (
-                      <div className="text-sm text-gray-400">No se encontraron coaches.</div>
+                      <div className="text-sm text-[hsl(var(--foreground))]/70">No se encontraron coaches.</div>
                     ) : (
                       filteredCoaches.map((c) => {
                         const checked = selectedCoaches.has(c.id)
                         return (
-                          <label key={c.id} className="flex items-center gap-3 text-sm text-gray-200">
+                          <label key={c.id} className="flex items-center gap-3 text-sm text-[hsl(var(--foreground))]">
                             <Checkbox checked={checked} onCheckedChange={(v) => toggleCoach(c.id, Boolean(v))} />
                             <div className="flex flex-col">
                               <span className="font-medium">{c.name}</span>
-                              <span className="text-gray-400">{c.email}</span>
+                              <span className="text-[hsl(var(--foreground))]/70">{c.email}</span>
                             </div>
                           </label>
                         )
@@ -522,10 +522,10 @@ export default function BranchesPage() {
 
             <DialogFooter>
               <div className="flex items-center justify-end gap-3 w-full">
-                <Button variant="outline" onClick={() => setOpenAssign(false)} className="border-gray-700 text-gray-200 hover:bg-gray-800">
+                <Button variant="outline" onClick={() => setOpenAssign(false)} className="border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/40">
                   Cancelar
                 </Button>
-                <Button onClick={saveAssignments} disabled={assignSaving || assignLoading} className="bg-indigo-600 hover:bg-indigo-700">
+                <Button onClick={saveAssignments} disabled={assignSaving || assignLoading} className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white">
                   {assignSaving ? "Guardando..." : "Guardar"}
                 </Button>
               </div>
