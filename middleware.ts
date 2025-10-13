@@ -21,6 +21,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Debug endpoint - allow without authentication (temporary)
+  if (pathname.startsWith("/api/debug")) {
+    return NextResponse.next()
+  }
+
   // Public API routes - allow without authentication
   if (pathname.startsWith("/api/odoo/ping")) {
     return NextResponse.next()
