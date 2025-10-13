@@ -35,7 +35,7 @@ export default async function AdminLayout({
 
   // Only require academyId for ACADEMY_ADMIN, not for SUPER_ADMIN
   if (session.user.role === "ACADEMY_ADMIN" && !session.user.academyId) {
-    redirect("/auth/signin")
+    redirect("/admin/onboarding")
   }
 
   // Try to get academy name from branding

@@ -10,8 +10,12 @@ export default async function PostSignIn() {
   }
 
   const role = session.user.role
+  const academyId = (session.user as any).academyId as string | undefined
 
   if (role === "SUPER_ADMIN" || role === "ACADEMY_ADMIN") {
+    if (role === "ACADEMY_ADMIN" && !academyId) {
+      redirect("/admin/onboarding")
+    }
     redirect("/admin/dashboard")
   }
 
