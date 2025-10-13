@@ -23,9 +23,27 @@ export default async function OnboardingPage() {
   // Ensure ACADEMY_ADMIN has an academy; create one if missing
   let academyId = (session.user as any).academyId as string | undefined
   if (!academyId && session.user.role === "ACADEMY_ADMIN") {
+    // Generate a unique slug based on user name or email local part
+    const base = (session.user.name || session.user.email.split("@")[0] || "mi-academia")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 32)
+    let slug = base || "mi-academia"
+    let suffix = 0
+    // ensure uniqueness
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const exists = await prisma.academy.findUnique({ where: { slug } })
+      if (!exists) break
+      suffix += 1
+      slug = `${base}-${suffix}`
+    }
+
     const created = await prisma.academy.create({
       data: {
         name: session.user.name || "Mi Academia",
+        slug,
         onboardingCompleted: false,
       },
       select: { id: true },

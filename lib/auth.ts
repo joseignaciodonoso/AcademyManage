@@ -54,16 +54,31 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           academyId: user.academyId,
           academy: user.academy,
-        }
+        } as any
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
-        token.academyId = user.academyId
-        token.academy = user.academy
+        token.role = (user as any).role
+        token.academyId = (user as any).academyId
+        token.academy = (user as any).academy
+        return token
+      }
+      // No user object (subsequent requests). Refresh critical fields from DB in case they changed (e.g., academyId after onboarding)
+      if (token?.sub) {
+        try {
+          const u = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { role: true, academyId: true, academy: { select: { id: true, name: true, slug: true } } },
+          })
+          if (u) {
+            token.role = u.role
+            token.academyId = u.academyId as any
+            token.academy = u.academy as any
+          }
+        } catch {}
       }
       return token
     },

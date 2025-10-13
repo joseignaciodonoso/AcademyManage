@@ -1,7 +1,7 @@
 import type React from "react"
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-simple"
+import { authOptions } from "@/lib/auth"
 import { AdminSidebar, MobileAdminSidebar } from "@/components/admin/layout/admin-sidebar"
 import { HeaderAcademyName } from "@/components/admin/layout/header-academy-name"
 import { Button } from "@/components/ui/button"
@@ -31,11 +31,6 @@ export default async function AdminLayout({
 
   if (session.user.role !== "ACADEMY_ADMIN" && session.user.role !== "SUPER_ADMIN") {
     redirect("/unauthorized")
-  }
-
-  // Only require academyId for ACADEMY_ADMIN, not for SUPER_ADMIN
-  if (session.user.role === "ACADEMY_ADMIN" && !session.user.academyId) {
-    redirect("/admin/onboarding")
   }
 
   // Try to get academy name from branding
