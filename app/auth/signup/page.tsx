@@ -21,8 +21,7 @@ export default function SignUpPage() {
     password: "",
     confirmPassword: "",
     phone: "",
-    academyName: "",
-    role: selectedPlan ? "STUDENT" : "ACADEMY_ADMIN",
+    // role is forced server-side to STUDENT; keep UI minimal
     selectedPlan: selectedPlan || "",
   })
   const [error, setError] = useState("")
@@ -52,7 +51,13 @@ export default function SignUpPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          selectedPlan: formData.selectedPlan || undefined,
+        }),
       })
 
       if (response.ok) {
@@ -74,12 +79,8 @@ export default function SignUpPage() {
 
         if (loginResult?.ok) {
           console.log("✅ Auto-login successful")
-          // Redirect based on role
-          if (formData.role === "STUDENT") {
-            router.push("/app") // Student dashboard
-          } else {
-            router.push("/admin") // Admin dashboard
-          }
+          // Public signup always lands on student app
+          router.push("/app")
         } else {
           console.log("❌ Auto-login failed, redirecting to manual login")
           // If auto-login fails, redirect to login page
@@ -100,13 +101,11 @@ export default function SignUpPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">
-            {selectedPlan ? "Registro de Estudiante" : "Crear Cuenta"}
-          </CardTitle>
+          <CardTitle className="text-2xl font-bold">Registro de Estudiante</CardTitle>
           <CardDescription>
-            {selectedPlan 
+            {selectedPlan
               ? `Completa tu registro para ${planNames[selectedPlan as keyof typeof planNames] || selectedPlan}`
-              : "Registra tu academia de artes marciales"
+              : "Crea tu cuenta de estudiante para acceder a la plataforma"
             }
           </CardDescription>
         </CardHeader>
@@ -151,18 +150,7 @@ export default function SignUpPage() {
               />
             </div>
 
-            {!selectedPlan && (
-              <div className="space-y-2">
-                <Label htmlFor="academyName">Nombre de la Academia</Label>
-                <Input
-                  id="academyName"
-                  value={formData.academyName}
-                  onChange={(e) => setFormData({ ...formData, academyName: e.target.value })}
-                  required
-                  placeholder="Academia de Karate Santiago"
-                />
-              </div>
-            )}
+            {/* Admin/Academy creation removed from public signup */}
 
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>

@@ -6,7 +6,7 @@ import { createOdooConnector } from "@/lib/odoo/connector"
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password, phone, academyName, role, selectedPlan } = await request.json()
+    const { name, email, password, phone, selectedPlan } = await request.json()
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -17,24 +17,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "El usuario ya existe" }, { status: 400 })
     }
 
-    // Create academy first if role is ACADEMY_ADMIN
-    let academyId: string | undefined
-
-    if (role === "ACADEMY_ADMIN") {
-      const academy = await prisma.academy.create({
-        data: {
-          name: academyName,
-          slug: academyName
-            .toLowerCase()
-            .replace(/\s+/g, "-")
-            .replace(/[^a-z0-9-]/g, ""),
-        },
-      })
-      academyId = academy.id
-    } else if (role === "STUDENT") {
-      // For students, use the demo academy
-      academyId = "academy-demo-123"
-    }
+    // Force role to STUDENT for all public signups
+    const forcedRole: UserRole = "STUDENT"
+    // Students created via public signup are not attached to an academy by default
+    // If you want to attach to a demo academy, set its ID here; otherwise leave null
+    const academyId: string | null = null
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
@@ -46,7 +33,7 @@ export async function POST(request: NextRequest) {
         email,
         password: hashedPassword,
         phone,
-        role: role as UserRole,
+        role: forcedRole as UserRole,
         academyId,
       },
     })
@@ -58,8 +45,8 @@ export async function POST(request: NextRequest) {
       role: user.role
     })}`)
 
-    // If user selected a plan, create membership and sync with Odoo
-    if (selectedPlan && role === "STUDENT" && academyId) {
+    // If user selected a plan and academyId is available, create membership (optional)
+    if (selectedPlan && academyId) {
       try {
         // Create plan in database if it doesn't exist
         const planData = {
