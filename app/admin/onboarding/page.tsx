@@ -15,15 +15,35 @@ export default async function OnboardingPage() {
     redirect("/unauthorized")
   }
 
-  if (!session.user.academyId) {
-    redirect("/auth/signin")
+  // If SUPER_ADMIN, skip onboarding
+  if (session.user.role === "SUPER_ADMIN") {
+    redirect("/admin/dashboard")
+  }
+
+  // Ensure ACADEMY_ADMIN has an academy; create one if missing
+  let academyId = (session.user as any).academyId as string | undefined
+  if (!academyId && session.user.role === "ACADEMY_ADMIN") {
+    const created = await prisma.academy.create({
+      data: {
+        name: session.user.name || "Mi Academia",
+        onboardingCompleted: false,
+      },
+      select: { id: true },
+    })
+    academyId = created.id
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { academyId },
+    })
   }
 
   // Check if onboarding is already completed
-  const academy = await prisma.academy.findUnique({
-    where: { id: session.user.academyId },
+  const academy = academyId
+    ? await prisma.academy.findUnique({
+    where: { id: academyId },
     select: { onboardingCompleted: true },
   })
+    : null
 
   if (academy?.onboardingCompleted) {
     redirect("/admin/dashboard")
@@ -31,7 +51,7 @@ export default async function OnboardingPage() {
 
   return (
     <OnboardingWizard
-      academyId={session.user.academyId}
+      academyId={academyId as string}
       onComplete={() => {
         // This will be handled by the component
       }}
