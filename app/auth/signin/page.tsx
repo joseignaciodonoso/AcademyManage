@@ -23,30 +23,20 @@ export default function SignInPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setError("")
 
     try {
       const result = await signIn("credentials", {
         email,
         password,
-        redirect: false,
+        redirect: true,
+        callbackUrl: "/auth/post-signin",
       })
 
-      if (result?.error) {
-        setError("Credenciales invalidas")
-      } else {
-        const session = await getSession()
-
-        if (session?.user.role === "SUPER_ADMIN" || session?.user.role === "ACADEMY_ADMIN") {
-          router.push("/admin/dashboard")
-        } else if (session?.user.role === "COACH") {
-          router.push("/coach/schedule")
-        } else {
-          router.push("/app")
-        }
+      if ((result as any)?.error) {
+        setError("Credenciales inválidas")
       }
     } catch (error) {
-      setError("Error al iniciar sesion")
+      setError("Error al iniciar sesión")
     } finally {
       setLoading(false)
     }
