@@ -62,6 +62,14 @@ export async function PATCH(
 
     const updated = await prisma.payment.update({ where: { id }, data })
 
+    // If approving payment, activate membership (if linked)
+    if ((data.status === "PAID" || (!data.status && existing.status === "PAID")) && existing.membershipId) {
+      await prisma.membership.update({
+        where: { id: existing.membershipId },
+        data: { status: "ACTIVE" },
+      })
+    }
+
     return NextResponse.json({
       payment: {
         id: updated.id,

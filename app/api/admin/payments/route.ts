@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
       status: p.status,
       method: (p as any).method || null,
       transactionId: p.externalRef || p.odooTransactionId || undefined,
+      acquirerCode: p.acquirerCode || undefined,
+      proofUrl: p.acquirerCode === "TRANSFER_PROOF" ? p.odooTransactionId || undefined : undefined,
       paidAt: p.paidAt?.toISOString(),
       createdAt: p.createdAt.toISOString(),
       user: {
@@ -42,11 +44,11 @@ export async function GET(request: NextRequest) {
       },
       membership: (p as any).membership
         ? {
-            plan: {
-              name: (p as any).membership.plan.name,
-              type: (p as any).membership.plan.type,
-            },
-          }
+          plan: {
+            name: (p as any).membership.plan.name,
+            type: (p as any).membership.plan.type,
+          },
+        }
         : undefined,
     }))
 

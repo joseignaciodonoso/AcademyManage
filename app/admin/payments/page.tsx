@@ -65,7 +65,7 @@ interface Payment {
   id: string
   amount: number
   currency: string
-  status: "PENDING" | "PAID" | "FAILED" | "CANCELED" | "REFUNDED"
+  status: "PENDING" | "PROCESSING" | "PAID" | "FAILED" | "CANCELED" | "REFUNDED"
   method: string
   transactionId?: string
   paidAt?: string
@@ -80,6 +80,8 @@ interface Payment {
       type: string
     }
   }
+  acquirerCode?: string
+  proofUrl?: string
 }
 
 interface PaymentMetrics {
@@ -145,6 +147,10 @@ export default function PaymentsPage() {
     paidAt: string
     transactionId: string
   }>({ amount: "", currency: "CLP", method: "TRANSFER", status: "PAID", paidAt: "", transactionId: "" })
+  // Review transfer proof dialog state
+  const [openReview, setOpenReview] = useState(false)
+  const [reviewing, setReviewing] = useState(false)
+  const [selectedPaymentForReview, setSelectedPaymentForReview] = useState<Payment | null>(null)
   
   const monthsForPlanType = (type?: string) => {
     switch (type) {
@@ -346,6 +352,54 @@ export default function PaymentsPage() {
       console.error("Error fetching payments:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const approvePayment = async (p: Payment) => {
+    try {
+      setReviewing(true)
+      const res = await fetch(`/api/admin/payments/${p.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "PAID", method: "TRANSFER", paidAt: new Date().toISOString() }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(()=>({}))
+        throw new Error(data.error || "No se pudo aprobar el pago")
+      }
+      toast({ title: "Pago aprobado", description: "La membresía del alumno fue activada" })
+      setOpenReview(false)
+      setSelectedPaymentForReview(null)
+      await fetchPayments()
+      await fetchMetrics()
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "No se pudo aprobar el pago", variant: "destructive" })
+    } finally {
+      setReviewing(false)
+    }
+  }
+
+  const rejectPayment = async (p: Payment) => {
+    try {
+      setReviewing(true)
+      const res = await fetch(`/api/admin/payments/${p.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "FAILED" }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(()=>({}))
+        throw new Error(data.error || "No se pudo rechazar el pago")
+      }
+      toast({ title: "Pago rechazado" })
+      setOpenReview(false)
+      setSelectedPaymentForReview(null)
+      await fetchPayments()
+      await fetchMetrics()
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "No se pudo rechazar el pago", variant: "destructive" })
+    } finally {
+      setReviewing(false)
     }
   }
 
@@ -714,6 +768,39 @@ export default function PaymentsPage() {
                             >
                               <Copy className="h-3 w-3" />
                             </Button>
+                            {(payment.status === "PENDING" || payment.status === "PROCESSING") && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
+                                onClick={() => { setSelectedPaymentForReview(payment); setOpenReview(true) }}
+                                title="Revisar comprobante"
+                              >
+                                Revisar
+                              </Button>
+                            )}
+                            {(payment.status === "PENDING" || payment.status === "PROCESSING") && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
+                                onClick={() => approvePayment(payment)}
+                                title="Aprobar pago"
+                              >
+                                Aprobar
+                              </Button>
+                            )}
+                            {(payment.status === "PENDING" || payment.status === "PROCESSING") && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]"
+                                onClick={() => rejectPayment(payment)}
+                                title="Rechazar pago"
+                              >
+                                Rechazar
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
@@ -934,6 +1021,49 @@ export default function PaymentsPage() {
               <Button onClick={submitManualPayment} disabled={savingManual} className="bg-green-600 hover:bg-green-700">
                 {savingManual ? "Guardando..." : "Registrar"}
               </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Review Transfer Proof Dialog */}
+      <Dialog open={openReview} onOpenChange={setOpenReview}>
+        <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
+          <DialogHeader>
+            <DialogTitle>Revisar comprobante de transferencia</DialogTitle>
+            <DialogDescription className="text-[hsl(var(--foreground))]/70">
+              Verifica el comprobante y aprueba o rechaza el pago.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPaymentForReview && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <div className="text-muted-foreground">Alumno</div>
+                  <div className="font-medium">{selectedPaymentForReview.user.name} · {selectedPaymentForReview.user.email}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Monto</div>
+                  <div className="font-medium">{formatCurrency(selectedPaymentForReview.amount, selectedPaymentForReview.currency)}</div>
+                </div>
+              </div>
+              {selectedPaymentForReview.proofUrl ? (
+                <a href={selectedPaymentForReview.proofUrl} target="_blank" rel="noreferrer" className="inline-flex items-center text-[hsl(var(--primary))] hover:underline text-sm">Abrir comprobante en nueva pestaña</a>
+              ) : (
+                <div className="text-sm text-muted-foreground">Sin comprobante</div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <div className="flex w-full justify-end gap-2">
+              <Button variant="outline" disabled={reviewing} onClick={() => setOpenReview(false)}>Cerrar</Button>
+              {selectedPaymentForReview && (
+                <>
+                  <Button variant="destructive" disabled={reviewing} onClick={() => rejectPayment(selectedPaymentForReview!)}>Rechazar</Button>
+                  <Button disabled={reviewing} onClick={() => approvePayment(selectedPaymentForReview!)}>
+                    {reviewing ? "Procesando..." : "Aprobar"}
+                  </Button>
+                </>
+              )}
             </div>
           </DialogFooter>
         </DialogContent>

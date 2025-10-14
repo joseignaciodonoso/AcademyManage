@@ -73,6 +73,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "enrollment:write",
     "content:read",
     "payment:read",
+    "payment:write",
+    "attendance:read",
+    "attendance:write",
   ],
   [UserRole.FINANCE]: ["payment:read", "report:read", "plan:read"],
 }

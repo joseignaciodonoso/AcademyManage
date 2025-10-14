@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Download, Eye, AlertCircle, CheckCircle, Clock, XCircle } from "lucide-react"
+import { Download, Eye, AlertCircle, CheckCircle, Clock, XCircle, ExternalLink, RefreshCcw } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -20,19 +20,34 @@ interface Payment {
   paidAt?: string
   externalRef?: string
   acquirerCode?: string
+  method?: "CASH" | "TRANSFER" | null
+  odooTransactionId?: string | null
 }
 
 export function PaymentHistory() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     fetchPayments()
   }, [])
 
-  const fetchPayments = async () => {
+  // Auto-refresh mientras haya pagos pendientes/procesando
+  useEffect(() => {
+    if (!payments.length) return
+    const hasPending = payments.some(p => p.status === "PENDING" || p.status === "PROCESSING")
+    if (!hasPending) return
+    const timer = setInterval(() => {
+      void fetchPayments(true)
+    }, 10000)
+    return () => clearInterval(timer)
+  }, [payments])
+
+  const fetchPayments = async (silent = false) => {
     try {
+      if (!silent) setRefreshing(true)
       const response = await fetch("/api/student/payments")
       if (!response.ok) throw new Error("Error al cargar historial de pagos")
 
@@ -42,6 +57,7 @@ export function PaymentHistory() {
       setError(err instanceof Error ? err.message : "Error desconocido")
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
@@ -83,6 +99,8 @@ export function PaymentHistory() {
     return typeLabels[type]
   }
 
+  const latest = useMemo(() => payments[0], [payments])
+
   if (loading) {
     return (
       <Card>
@@ -112,11 +130,25 @@ export function PaymentHistory() {
             <CardTitle>Historial de Pagos</CardTitle>
             <CardDescription>Todos tus pagos y transacciones</CardDescription>
           </div>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
+          <div className="flex items-center gap-2">
+            {refreshing ? (
+              <Badge variant="outline" className="text-xs">Actualizando...</Badge>
+            ) : null}
+            <Button variant="outline" size="sm" onClick={() => fetchPayments(true)}>
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Actualizar
+            </Button>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+          </div>
         </div>
+        {latest && (latest.status === "PENDING" || latest.status === "PROCESSING") && (
+          <div className="mt-2 text-sm text-muted-foreground">
+            Tienes un pago en revisión por el administrador. Una vez aprobado, tu acceso se activará automáticamente.
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         {payments.length === 0 ? (
@@ -134,6 +166,7 @@ export function PaymentHistory() {
                   <TableHead>Monto</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Método</TableHead>
+                  <TableHead>Comprobante</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -155,7 +188,11 @@ export function PaymentHistory() {
                     <TableCell>{getStatusBadge(payment.status)}</TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {payment.acquirerCode ? (
+                        {payment.method ? (
+                          <Badge variant="outline" className="text-xs">
+                            {payment.method}
+                          </Badge>
+                        ) : payment.acquirerCode ? (
                           <Badge variant="outline" className="text-xs">
                             {payment.acquirerCode}
                           </Badge>
@@ -163,6 +200,15 @@ export function PaymentHistory() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {payment.acquirerCode === "TRANSFER_PROOF" && payment.odooTransactionId ? (
+                        <a href={payment.odooTransactionId} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-[hsl(var(--primary))] hover:underline">
+                          Ver comprobante <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm">

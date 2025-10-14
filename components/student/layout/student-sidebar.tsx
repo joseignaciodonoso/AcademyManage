@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Home, User, CreditCard, Calendar, BookOpen, Trophy, Menu, GraduationCap } from "lucide-react"
+import { Home, User, CreditCard, Calendar, BookOpen, Trophy, Menu, GraduationCap, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
@@ -49,54 +49,90 @@ const navigation = [
 
 interface StudentSidebarProps {
   className?: string
+  hasActivePlan?: boolean
 }
 
-function SidebarContent() {
+function SidebarContent({ hasActivePlan }: { hasActivePlan?: boolean }) {
   const pathname = usePathname()
 
+  // Define base nav
+  const fullNav = [
+    { name: "Inicio", href: "/app", icon: Home },
+    { name: "Asistencia", href: "/app/attendance", icon: GraduationCap },
+    { name: "Mi Plan", href: "/app/plan", icon: GraduationCap },
+    { name: "Pagos", href: "/app/billing", icon: CreditCard },
+    { name: "Calendario", href: "/app/calendar", icon: Calendar },
+  ]
+
+  const visibleNav = hasActivePlan ? fullNav : [
+    { name: "Pagos", href: "/app/billing", icon: CreditCard },
+  ]
+
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center border-b px-4">
-        <Link href="/app" className="flex items-center gap-2 font-semibold">
-          <GraduationCap className="h-6 w-6" />
-          <span>Mi Academia</span>
+    <div className="flex h-full flex-col bg-[hsl(var(--background))]">
+      {/* Header */}
+      <div className="flex h-16 items-center border-b border-border px-6 bg-[hsl(var(--background))]">
+        <Link href="/app" className="flex items-center gap-3 font-bold text-white group transition-all duration-200 hover:scale-105">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] shadow-lg transition-all duration-200">
+            <GraduationCap className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-lg text-[hsl(var(--foreground))]">Portal Estudiante</span>
         </Link>
       </div>
 
-      <ScrollArea className="flex-1 px-3">
-        <div className="space-y-1 py-4">
-          {navigation.map((item) => (
-            <Link key={item.name} href={item.href}>
-              <Button
-                variant={pathname === item.href ? "secondary" : "ghost"}
-                className={cn("w-full justify-start gap-2", pathname === item.href && "bg-secondary")}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.name}
-              </Button>
-            </Link>
-          ))}
+      <ScrollArea className="flex-1">
+        <div className="space-y-6 py-6 px-4">
+          <div className="space-y-2">
+            {visibleNav.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                pathname.startsWith(item.href + "/") ||
+                (pathname.startsWith("/app/subscribe") && item.href === "/app/billing")
+              return (
+                <Link key={item.name} href={item.href} className="block">
+                  <div
+                    className={cn(
+                      "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 overflow-hidden isolate",
+                      isActive
+                        ? "bg-gradient-to-r from-[hsl(var(--primary))]/20 to-[hsl(var(--accent))]/20 text-[hsl(var(--foreground))] shadow-lg border border-[hsl(var(--primary))]/30"
+                        : "text-[hsl(var(--foreground))]/70 hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/50 hover:shadow-md"
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200",
+                        isActive
+                          ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white shadow-lg"
+                          : "bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))]/60 group-hover:bg-[hsl(var(--muted))] group-hover:text-[hsl(var(--foreground))]"
+                      )}
+                    >
+                      <item.icon className="h-4 w-4 text-[hsl(var(--foreground))]/60 group-hover:text-[hsl(var(--foreground))]" />
+                    </div>
+                    <span className="flex-1">{item.name}</span>
+                    {isActive && <ChevronRight className="h-4 w-4 text-[hsl(var(--accent))]" />}
+                    {isActive && (
+                      <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[hsl(var(--primary))] to-[hsl(var(--accent))] rounded-r-full" />
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
         </div>
       </ScrollArea>
     </div>
   )
 }
 
-export function StudentSidebar({ className }: StudentSidebarProps) {
+export function StudentSidebar({ className, hasActivePlan }: StudentSidebarProps) {
   return (
-    <div className={cn("pb-12 w-64", className)}>
-      <div className="space-y-4 py-4">
-        <div className="px-3 py-2">
-          <div className="space-y-1">
-            <SidebarContent />
-          </div>
-        </div>
-      </div>
+    <div className={cn("h-full", className)}>
+      <SidebarContent hasActivePlan={hasActivePlan} />
     </div>
   )
 }
 
-export function MobileStudentSidebar() {
+export function MobileStudentSidebar({ hasActivePlan }: { hasActivePlan?: boolean }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -108,7 +144,7 @@ export function MobileStudentSidebar() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="flex flex-col p-0">
-        <SidebarContent />
+        <SidebarContent hasActivePlan={hasActivePlan} />
       </SheetContent>
     </Sheet>
   )

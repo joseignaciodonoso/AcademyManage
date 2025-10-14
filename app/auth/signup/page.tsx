@@ -2,14 +2,17 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Eye, EyeOff, UserPlus } from "lucide-react"
+import AuthLayout from "@/components/auth/AuthLayout"
 
 export default function SignUpPage() {
   const searchParams = useSearchParams()
@@ -27,6 +30,8 @@ export default function SignUpPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const planNames = {
     "plan_monthly_basic": "Plan Básico ($25.000/mes)",
@@ -98,19 +103,22 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+    <AuthLayout
+      title="Crear cuenta"
+      subtitle="Regístrate para acceder a tu portal de estudiante"
+      Icon={UserPlus}
+    >
+      <Card className="glass-effect border-border shadow-2xl">
+        <CardHeader className="text-center pb-4">
           <CardTitle className="text-2xl font-bold">Registro de Estudiante</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-[hsl(var(--foreground))]/70">
             {selectedPlan
               ? `Completa tu registro para ${planNames[selectedPlan as keyof typeof planNames] || selectedPlan}`
-              : "Crea tu cuenta de estudiante para acceder a la plataforma"
-            }
+              : "Crea tu cuenta de estudiante para acceder a la plataforma"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
@@ -118,18 +126,19 @@ export default function SignUpPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre Completo</Label>
+              <Label htmlFor="name" className="font-medium">Nombre Completo</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
                 placeholder="Juan Pérez"
+                className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="font-medium">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -137,51 +146,103 @@ export default function SignUpPage() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
                 placeholder="juan@academia.cl"
+                className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono</Label>
+              <Label htmlFor="phone" className="font-medium">Teléfono</Label>
               <Input
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+56 9 1234 5678"
+                className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
               />
             </div>
 
-            {/* Admin/Academy creation removed from public signup */}
+            {/* Contraseña */}
+            <div className="space-y-2">
+              <Label htmlFor="password" className="font-medium">Contraseña</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  placeholder="••••••••"
+                  className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))] pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[hsl(var(--foreground))]/60 hover:text-[hsl(var(--foreground))] transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                placeholder="••••••••"
-              />
+              <Label htmlFor="confirmPassword" className="font-medium">Confirmar Contraseña</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirm ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  required
+                  placeholder="••••••••"
+                  className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))] pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[hsl(var(--foreground))]/60 hover:text-[hsl(var(--foreground))] transition-colors"
+                >
+                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                required
-                placeholder="••••••••"
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full font-medium py-3 transition-all duration-300 transform hover:scale-105"
+              disabled={loading}
+            >
               {loading ? "Creando cuenta..." : "Crear Cuenta"}
             </Button>
           </form>
+
+          <div className="mt-6 mb-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/20"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-transparent text-slate-400">¿Ya tienes cuenta?</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <Button
+              variant="outline"
+              asChild
+              className="w-full transition-all duration-300"
+            >
+              <Link href="/auth/signin">Iniciar Sesión</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
-    </div>
+
+      <div className="text-center mt-8">
+        <p className="text-[hsl(var(--foreground))]/70 text-sm">
+          Al registrarte, aceptas nuestros <Link href="/terms" className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80 transition-colors">Términos de Servicio</Link> y <Link href="/privacy" className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80 transition-colors">Política de Privacidad</Link>
+        </p>
+      </div>
+    </AuthLayout>
   )
 }

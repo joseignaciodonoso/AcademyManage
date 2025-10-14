@@ -19,9 +19,18 @@ export async function POST(request: NextRequest) {
 
     // Force role to STUDENT for all public signups
     const forcedRole: UserRole = "STUDENT"
-    // Students created via public signup are not attached to an academy by default
-    // If you want to attach to a demo academy, set its ID here; otherwise leave null
-    const academyId: string | null = null
+    // Single-academy mode: attach students to the unique academy
+    let academyId: string | null = null
+    const existingAcademy = await prisma.academy.findFirst({})
+    if (existingAcademy) {
+      academyId = existingAcademy.id
+    } else {
+      const created = await prisma.academy.create({
+        data: { name: "Mi Academia", slug: "mi-academia", onboardingCompleted: false },
+        select: { id: true },
+      })
+      academyId = created.id
+    }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)

@@ -10,6 +10,7 @@ import { BookOpen, Calendar, Clock, CreditCard, Trophy, User, Users } from "luci
 import Link from "next/link"
 import { format, addDays } from "date-fns"
 import { es } from "date-fns/locale"
+// Removed legacy SubscribeModal to avoid intrusive modal on dashboard
 
 export default async function StudentDashboardPage() {
   const session = await getServerSession(authOptions)
@@ -18,12 +19,16 @@ export default async function StudentDashboardPage() {
     redirect("/auth/signin")
   }
 
+  if (session.user.role !== "STUDENT") {
+    redirect("/unauthorized")
+  }
+
   // Get user data with membership and recent activity
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: {
       memberships: {
-        where: { status: "ACTIVE" },
+        where: { status: { in: ["ACTIVE", "TRIAL"] } },
         include: { plan: true },
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -52,6 +57,16 @@ export default async function StudentDashboardPage() {
   }
 
   const activeMembership = user.memberships[0]
+
+  // Load available plans for modal if user has no membership
+  const hasAcademy = Boolean((user as any).academyId)
+  const availablePlans = !activeMembership && hasAcademy
+    ? await prisma.plan.findMany({
+        where: { academyId: (user as any).academyId, status: "ACTIVE" },
+        orderBy: { price: "asc" },
+        take: 12,
+      })
+    : []
   const recentClasses = user.enrollments
   const attendanceRate =
     user.attendances.length > 0
@@ -84,6 +99,7 @@ export default async function StudentDashboardPage() {
 
   return (
     <div className="min-h-screen w-full bg-gray-900 text-white p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+      {/* Removed intrusive subscribe modal */}
       
       {/* Welcome Header */}
       <div className="text-center mb-8">
@@ -204,7 +220,7 @@ export default async function StudentDashboardPage() {
               <div className="text-center py-4">
                 <p className="text-gray-400 mb-4">No tienes un plan activo</p>
                 <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-lg shadow-indigo-500/30 transition-all duration-300 transform hover:scale-105">
-                  <Link href="/app/plan">Activar Plan</Link>
+                  <Link href="/app/subscribe">Activar Plan</Link>
                 </Button>
               </div>
             )}
