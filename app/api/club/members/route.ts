@@ -21,22 +21,37 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all members (students and coaches)
+    // Note: playerProfile will be queried separately for now
     const members = await prisma.user.findMany({
       where: {
         academyId: user.academyId,
         role: {
           in: ["STUDENT", "COACH"],
         },
-      },
-      include: {
-        playerProfile: true,
+        status: "ACTIVE",
       },
       orderBy: {
         name: "asc",
       },
     })
 
-    return NextResponse.json({ members }, { status: 200 })
+    // Get player profiles for all members
+    const memberIds = members.map(m => m.id)
+    const profiles = await prisma.playerProfile.findMany({
+      where: {
+        userId: {
+          in: memberIds,
+        },
+      },
+    })
+
+    // Merge profiles with members
+    const membersWithProfiles = members.map(member => ({
+      ...member,
+      playerProfile: profiles.find(p => p.userId === member.id) || null,
+    }))
+
+    return NextResponse.json({ members: membersWithProfiles }, { status: 200 })
   } catch (error) {
     console.error("Error fetching members:", error)
     return NextResponse.json(

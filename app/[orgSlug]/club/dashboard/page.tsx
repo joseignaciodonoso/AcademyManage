@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Trophy, Target, TrendingUp, Users, Calendar, Activity } from "lucide-react"
+import { Trophy, Target, TrendingUp, Users, Calendar, Activity, BarChart3 } from "lucide-react"
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
 import type { TeamMetrics } from "@/lib/types/club"
 
 export default function ClubDashboardPage() {
@@ -262,45 +263,90 @@ export default function ClubDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Recent Matches */}
+        {/* Recent Form Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>📅 Últimos Partidos</CardTitle>
-            <CardDescription>Forma reciente del equipo</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Forma Reciente
+            </CardTitle>
+            <CardDescription>Últimos 5 partidos</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {metrics.recentMatches.map((match) => {
-              const resultColor = 
-                match.result === "WIN" ? "text-green-600" :
-                match.result === "LOSS" ? "text-red-600" :
-                "text-yellow-600"
-              
-              const resultText = 
-                match.result === "WIN" ? "V" :
-                match.result === "LOSS" ? "D" :
-                "E"
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={metrics.recentMatches.reverse()}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  dataKey="opponent" 
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload
+                      return (
+                        <div className="bg-background border rounded-lg p-3 shadow-lg">
+                          <p className="font-semibold">{data.opponent}</p>
+                          <p className="text-sm">
+                            {data.scoreFor} - {data.scoreAgainst}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(data.date).toLocaleDateString('es-CL')}
+                          </p>
+                        </div>
+                      )
+                    }
+                    return null
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="scoreFor" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  name="Goles/Puntos"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+            
+            <div className="mt-4 space-y-2">
+              {metrics.recentMatches.slice().reverse().map((match) => {
+                const resultColor = 
+                  match.result === "WIN" ? "bg-green-500" :
+                  match.result === "LOSS" ? "bg-red-500" :
+                  "bg-yellow-500"
+                
+                const resultText = 
+                  match.result === "WIN" ? "V" :
+                  match.result === "LOSS" ? "D" :
+                  "E"
 
-              return (
-                <div key={match.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${resultColor} bg-opacity-10`}>
-                      {resultText}
+                return (
+                  <div key={match.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${resultColor}`}>
+                        {resultText}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">vs {match.opponent}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(match.date).toLocaleDateString('es-CL')}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">vs {match.opponent}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(match.date).toLocaleDateString('es-CL')}
+                    <div className="text-right">
+                      <p className="text-lg font-bold">
+                        {match.scoreFor} - {match.scoreAgainst}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold">
-                      {match.scoreFor} - {match.scoreAgainst}
-                    </p>
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </CardContent>
         </Card>
       </div>
