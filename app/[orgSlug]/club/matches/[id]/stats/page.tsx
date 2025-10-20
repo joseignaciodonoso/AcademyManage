@@ -150,7 +150,7 @@ export default function MatchStatsPage() {
     )
   }
 
-  const isFoot ball = match.sport === "FOOTBALL"
+  const isFootball = match.sport === "FOOTBALL"
 
   return (
     <div className="container mx-auto p-6 space-y-6">

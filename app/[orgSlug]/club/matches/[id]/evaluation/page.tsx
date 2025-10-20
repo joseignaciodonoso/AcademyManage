@@ -259,10 +259,10 @@ export default function MatchEvaluationPage() {
       {/* Player Evaluations */}
       <div className="space-y-4">
         {players.map((player) => {
-          const eval = evaluations[player.id]
-          if (!eval) return null
+          const playerEval = evaluations[player.id]
+          if (!playerEval) return null
 
-          const avgScore = (eval.technique + eval.tactics + eval.physical + eval.attitude) / 4
+          const avgScore = (playerEval.technique + playerEval.tactics + playerEval.physical + playerEval.attitude) / 4
 
           return (
             <Card key={player.id}>
@@ -290,17 +290,17 @@ export default function MatchEvaluationPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Técnica</Label>
-                    <span className={`font-bold ${getScoreColor(eval.technique)}`}>
-                      {eval.technique}/10
+                    <span className={`font-bold ${getScoreColor(playerEval.technique)}`}>
+                      {playerEval.technique}/10
                     </span>
                   </div>
                   <Slider
-                    value={[eval.technique]}
+                    value={[playerEval.technique]}
                     onValueChange={([value]) => updateEvaluation(player.id, "technique", value)}
                     min={1}
                     max={10}
                     step={1}
-                    className="w-full"
+                    className="cursor-pointer"
                   />
                 </div>
 
@@ -308,17 +308,17 @@ export default function MatchEvaluationPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Táctica</Label>
-                    <span className={`font-bold ${getScoreColor(eval.tactics)}`}>
-                      {eval.tactics}/10
+                    <span className={`font-bold ${getScoreColor(playerEval.tactics)}`}>
+                      {playerEval.tactics}/10
                     </span>
                   </div>
                   <Slider
-                    value={[eval.tactics]}
+                    value={[playerEval.tactics]}
                     onValueChange={([value]) => updateEvaluation(player.id, "tactics", value)}
                     min={1}
                     max={10}
                     step={1}
-                    className="w-full"
+                    className="cursor-pointer"
                   />
                 </div>
 
@@ -326,17 +326,17 @@ export default function MatchEvaluationPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Físico</Label>
-                    <span className={`font-bold ${getScoreColor(eval.physical)}`}>
-                      {eval.physical}/10
+                    <span className={`font-bold ${getScoreColor(playerEval.physical)}`}>
+                      {playerEval.physical}/10
                     </span>
                   </div>
                   <Slider
-                    value={[eval.physical]}
+                    value={[playerEval.physical]}
                     onValueChange={([value]) => updateEvaluation(player.id, "physical", value)}
                     min={1}
                     max={10}
                     step={1}
-                    className="w-full"
+                    className="cursor-pointer"
                   />
                 </div>
 
@@ -344,17 +344,17 @@ export default function MatchEvaluationPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Actitud</Label>
-                    <span className={`font-bold ${getScoreColor(eval.attitude)}`}>
-                      {eval.attitude}/10
+                    <span className={`font-bold ${getScoreColor(playerEval.attitude)}`}>
+                      {playerEval.attitude}/10
                     </span>
                   </div>
                   <Slider
-                    value={[eval.attitude]}
+                    value={[playerEval.attitude]}
                     onValueChange={([value]) => updateEvaluation(player.id, "attitude", value)}
                     min={1}
                     max={10}
                     step={1}
-                    className="w-full"
+                    className="cursor-pointer"
                   />
                 </div>
 
@@ -363,7 +363,7 @@ export default function MatchEvaluationPage() {
                   <Label>Comentarios</Label>
                   <Textarea
                     placeholder="Observaciones sobre el desempeño del jugador..."
-                    value={eval.comments}
+                    value={playerEval.comments}
                     onChange={(e) => updateEvaluation(player.id, "comments", e.target.value)}
                     rows={3}
                   />
