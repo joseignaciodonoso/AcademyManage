@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch recipient details
-    const recipientUsers = await prisma.user.findMany({
+    const recipientUsersRaw = await prisma.user.findMany({
       where: {
         id: { in: recipients },
         academyId: user.academyId,
@@ -50,6 +50,15 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Filter out users without name or email
+    const recipientUsers = recipientUsersRaw
+      .filter(u => u.name && u.email)
+      .map(u => ({
+        id: u.id,
+        name: u.name as string,
+        email: u.email,
+      }))
+
     if (recipientUsers.length === 0) {
       return NextResponse.json({ error: "No valid recipients found" }, { status: 404 })
     }
@@ -58,7 +67,7 @@ export async function POST(request: NextRequest) {
     const results = await Promise.allSettled(
       recipientUsers.map(async (recipient) => {
         if (channel === "email") {
-          return await sendEmailNotification(recipient, subject, message, user.academy?.name || "Club")
+          return await sendEmailNotification(recipient, subject || "Notificación", message, user.academy?.name || "Club")
         } else {
           return await sendWhatsAppNotification(recipient, message, user.academy?.name || "Club")
         }
@@ -76,13 +85,13 @@ export async function POST(request: NextRequest) {
         entityId: notificationType || "custom",
         userId: user.id,
         academyId: user.academyId,
-        details: {
+        details: JSON.parse(JSON.stringify({
           channel,
           recipients: recipientUsers.length,
           successful,
           failed,
           notificationType,
-        },
+        })),
       },
     })
 
