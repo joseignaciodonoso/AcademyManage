@@ -19,10 +19,14 @@ import {
   GraduationCap,
   Palette,
   ChevronRight,
+  Trophy,
+  Target,
+  Activity,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const navigation = [
+// Navigation for ACADEMY type
+const academyNavigation = [
   {
     name: "Organizaciones",
     href: "/admin/organizations",
@@ -62,12 +66,55 @@ const navigation = [
     name: "Asistencia",
     href: "/admin/attendance",
     icon: Calendar,
-    // removed feature (hidden via filter below)
   },
   {
     name: "Contenido",
     href: "/admin/content",
     icon: BookOpen,
+  },
+  {
+    name: "Reportes",
+    href: "/admin/reports",
+    icon: BarChart3,
+  },
+]
+
+// Navigation for CLUB type
+const clubNavigation = [
+  {
+    name: "Organizaciones",
+    href: "/admin/organizations",
+    icon: Building,
+  },
+  {
+    name: "Dashboard",
+    href: "/club/dashboard",
+    icon: Home,
+  },
+  {
+    name: "Jugadores",
+    href: "/club/members",
+    icon: Users,
+  },
+  {
+    name: "Partidos",
+    href: "/club/matches",
+    icon: Trophy,
+  },
+  {
+    name: "Entrenamientos",
+    href: "/club/trainings",
+    icon: Activity,
+  },
+  {
+    name: "Planes",
+    href: "/admin/plans",
+    icon: GraduationCap,
+  },
+  {
+    name: "Pagos",
+    href: "/admin/payments",
+    icon: CreditCard,
   },
   {
     name: "Reportes",
@@ -93,31 +140,35 @@ interface AdminSidebarProps {
   className?: string
   prefix?: string // e.g., "/demoacademy" for tenantized routes
   role?: string
+  organizationType?: "ACADEMY" | "CLUB"
 }
 
-function SidebarContent({ prefix, role }: { prefix?: string; role?: string }) {
+function SidebarContent({ prefix, role, organizationType }: { prefix?: string; role?: string; organizationType?: "ACADEMY" | "CLUB" }) {
   const pathname = usePathname()
   const pref = prefix ?? ""
   const isSuperAdmin = role === "SUPER_ADMIN"
+  const isClub = organizationType === "CLUB"
+
+  // Select navigation based on organization type
+  const baseNavigation = isClub ? clubNavigation : academyNavigation
 
   // Filter out items based on role and feature flags
-  const filtered = navigation
+  const filtered = baseNavigation
     // Remove Organizations for non SUPER_ADMIN
     .filter((item) => isSuperAdmin || item.href !== "/admin/organizations")
     // Remove Branches (Sedes) globally (feature disabled)
     .filter((item) => item.href !== "/admin/branches")
-    // Attendance enabled again
   const mainNav = filtered
 
   return (
     <div className="flex h-full flex-col bg-[hsl(var(--background))]">
       {/* Header */}
       <div className="flex h-16 items-center border-b border-border px-6 bg-[hsl(var(--background))]">
-        <Link href={`${pref}/admin/dashboard`} className="flex items-center gap-3 font-bold text-white group transition-all duration-200 hover:scale-105">
+        <Link href={`${pref}${isClub ? '/club/dashboard' : '/admin/dashboard'}`} className="flex items-center gap-3 font-bold text-white group transition-all duration-200 hover:scale-105">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] shadow-lg transition-all duration-200">
-            <GraduationCap className="h-5 w-5 text-white" />
+            {isClub ? <Trophy className="h-5 w-5 text-white" /> : <GraduationCap className="h-5 w-5 text-white" />}
           </div>
-          <span className="text-lg text-[hsl(var(--foreground))]">Academia Admin</span>
+          <span className="text-lg text-[hsl(var(--foreground))]">{isClub ? 'Club Admin' : 'Academia Admin'}</span>
         </Link>
       </div>
       <ScrollArea className="flex-1">
@@ -208,15 +259,15 @@ function SidebarContent({ prefix, role }: { prefix?: string; role?: string }) {
   )
 }
 
-export function AdminSidebar({ className, prefix, role }: AdminSidebarProps) {
+export function AdminSidebar({ className, prefix, role, organizationType }: AdminSidebarProps) {
   return (
     <div className={cn("h-full", className)}>
-      <SidebarContent prefix={prefix} role={role} />
+      <SidebarContent prefix={prefix} role={role} organizationType={organizationType} />
     </div>
   )
 }
 
-export function MobileAdminSidebar({ prefix, role }: { prefix?: string; role?: string }) {
+export function MobileAdminSidebar({ prefix, role, organizationType }: { prefix?: string; role?: string; organizationType?: "ACADEMY" | "CLUB" }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -228,7 +279,7 @@ export function MobileAdminSidebar({ prefix, role }: { prefix?: string; role?: s
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="flex flex-col p-0">
-        <SidebarContent prefix={prefix} role={role} />
+        <SidebarContent prefix={prefix} role={role} organizationType={organizationType} />
       </SheetContent>
     </Sheet>
   )

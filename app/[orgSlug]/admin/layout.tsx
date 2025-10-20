@@ -15,6 +15,7 @@ import {
 import { Bell, ChevronDown, Settings, User } from "lucide-react"
 import Link from "next/link"
 import { SignOutButton } from "@/components/auth/sign-out-button"
+import { prisma } from "@/lib/prisma"
 
 export default async function TenantAdminLayout({
   children,
@@ -27,19 +28,27 @@ export default async function TenantAdminLayout({
   const role = session?.user?.role
   const prefix = `/${params.orgSlug}`
 
+  // Get academy type
+  const user = session?.user?.id ? await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: { academy: true },
+  }) : null
+
+  const organizationType = user?.academy?.type as "ACADEMY" | "CLUB" | undefined
+
   return (
     <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
         {/* Sidebar */}
         <div className="hidden md:block">
-          <AdminSidebar prefix={prefix} className="w-64" role={role} />
+          <AdminSidebar prefix={prefix} className="w-64" role={role} organizationType={organizationType} />
         </div>
 
         {/* Main Content */}
         <div className="flex flex-col">
           {/* Header */}
           <header className="flex h-16 items-center gap-4 border-b border-border bg-gradient-to-r from-[hsl(var(--background))] via-[hsl(var(--muted))] to-[hsl(var(--background))] backdrop-blur-md px-4 lg:px-6 shadow-lg">
-            <MobileAdminSidebar prefix={prefix} role={role} />
+            <MobileAdminSidebar prefix={prefix} role={role} organizationType={organizationType} />
 
             {/* Title/Context */}
             <div className="flex items-center gap-3 flex-1">
