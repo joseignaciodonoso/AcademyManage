@@ -80,12 +80,13 @@ export async function POST(request: NextRequest) {
     // Log notification in database (optional)
     await prisma.auditLog.create({
       data: {
-        action: "NOTIFICATION_SENT",
-        entityType: "NOTIFICATION",
-        entityId: notificationType || "custom",
+        action: "CREATE",
+        resource: "NOTIFICATION",
+        resourceId: notificationType || "custom",
         userId: user.id,
         academyId: user.academyId,
-        details: JSON.parse(JSON.stringify({
+        newValues: JSON.parse(JSON.stringify({
+          action: "NOTIFICATION_SENT",
           channel,
           recipients: recipientUsers.length,
           successful,
