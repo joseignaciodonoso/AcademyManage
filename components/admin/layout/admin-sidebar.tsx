@@ -24,6 +24,11 @@ import { cn } from "@/lib/utils"
 
 const navigation = [
   {
+    name: "Organizaciones",
+    href: "/admin/organizations",
+    icon: Building,
+  },
+  {
     name: "Dashboard",
     href: "/admin/dashboard",
     icon: Home,
@@ -49,9 +54,15 @@ const navigation = [
     icon: Calendar,
   },
   {
+    name: "Horarios",
+    href: "/admin/schedules",
+    icon: Calendar,
+  },
+  {
     name: "Asistencia",
     href: "/admin/attendance",
     icon: Calendar,
+    // removed feature (hidden via filter below)
   },
   {
     name: "Contenido",
@@ -62,11 +73,6 @@ const navigation = [
     name: "Reportes",
     href: "/admin/reports",
     icon: BarChart3,
-  },
-  {
-    name: "Sedes",
-    href: "/admin/branches",
-    icon: Building,
   },
 ]
 
@@ -85,16 +91,29 @@ const settingsNavigation = [
 
 interface AdminSidebarProps {
   className?: string
+  prefix?: string // e.g., "/demoacademy" for tenantized routes
+  role?: string
 }
 
-function SidebarContent() {
+function SidebarContent({ prefix, role }: { prefix?: string; role?: string }) {
   const pathname = usePathname()
+  const pref = prefix ?? ""
+  const isSuperAdmin = role === "SUPER_ADMIN"
+
+  // Filter out items based on role and feature flags
+  const filtered = navigation
+    // Remove Organizations for non SUPER_ADMIN
+    .filter((item) => isSuperAdmin || item.href !== "/admin/organizations")
+    // Remove Branches (Sedes) globally (feature disabled)
+    .filter((item) => item.href !== "/admin/branches")
+    // Attendance enabled again
+  const mainNav = filtered
 
   return (
     <div className="flex h-full flex-col bg-[hsl(var(--background))]">
       {/* Header */}
       <div className="flex h-16 items-center border-b border-border px-6 bg-[hsl(var(--background))]">
-        <Link href="/admin/dashboard" className="flex items-center gap-3 font-bold text-white group transition-all duration-200 hover:scale-105">
+        <Link href={`${pref}/admin/dashboard`} className="flex items-center gap-3 font-bold text-white group transition-all duration-200 hover:scale-105">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] shadow-lg transition-all duration-200">
             <GraduationCap className="h-5 w-5 text-white" />
           </div>
@@ -105,10 +124,11 @@ function SidebarContent() {
         <div className="space-y-6 py-6 px-4">
           {/* Main Navigation */}
           <div className="space-y-2">
-            {navigation.map((item) => {
-              const isActive = usePathname() === item.href
+            {mainNav.map((item) => {
+              const href = `${pref}${item.href}`
+              const isActive = pathname === href
               return (
-                <Link key={item.name} href={item.href} className="block">
+                <Link key={item.name} href={href} className="block">
                   <div
                     className={cn(
                       "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 overflow-hidden isolate",
@@ -149,9 +169,10 @@ function SidebarContent() {
             </div>
             <div className="space-y-2">
               {settingsNavigation.map((item) => {
-                const isActive = usePathname() === item.href
+                const href = `${pref}${item.href}`
+                const isActive = pathname === href
                 return (
-                  <Link key={item.name} href={item.href} className="block">
+                  <Link key={item.name} href={href} className="block">
                     <div
                       className={cn(
                         "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 overflow-hidden isolate",
@@ -187,15 +208,15 @@ function SidebarContent() {
   )
 }
 
-export function AdminSidebar({ className }: AdminSidebarProps) {
+export function AdminSidebar({ className, prefix, role }: AdminSidebarProps) {
   return (
     <div className={cn("h-full", className)}>
-      <SidebarContent />
+      <SidebarContent prefix={prefix} role={role} />
     </div>
   )
 }
 
-export function MobileAdminSidebar() {
+export function MobileAdminSidebar({ prefix, role }: { prefix?: string; role?: string }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -207,7 +228,7 @@ export function MobileAdminSidebar() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="flex flex-col p-0">
-        <SidebarContent />
+        <SidebarContent prefix={prefix} role={role} />
       </SheetContent>
     </Sheet>
   )

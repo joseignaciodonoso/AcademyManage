@@ -21,16 +21,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const month = searchParams.get("month")
     const recalculate = searchParams.get("recalculate") === "true"
-    const branchId = searchParams.get("branchId") || undefined
 
     const targetMonth = month ? new Date(month) : new Date()
     const kpiCalculator = createKPICalculator(session.user.academyId)
 
     let metrics
-    if (branchId) {
-      // Branch-scoped KPIs are not cached to avoid mixing scopes
-      metrics = await kpiCalculator.calculateKPIs(targetMonth, branchId)
-    } else if (recalculate) {
+    if (recalculate) {
       // Force recalculation (global)
       metrics = await kpiCalculator.calculateKPIs(targetMonth)
       await kpiCalculator.cacheKPIs(targetMonth, metrics)

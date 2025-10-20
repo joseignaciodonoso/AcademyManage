@@ -68,11 +68,6 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <OnboardingWizard
-      academyId={academyId as string}
-      onComplete={() => {
-        // This will be handled by the component
-      }}
-    />
+    <OnboardingWizard academyId={academyId as string} />
   )
 }

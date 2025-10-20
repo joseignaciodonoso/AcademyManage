@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth-simple"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { hasPermission } from "@/lib/rbac"
 
@@ -16,6 +16,7 @@ export async function PATCH(
     if (!hasPermission(session.user.role, "payment:write")) {
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
     }
+    const academyFromTenant = await requireAcademyFromRequest(request as any)
     const academyId = session.user.academyId
     if (!academyId) {
       return NextResponse.json({ error: "Academia no encontrada" }, { status: 400 })

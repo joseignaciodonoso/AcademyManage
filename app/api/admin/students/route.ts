@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth-simple"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { hasPermission } from "@/lib/rbac"
 
@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
     }
 
+    // Multi-tenant support disabled
     const academyId = session.user.academyId
     if (!academyId) {
       return NextResponse.json({ error: "Academia no encontrada" }, { status: 400 })
@@ -104,9 +105,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => null)
     const { name, email, phone, academyId: bodyAcademyId } = body || {}
 
-    // Resolve academyId: from session for admins; for SUPER_ADMIN allow override via body
-    let academyId = session.user.academyId as string | undefined
-    if (!academyId && session.user.role === "SUPER_ADMIN") {
+    // Resolve academyId: prefer tenant header; else session; SUPER_ADMIN may override via body when no tenant header
+    // Multi-tenant support disabled
+    let academyId = academyFromTenant?.id ?? (session.user.academyId as string | undefined)
+    if (!academyFromTenant && !academyId && session.user.role === "SUPER_ADMIN") {
       academyId = bodyAcademyId
     }
     if (!academyId) {

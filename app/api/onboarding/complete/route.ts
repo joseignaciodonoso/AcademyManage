@@ -47,33 +47,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create branches
-    if (data.branches && data.branches.length > 0) {
-      await prisma.branch.createMany({
-        data: data.branches.map((branch) => ({
-          academyId,
-          name: branch.name,
-          address: branch.address,
-          phone: branch.phone || null,
-          email: branch.email || null,
-          // Operating hours
-          mondayOpen: branch.operatingHours.monday?.open || null,
-          mondayClose: branch.operatingHours.monday?.close || null,
-          tuesdayOpen: branch.operatingHours.tuesday?.open || null,
-          tuesdayClose: branch.operatingHours.tuesday?.close || null,
-          wednesdayOpen: branch.operatingHours.wednesday?.open || null,
-          wednesdayClose: branch.operatingHours.wednesday?.close || null,
-          thursdayOpen: branch.operatingHours.thursday?.open || null,
-          thursdayClose: branch.operatingHours.thursday?.close || null,
-          fridayOpen: branch.operatingHours.friday?.open || null,
-          fridayClose: branch.operatingHours.friday?.close || null,
-          saturdayOpen: branch.operatingHours.saturday?.open || null,
-          saturdayClose: branch.operatingHours.saturday?.close || null,
-          sundayOpen: branch.operatingHours.sunday?.open || null,
-          sundayClose: branch.operatingHours.sunday?.close || null,
-        })),
-      })
-    }
+    // Branch creation removed
 
     // Create plans
     if (data.plans && data.plans.length > 0) {
@@ -116,7 +90,6 @@ export async function POST(request: NextRequest) {
         resourceId: academyId,
         newValues: {
           onboardingCompleted: true,
-          branchesCreated: data.branches?.length || 0,
           plansCreated: data.plans?.length || 0,
         },
       },

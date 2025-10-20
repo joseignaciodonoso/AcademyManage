@@ -50,29 +50,31 @@ const navigation = [
 interface StudentSidebarProps {
   className?: string
   hasActivePlan?: boolean
+  prefix?: string // e.g., "/demoacademy" for tenantized routes
 }
 
-function SidebarContent({ hasActivePlan }: { hasActivePlan?: boolean }) {
+function SidebarContent({ hasActivePlan, prefix }: { hasActivePlan?: boolean; prefix?: string }) {
   const pathname = usePathname()
+  const pref = prefix ?? ""
 
   // Define base nav
   const fullNav = [
-    { name: "Inicio", href: "/app", icon: Home },
-    { name: "Asistencia", href: "/app/attendance", icon: GraduationCap },
-    { name: "Mi Plan", href: "/app/plan", icon: GraduationCap },
-    { name: "Pagos", href: "/app/billing", icon: CreditCard },
-    { name: "Calendario", href: "/app/calendar", icon: Calendar },
+    { name: "Inicio", href: `${pref}/app`, icon: Home },
+    { name: "Asistencia", href: `${pref}/app/attendance`, icon: GraduationCap },
+    { name: "Mi Plan", href: `${pref}/app/plan`, icon: GraduationCap },
+    { name: "Pagos", href: `${pref}/app/billing`, icon: CreditCard },
+    { name: "Calendario", href: `${pref}/app/calendar`, icon: Calendar },
   ]
 
   const visibleNav = hasActivePlan ? fullNav : [
-    { name: "Pagos", href: "/app/billing", icon: CreditCard },
+    { name: "Pagos", href: `${pref}/app/billing`, icon: CreditCard },
   ]
 
   return (
     <div className="flex h-full flex-col bg-[hsl(var(--background))]">
       {/* Header */}
       <div className="flex h-16 items-center border-b border-border px-6 bg-[hsl(var(--background))]">
-        <Link href="/app" className="flex items-center gap-3 font-bold text-white group transition-all duration-200 hover:scale-105">
+        <Link href={`${pref}/app`} className="flex items-center gap-3 font-bold text-white group transition-all duration-200 hover:scale-105">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] shadow-lg transition-all duration-200">
             <GraduationCap className="h-5 w-5 text-white" />
           </div>
@@ -87,7 +89,7 @@ function SidebarContent({ hasActivePlan }: { hasActivePlan?: boolean }) {
               const isActive =
                 pathname === item.href ||
                 pathname.startsWith(item.href + "/") ||
-                (pathname.startsWith("/app/subscribe") && item.href === "/app/billing")
+                (pathname.startsWith(`${pref}/app/subscribe`) && item.href === `${pref}/app/billing`)
               return (
                 <Link key={item.name} href={item.href} className="block">
                   <div
@@ -124,15 +126,15 @@ function SidebarContent({ hasActivePlan }: { hasActivePlan?: boolean }) {
   )
 }
 
-export function StudentSidebar({ className, hasActivePlan }: StudentSidebarProps) {
+export function StudentSidebar({ className, hasActivePlan, prefix }: StudentSidebarProps) {
   return (
     <div className={cn("h-full", className)}>
-      <SidebarContent hasActivePlan={hasActivePlan} />
+      <SidebarContent hasActivePlan={hasActivePlan} prefix={prefix} />
     </div>
   )
 }
 
-export function MobileStudentSidebar({ hasActivePlan }: { hasActivePlan?: boolean }) {
+export function MobileStudentSidebar({ hasActivePlan, prefix }: { hasActivePlan?: boolean; prefix?: string }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -144,7 +146,7 @@ export function MobileStudentSidebar({ hasActivePlan }: { hasActivePlan?: boolea
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="flex flex-col p-0">
-        <SidebarContent hasActivePlan={hasActivePlan} />
+        <SidebarContent hasActivePlan={hasActivePlan} prefix={prefix} />
       </SheetContent>
     </Sheet>
   )

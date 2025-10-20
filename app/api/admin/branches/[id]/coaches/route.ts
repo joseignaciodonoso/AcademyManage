@@ -13,86 +13,10 @@ async function ensureBranchAccess(session: any, branchId: string) {
   return { ok: true, branch }
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    requirePermission(session.user.role, "branch:read")
-
-    const access = await ensureBranchAccess(session, params.id)
-    if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status })
-
-    const [coaches, assigned] = await Promise.all([
-      prisma.user.findMany({
-        where: { role: "COACH", academyId: access.branch!.academyId },
-        select: { id: true, name: true, email: true },
-        orderBy: { name: "asc" },
-      }),
-      prisma.branchCoach.findMany({ where: { branchId: params.id } }),
-    ])
-
-    const assignedSet = new Set(assigned.map((a) => a.coachId))
-
-    const data = coaches.map((c) => ({
-      id: c.id,
-      name: c.name ?? "(Sin nombre)",
-      email: c.email,
-      assigned: assignedSet.has(c.id),
-    }))
-
-    return NextResponse.json({ coaches: data })
-  } catch (e) {
-    console.error("GET /admin/branches/[id]/coaches error", e)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
+export async function GET(_req: NextRequest, _ctx: { params: { id: string } }) {
+  return NextResponse.json({ error: "Branches feature disabled" }, { status: 410 })
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    requirePermission(session.user.role, "branch:write")
-
-    const access = await ensureBranchAccess(session, params.id)
-    if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status })
-
-    const body = await req.json().catch(() => ({}))
-    const coachIds: string[] = Array.isArray(body?.coachIds) ? body.coachIds : []
-
-    // Validate coaches belong to same academy and role is COACH
-    const validCoaches = await prisma.user.findMany({
-      where: { id: { in: coachIds }, role: "COACH", academyId: access.branch!.academyId },
-      select: { id: true },
-    })
-    const validIds = new Set(validCoaches.map((c) => c.id))
-
-    // Current assignments
-    const current = await prisma.branchCoach.findMany({ where: { branchId: params.id } })
-    const currentIds = new Set(current.map((a) => a.coachId))
-
-    // Compute diffs using only valid coach ids
-    const targetIds = new Set([...coachIds].filter((id) => validIds.has(id)))
-
-    const toAdd = [...targetIds].filter((id) => !currentIds.has(id))
-    const toRemove = [...currentIds].filter((id) => !targetIds.has(id))
-
-    await prisma.$transaction([
-      toAdd.length
-        ? prisma.branchCoach.createMany({
-            data: toAdd.map((id) => ({ branchId: params.id, coachId: id })),
-            skipDuplicates: true,
-          })
-        : prisma.branchCoach.findFirst({ where: { branchId: params.id } }), // no-op
-      toRemove.length
-        ? prisma.branchCoach.deleteMany({ where: { branchId: params.id, coachId: { in: toRemove } } })
-        : prisma.branchCoach.findFirst({ where: { branchId: params.id } }), // no-op
-    ])
-
-    // Return updated set
-    const updated = await prisma.branchCoach.findMany({ where: { branchId: params.id } })
-    return NextResponse.json({ coachIds: updated.map((a) => a.coachId) })
-  } catch (e) {
-    console.error("PATCH /admin/branches/[id]/coaches error", e)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
+export async function PATCH(_req: NextRequest, _ctx: { params: { id: string } }) {
+  return NextResponse.json({ error: "Branches feature disabled" }, { status: 410 })
 }

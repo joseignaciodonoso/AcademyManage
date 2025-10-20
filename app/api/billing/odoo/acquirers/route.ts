@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth-simple"
+import { authOptions } from "@/lib/auth"
 import { createOdooConnector } from "@/lib/odoo/connector"
 import { requirePermission } from "@/lib/rbac"
 

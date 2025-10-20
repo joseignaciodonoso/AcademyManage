@@ -28,7 +28,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const body = await request.json()
     const { title, description, type, allDay, date, startTime, endTime, published, important, branchId } = body || {}
 
-    const existing = await prisma.event.findFirst({ where: { id, academyId: session.user.academyId ?? undefined } })
+    // Multi-tenant support disabled
+    const academyId = session.user.academyId ?? undefined
+    const existing = await prisma.event.findFirst({ where: { id, academyId } })
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
     const data: any = {}
@@ -73,7 +75,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user || !["SUPER_ADMIN", "ACADEMY_ADMIN", "COACH"].includes(session.user.role)) {
@@ -81,8 +83,9 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
     }
 
     const id = params.id
-
-    const existing = await prisma.event.findFirst({ where: { id, academyId: session.user.academyId ?? undefined } })
+    // Multi-tenant support disabled
+    const academyId = session.user.academyId ?? undefined
+    const existing = await prisma.event.findFirst({ where: { id, academyId } })
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
     await prisma.event.delete({ where: { id } })

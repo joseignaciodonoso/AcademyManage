@@ -29,6 +29,7 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 import { Separator } from "@/components/ui/separator"
 import { Plus, Pencil, Trash2, Copy, Clock, Mail, Phone, MapPin, Building2, Users } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface Branch {
   id: string
@@ -59,28 +60,14 @@ interface CoachItem {
   assigned: boolean
 }
 
-const dayKeys: Array<{ key: keyof Branch; label: string; open: keyof Branch; close: keyof Branch }> = [
-  { key: "mondayOpen", label: "Lunes", open: "mondayOpen", close: "mondayClose" },
-  { key: "tuesdayOpen", label: "Martes", open: "tuesdayOpen", close: "tuesdayClose" },
-  { key: "wednesdayOpen", label: "Miércoles", open: "wednesdayOpen", close: "wednesdayClose" },
-  { key: "thursdayOpen", label: "Jueves", open: "thursdayOpen", close: "thursdayClose" },
-  { key: "fridayOpen", label: "Viernes", open: "fridayOpen", close: "fridayClose" },
-  { key: "saturdayOpen", label: "Sábado", open: "saturdayOpen", close: "saturdayClose" },
-  { key: "sundayOpen", label: "Domingo", open: "sundayOpen", close: "sundayClose" },
-]
+const dayKeys: Array<{ key: keyof Branch; label: string; open: keyof Branch; close: keyof Branch }> = []
 
 export default function BranchesPage() {
-  const { toast } = useToast()
-  const [loading, setLoading] = useState(true)
-  const [branches, setBranches] = useState<Branch[]>([])
-  const [search, setSearch] = useState("")
-
-  const [openDialog, setOpenDialog] = useState(false)
-  const [editing, setEditing] = useState<Branch | null>(null)
-  const [form, setForm] = useState<Partial<Branch>>({
-    name: "",
-    address: "",
-  })
+  const router = useRouter()
+  useEffect(() => {
+    router.replace("/admin/dashboard")
+  }, [router])
+  return null
 
   const [deleting, setDeleting] = useState<Branch | null>(null)
 

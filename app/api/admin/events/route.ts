@@ -30,9 +30,10 @@ export async function GET(request: NextRequest) {
     const branchId = searchParams.get("branchId")
     const published = searchParams.get("published")
 
-    const where: any = {
-      academyId: session.user.academyId ?? undefined,
-    }
+    // Resolve academy from tenant header or session
+    // Multi-tenant support disabled
+    const academyId = session.user.academyId ?? undefined
+    const where: any = { academyId }
 
     if (startDate && endDate) {
       where.eventDate = {
@@ -100,9 +101,16 @@ export async function POST(request: NextRequest) {
     const endAt = allDay || !endTime ? null : new Date(`${date}T${endTime}`)
     const typeEnum = String(type || "other").toUpperCase() as any
 
+    // Resolve academy from tenant header or session
+    // Multi-tenant support disabled
+    const academyId = session.user.academyId
+    if (!academyId) {
+      return NextResponse.json({ error: "Academia no encontrada" }, { status: 400 })
+    }
+
     const created = await prisma.event.create({
       data: {
-        academyId: session.user.academyId!,
+        academyId,
         branchId: branchId || null,
         title,
         description,

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { BookOpen, Calendar, Clock, CreditCard, Trophy, User, Users } from "lucide-react"
 import Link from "next/link"
-import { format, addDays } from "date-fns"
+import { format } from "date-fns"
 import { es } from "date-fns/locale"
 // Removed legacy SubscribeModal to avoid intrusive modal on dashboard
 
@@ -73,21 +73,19 @@ export default async function StudentDashboardPage() {
       ? (user.attendances.filter((a) => a.status === "PRESENT").length / user.attendances.length) * 100
       : 0
 
-  // Mock upcoming classes (in a real app, this would be fetched from the database)
-  const upcomingClasses = [
-    {
-      id: "1",
-      title: "Karate Básico",
-      startTime: addDays(new Date(), 1),
-      branch: { name: "Sede Principal" },
+  // Get upcoming classes from database
+  const upcomingClasses = await prisma.class.findMany({
+    where: {
+      academyId: (user as any).academyId,
+      startTime: { gte: new Date() },
+      status: { in: ["SCHEDULED", "IN_PROGRESS"] },
     },
-    {
-      id: "2",
-      title: "Sparring Avanzado",
-      startTime: addDays(new Date(), 3),
-      branch: { name: "Sede Norte" },
+    include: {
+      branch: true,
     },
-  ]
+    orderBy: { startTime: "asc" },
+    take: 5,
+  })
 
   const formatCurrency = (amount: number, currency = "CLP") => {
     return new Intl.NumberFormat("es-CL", {

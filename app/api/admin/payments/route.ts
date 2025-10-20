@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth-simple"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { hasPermission } from "@/lib/rbac"
 
@@ -14,12 +14,14 @@ export async function GET(request: NextRequest) {
     if (!hasPermission(session.user.role, "payment:read")) {
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
     }
-    if (!session.user.academyId) {
+    // Multi-tenant support disabled
+    const academyId = session.user.academyId
+    if (!academyId) {
       return NextResponse.json({ error: "Academia no encontrada" }, { status: 400 })
     }
 
     const payments = await prisma.payment.findMany({
-      where: { academyId: session.user.academyId },
+      where: { academyId },
       orderBy: { createdAt: "desc" },
       include: {
         membership: { include: { plan: true, user: true } },
@@ -69,6 +71,7 @@ export async function POST(request: NextRequest) {
     if (!hasPermission(session.user.role, "payment:write")) {
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
     }
+    // Multi-tenant support disabled
     const academyId = session.user.academyId
     if (!academyId) {
       return NextResponse.json({ error: "Academia no encontrada" }, { status: 400 })

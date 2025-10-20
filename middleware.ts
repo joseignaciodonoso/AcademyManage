@@ -12,7 +12,15 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes - allow access without authentication
+  // - Global auth pages
   if (pathname.startsWith("/auth") || pathname === "/") {
+    return NextResponse.next()
+  }
+
+  // - Tenant auth: /:org/login and /:org/auth/(signin|signup)
+  const tenantLoginMatch = /^\/[^/]+\/login(\/?$|\?.*|$)/
+  const tenantAuthMatch = /^\/[^/]+\/auth\/(signin|signup)(\/?$|\?.*|$)/
+  if (tenantLoginMatch.test(pathname) || tenantAuthMatch.test(pathname)) {
     return NextResponse.next()
   }
 
@@ -51,7 +59,34 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Tenantized role-based protection: /:org/admin/* and /:org/coach/*
+  const tenantAdminMatch = /^\/([^/]+)\/admin(\/|$)/
+  if (tenantAdminMatch.test(pathname)) {
+    if (token.role !== UserRole.SUPER_ADMIN && token.role !== UserRole.ACADEMY_ADMIN) {
+      return NextResponse.redirect(new URL("/unauthorized", request.url))
+    }
+  }
+
+  const tenantCoachMatch = /^\/([^/]+)\/coach(\/|$)/
+  if (tenantCoachMatch.test(pathname)) {
+    if (token.role !== UserRole.COACH && token.role !== UserRole.ACADEMY_ADMIN && token.role !== UserRole.SUPER_ADMIN) {
+      return NextResponse.redirect(new URL("/unauthorized", request.url))
+    }
+  }
+
   if (pathname.startsWith("/app")) {
+    if (
+      token.role !== UserRole.STUDENT &&
+      token.role !== UserRole.ACADEMY_ADMIN &&
+      token.role !== UserRole.SUPER_ADMIN
+    ) {
+      return NextResponse.redirect(new URL("/unauthorized", request.url))
+    }
+  }
+
+  // Tenantized student protection: /:org/app/*
+  const tenantAppMatch = /^\/([^/]+)\/app(\/|$)/
+  if (tenantAppMatch.test(pathname)) {
     if (
       token.role !== UserRole.STUDENT &&
       token.role !== UserRole.ACADEMY_ADMIN &&

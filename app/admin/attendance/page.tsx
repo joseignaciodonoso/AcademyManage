@@ -1,349 +1,214 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Search, Layers, Clock, CheckCircle2, CircleSlash } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
-type Schedule = {
+type EventItem = {
   id: string
-  branchId: string
-  coachId: string
   title: string
   description?: string | null
-  discipline: string
-  level: string
-  weekday: "MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT" | "SUN"
-  startTimeLocal: string
-  endTimeLocal: string
-  timezone: string
-  active: boolean
-  startDate?: string | null
-  endDate?: string | null
+  type?: string | null
+  startsAt: string
+  endsAt?: string | null
 }
 
-const weekdayLabels: Record<Schedule["weekday"], string> = {
-  MON: "Lunes",
-  TUE: "Martes",
-  WED: "Miércoles",
-  THU: "Jueves",
-  FRI: "Viernes",
-  SAT: "Sábado",
-  SUN: "Domingo",
+type ClassItem = {
+  id: string
+  title: string
+  description?: string | null
+  startTime: string
+  endTime: string
+  coach?: { id: string; name?: string | null; email?: string | null } | null
+  _count?: { attendances: number }
 }
 
 export default function AdminAttendancePage() {
-  const [schedules, setSchedules] = useState<Schedule[]>([])
-  const [loading, setLoading] = useState(false)
-  const [branches, setBranches] = useState<{ id: string; name: string }[]>([])
-  const [coaches, setCoaches] = useState<{ id: string; name: string }[]>([])
-
-  const [form, setForm] = useState({
-    branchId: "",
-    coachId: "",
-    title: "Clase regular",
-    description: "",
-    discipline: "General",
-    level: "Intermedio",
-    weekday: "MON" as Schedule["weekday"],
-    startTimeLocal: "18:00",
-    endTimeLocal: "19:00",
-    timezone: "America/Santiago",
-    active: true,
-    startDate: "",
-    endDate: "",
+  const [tab, setTab] = useState<"classes" | "events">("events")
+  const [start, setStart] = useState<string>(new Date().toISOString().slice(0, 10))
+  const [end, setEnd] = useState<string>(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 7)
+    return d.toISOString().slice(0, 10)
   })
+  const [loading, setLoading] = useState(false)
+  const [events, setEvents] = useState<EventItem[]>([])
+  const [classes, setClasses] = useState<ClassItem[]>([])
+  const [checkingMap, setCheckingMap] = useState<Record<string, boolean>>({})
+  const [emailMap, setEmailMap] = useState<Record<string, string>>({})
 
-  // UI filters
-  const [query, setQuery] = useState("")
-  const [filterWeekday, setFilterWeekday] = useState<"ALL" | Schedule["weekday"]>("ALL")
-  const [filterActive, setFilterActive] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL")
+  const range = useMemo(() => {
+    const s = new Date(`${start}T00:00:00`)
+    const e = new Date(`${end}T23:59:59`)
+    return { s, e }
+  }, [start, end])
 
-  const monthRange = useMemo(() => {
-    const now = new Date()
-    const start = new Date(now.getFullYear(), now.getMonth(), 1)
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
-    return { start, end }
-  }, [])
-
-  const loadSchedules = async () => {
+  async function loadEvents() {
     try {
       setLoading(true)
-      const res = await fetch("/api/admin/class-schedules")
-      if (!res.ok) return
-      const data = await res.json()
-      if (Array.isArray(data.schedules)) setSchedules(data.schedules)
+      const params = new URLSearchParams({ start: range.s.toISOString(), end: range.e.toISOString() })
+      const res = await fetch(`/api/events?${params.toString()}`)
+      const data = await res.json().catch(() => ({}))
+      const items: EventItem[] = Array.isArray(data?.events) ? data.events : Array.isArray(data) ? data : []
+      setEvents(items)
+    } catch {
+      setEvents([])
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { loadSchedules() }, [])
-
-  // Load branches once
-  useEffect(() => {
-    let alive = true
-    ;(async () => {
-      try {
-        const res = await fetch("/api/admin/branches")
-        if (res.ok) {
-          const data = await res.json()
-          if (alive && Array.isArray(data.branches)) {
-            setBranches(data.branches.map((b: any) => ({ id: b.id, name: b.name })))
-          }
-        }
-      } catch {}
-    })()
-    return () => { alive = false }
-  }, [])
-
-  // Load coaches when branch changes
-  useEffect(() => {
-    let alive = true
-    ;(async () => {
-      if (!form.branchId) { setCoaches([]); return }
-      try {
-        const res = await fetch(`/api/admin/branches/${form.branchId}/coaches`)
-        if (res.ok) {
-          const data = await res.json()
-          if (alive && Array.isArray(data.coaches)) {
-            setCoaches(data.coaches.map((c: any) => ({ id: c.id, name: c.name })))
-          }
-        }
-      } catch {}
-    })()
-    return () => { alive = false }
-  }, [form.branchId])
-
-  const createSchedule = async () => {
-    setLoading(true)
+  async function loadClasses() {
     try {
-      const payload = {
-        ...form,
-        description: form.description || undefined,
-        startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
-        endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
-      }
-      const res = await fetch("/api/admin/class-schedules", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
-      if (res.ok) {
-        await loadSchedules()
-      }
+      setLoading(true)
+      const params = new URLSearchParams({ start: range.s.toISOString(), end: range.e.toISOString() })
+      const res = await fetch(`/api/admin/classes?${params.toString()}`)
+      const data = await res.json().catch(() => ({}))
+      const items: ClassItem[] = Array.isArray(data?.classes) ? data.classes : []
+      setClasses(items)
+    } catch {
+      setClasses([])
     } finally {
       setLoading(false)
     }
   }
 
-  const ensureThisMonth = async () => {
-    setLoading(true)
+  async function checkIn(classId: string) {
+    const email = (emailMap[classId] || "").trim()
+    if (!email) return
+    setCheckingMap((m) => ({ ...m, [classId]: true }))
     try {
-      const params = new URLSearchParams({ startDate: monthRange.start.toISOString(), endDate: monthRange.end.toISOString() })
-      await fetch(`/api/admin/class-schedules/ensure-classes?${params.toString()}`, { method: "POST" })
+      const res = await fetch(`/api/admin/classes/${classId}/attendance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        alert(err.error || "No se pudo registrar asistencia")
+        return
+      }
+      // refrescar conteos
+      await loadClasses()
+      setEmailMap((m) => ({ ...m, [classId]: "" }))
     } finally {
-      setLoading(false)
+      setCheckingMap((m) => ({ ...m, [classId]: false }))
     }
   }
 
-  // Derived filtered schedules
-  const filtered = useMemo(() => {
-    return schedules.filter((s) => {
-      const matchesQuery = query.trim()
-        ? [s.title, s.discipline, s.level].join(" ").toLowerCase().includes(query.toLowerCase())
-        : true
-      const matchesWeekday = filterWeekday === "ALL" ? true : s.weekday === filterWeekday
-      const matchesActive =
-        filterActive === "ALL" ? true : filterActive === "ACTIVE" ? s.active : !s.active
-      return matchesQuery && matchesWeekday && matchesActive
-    })
-  }, [schedules, query, filterWeekday, filterActive])
+  useEffect(() => {
+    if (tab === "events") loadEvents()
+    if (tab === "classes") loadClasses()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, start, end])
 
   return (
-    <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8 bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-      <div className="max-w-7xl mx-auto space-y-8">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <Calendar className="h-7 w-7 text-[hsl(var(--accent))]" />
-          Asistencia · Horarios regulares
-        </h1>
-        <p className="text-[hsl(var(--foreground))]/70">Define los días y horas en que hay clases regulares y genera las clases del mes.</p>
-      </header>
+    <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))] p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+      <div className="absolute inset-0 gradient-bg opacity-20"></div>
+      <div className="absolute top-10 -left-24 w-72 h-72 bg-[hsl(var(--primary))] rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
+      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-[hsl(var(--accent))] rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-white/10 bg-white/5 backdrop-blur-md shadow-2xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Layers className="h-5 w-5" /> Horarios definidos
-            </CardTitle>
-            <CardDescription className="text-[hsl(var(--foreground))]/70">Listado de horarios regulares activos en tu academia.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Filters */}
-            <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por título, disciplina o nivel"
-                  className="pl-8"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </div>
-              <Select value={filterWeekday} onValueChange={(v) => setFilterWeekday(v as any)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Día" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Todos los días</SelectItem>
-                  {Object.entries(weekdayLabels).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={filterActive} onValueChange={(v) => setFilterActive(v as any)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Todos</SelectItem>
-                  <SelectItem value="ACTIVE">Activos</SelectItem>
-                  <SelectItem value="INACTIVE">Inactivos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="relative z-10 mx-auto max-w-6xl space-y-6">
+        <header className="mb-2">
+          <h1 className="text-3xl font-bold tracking-tight">Asistencia</h1>
+          <p className="text-gray-400">Gestiona asistencia de Clases y Eventos</p>
+        </header>
 
-            {loading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-center rounded-xl border border-white/10 bg-white/5 p-3 animate-pulse">
-                    <div className="col-span-2 space-y-2">
-                      <div className="h-4 w-40 bg-[hsl(var(--muted))] rounded" />
-                      <div className="h-3 w-24 bg-[hsl(var(--muted))] rounded" />
-                    </div>
-                    <div className="h-4 w-44 bg-[hsl(var(--muted))] rounded" />
-                    <div className="h-3 w-16 bg-[hsl(var(--muted))] rounded" />
-                    <div />
-                  </div>
-                ))}
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center border border-white/10 bg-white/5 backdrop-blur-md rounded-xl">
-                <div className="mb-3 flex items-center gap-2 text-sm text-[hsl(var(--foreground))]/70">
-                  <Calendar className="h-4 w-4" />
-                  Sin horarios que coincidan con los filtros
+        <Card className="glass-effect rounded-2xl border-gray-700/50">
+          <CardContent className="p-4">
+            <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+              <div className="flex flex-wrap items-center gap-2">
+                <TabsList>
+                  <TabsTrigger value="classes">Clases</TabsTrigger>
+                  <TabsTrigger value="events">Eventos</TabsTrigger>
+                </TabsList>
+                <div className="ml-auto flex items-center gap-2">
+                  <label className="text-sm text-muted-foreground">Desde</label>
+                  <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="w-[160px]" />
+                  <label className="text-sm text-muted-foreground">Hasta</label>
+                  <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="w-[160px]" />
                 </div>
-                <p className="text-xs text-[hsl(var(--foreground))]/60">Ajusta los filtros o crea un nuevo horario a la derecha.</p>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {filtered.map((s) => (
-                  <div key={s.id} className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-center rounded-xl border border-white/10 p-3 bg-white/5 backdrop-blur-md">
-                    <div className="col-span-2">
-                      <div className="text-sm font-medium flex items-center gap-2">
-                        {s.title}
-                        <Badge variant={s.active ? "default" : "secondary"} className={s.active ? "" : "opacity-70"}>
-                          {s.active ? (
-                            <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Activo</span>
-                          ) : (
-                            <span className="flex items-center gap-1"><CircleSlash className="h-3 w-3" /> Inactivo</span>
-                          )}
-                        </Badge>
-                      </div>
-                      <div className="text-xs text-[hsl(var(--foreground))]/70">{s.discipline} · {s.level}</div>
-                    </div>
-                    <div className="text-sm flex items-center gap-2 text-[hsl(var(--foreground))]">
-                      <Badge variant="outline">{weekdayLabels[s.weekday]}</Badge>
-                      <div className="flex items-center gap-1 text-[hsl(var(--foreground))]/70">
-                        <Clock className="h-3.5 w-3.5" /> {s.startTimeLocal} – {s.endTimeLocal}
-                      </div>
-                    </div>
-                    <div className="text-xs text-[hsl(var(--foreground))]/60">TZ: {s.timezone}</div>
-                    <div className="text-right">
-                      {/* Future: edit/delete */}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        <Card className="border-white/10 bg-white/5 backdrop-blur-md shadow-2xl">
-          <CardHeader>
-            <CardTitle>Nuevo horario</CardTitle>
-            <CardDescription className="text-[hsl(var(--foreground))]/70">Configura un día y hora fija para una clase recurrente.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-1">
-              <Label>Sede</Label>
-              <Select value={form.branchId} onValueChange={(v) => setForm((f) => ({ ...f, branchId: v, coachId: "" }))}>
-                <SelectTrigger><SelectValue placeholder="Selecciona sede" /></SelectTrigger>
-                <SelectContent>
-                  {branches.map((b) => (<SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Instructor</Label>
-              <Select value={form.coachId} onValueChange={(v) => setForm((f) => ({ ...f, coachId: v }))} disabled={!form.branchId}>
-                <SelectTrigger><SelectValue placeholder="Selecciona instructor" /></SelectTrigger>
-                <SelectContent>
-                  {coaches.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Título</Label>
-              <Input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <Label>Disciplina</Label>
-              <Input value={form.discipline} onChange={(e) => setForm((f) => ({ ...f, discipline: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <Label>Nivel</Label>
-              <Input value={form.level} onChange={(e) => setForm((f) => ({ ...f, level: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <Label>Día</Label>
-              <Select value={form.weekday} onValueChange={(v) => setForm((f) => ({ ...f, weekday: v as Schedule["weekday"] }))}>
-                <SelectTrigger><SelectValue placeholder="Selecciona día" /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(weekdayLabels).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label>Inicio</Label>
-                <Input type="time" value={form.startTimeLocal} onChange={(e) => setForm((f) => ({ ...f, startTimeLocal: e.target.value }))} />
-              </div>
-              <div className="space-y-1">
-                <Label>Término</Label>
-                <Input type="time" value={form.endTimeLocal} onChange={(e) => setForm((f) => ({ ...f, endTimeLocal: e.target.value }))} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label>Desde</Label>
-                <Input type="date" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} />
-              </div>
-              <div className="space-y-1">
-                <Label>Hasta</Label>
-                <Input type="date" value={form.endDate} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={createSchedule} disabled={loading || !form.branchId || !form.coachId}>Crear horario</Button>
-              <Button variant="outline" onClick={ensureThisMonth} disabled={loading}>Generar clases del mes</Button>
-            </div>
+              <TabsContent value="classes" className="mt-4">
+                <Card className="glass-effect rounded-2xl border-gray-700/50">
+                  <CardContent className="p-0">
+                    {loading ? (
+                      <div className="p-6 text-sm text-muted-foreground">Cargando clases…</div>
+                    ) : classes.length === 0 ? (
+                      <div className="p-6 text-sm text-muted-foreground">No hay clases en el rango seleccionado.</div>
+                    ) : (
+                      <ul className="divide-y divide-gray-800">
+                        {classes.map((cl) => (
+                          <li key={cl.id} className="p-4 space-y-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                              <div className="flex-1">
+                                <div className="font-medium">{cl.title}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(cl.startTime).toLocaleString()} — {new Date(cl.endTime).toLocaleString()}
+                                </div>
+                                {cl.coach?.name && (
+                                  <div className="text-xs text-muted-foreground">Instructor: {cl.coach.name}</div>
+                                )}
+                              </div>
+                              <Badge variant="outline">Presentes: {cl._count?.attendances ?? 0}</Badge>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Input
+                                type="email"
+                                placeholder="email del alumno"
+                                value={emailMap[cl.id] || ""}
+                                onChange={(e) => setEmailMap((m) => ({ ...m, [cl.id]: e.target.value }))}
+                                className="w-64"
+                              />
+                              <Button onClick={() => checkIn(cl.id)} disabled={!!checkingMap[cl.id]} variant="outline">
+                                {checkingMap[cl.id] ? "Registrando…" : "Check-in"}
+                              </Button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="events" className="mt-4">
+                <Card className="glass-effect rounded-2xl border-gray-700/50">
+                  <CardContent className="p-0">
+                    {loading ? (
+                      <div className="p-6 text-sm text-muted-foreground">Cargando eventos…</div>
+                    ) : events.length === 0 ? (
+                      <div className="p-6 text-sm text-muted-foreground">No hay eventos en el rango seleccionado.</div>
+                    ) : (
+                      <ul className="divide-y divide-gray-800">
+                        {events.map((ev) => (
+                          <li key={ev.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                            <div className="flex-1">
+                              <div className="font-medium">{ev.title}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(ev.startsAt).toLocaleString()} {ev.endsAt ? `— ${new Date(ev.endsAt).toLocaleString()}` : ""}
+                              </div>
+                              {ev.type && <div className="text-xs text-muted-foreground">Tipo: {ev.type}</div>}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button asChild variant="outline" size="sm">
+                                <a href={`/admin/calendar`} title="Ver en calendario">Ver en calendario</a>
+                              </Button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
-      </div>
       </div>
     </div>
   )

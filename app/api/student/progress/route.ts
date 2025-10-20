@@ -17,18 +17,24 @@ export async function GET(request: NextRequest) {
     const progress = await prisma.studentProgress.findMany({
       where: {
         studentId: session.user.id,
-        curriculumItem: {
-          level: {
-            curriculum: discipline ? { discipline } : undefined,
+        technique: {
+          unit: {
+            module: {
+              curriculum: discipline ? { discipline } : undefined,
+            },
           },
         },
       },
       include: {
-        curriculumItem: {
+        technique: {
           include: {
-            level: {
+            unit: {
               include: {
-                curriculum: true,
+                module: {
+                  include: {
+                    curriculum: true,
+                  },
+                },
               },
             },
           },
@@ -36,16 +42,23 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Get all curriculum items for the discipline
+    // Get all curricula for the discipline
     const curricula = await prisma.curriculum.findMany({
       where: {
         discipline: discipline || undefined,
         academyId: session.user.academyId,
       },
       include: {
-        levels: {
+        modules: {
           include: {
-            items: {
+            units: {
+              include: {
+                techniques: {
+                  orderBy: {
+                    order: "asc",
+                  },
+                },
+              },
               orderBy: {
                 order: "asc",
               },
@@ -61,17 +74,21 @@ export async function GET(request: NextRequest) {
     // Combine curriculum with progress data
     const result = curricula.map((curriculum) => ({
       ...curriculum,
-      levels: curriculum.levels.map((level) => ({
-        ...level,
-        items: level.items.map((item) => {
-          const itemProgress = progress.find((p) => p.curriculumItemId === item.id)
-          return {
-            ...item,
-            completed: itemProgress?.completed || false,
-            score: itemProgress?.score,
-            completedAt: itemProgress?.completedAt,
-          }
-        }),
+      modules: curriculum.modules.map((module) => ({
+        ...module,
+        units: module.units.map((unit) => ({
+          ...unit,
+          techniques: unit.techniques.map((technique) => {
+            const techniqueProgress = progress.find((p) => p.techniqueId === technique.id)
+            return {
+              ...technique,
+              completed: techniqueProgress?.completed || false,
+              score: techniqueProgress?.score,
+              notes: techniqueProgress?.notes,
+              completedAt: techniqueProgress?.completedAt,
+            }
+          }),
+        })),
       })),
     }))
 
@@ -90,25 +107,31 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { curriculumItemId, completed, score } = body
+    const { techniqueId, completed, score, notes } = body
+
+    if (!techniqueId) {
+      return NextResponse.json({ error: "techniqueId is required" }, { status: 400 })
+    }
 
     const progress = await prisma.studentProgress.upsert({
       where: {
-        studentId_curriculumItemId: {
+        studentId_techniqueId: {
           studentId: session.user.id,
-          curriculumItemId,
+          techniqueId,
         },
       },
       update: {
         completed,
         score,
+        notes,
         completedAt: completed ? new Date() : null,
       },
       create: {
         studentId: session.user.id,
-        curriculumItemId,
+        techniqueId,
         completed,
         score,
+        notes,
         completedAt: completed ? new Date() : null,
       },
     })

@@ -10,7 +10,6 @@ import { CheckCircle, AlertCircle } from "lucide-react"
 import { OdooConnectionStep } from "./steps/odoo-connection-step"
 import { AcademyDataStep } from "./steps/academy-data-step"
 import { BrandingStep } from "./steps/branding-step"
-import { BranchesStep } from "./steps/branches-step"
 import { PlansStep } from "./steps/plans-step"
 import { ReviewStep } from "./steps/review-step"
 
@@ -68,14 +67,13 @@ const STEPS = [
   { id: "odoo", title: "Conectar Odoo", required: false },
   { id: "academy", title: "Datos de la Academia", required: true },
   { id: "branding", title: "Branding", required: true },
-  { id: "branches", title: "Sedes", required: true },
   { id: "plans", title: "Planes", required: true },
   { id: "review", title: "Revisión Final", required: true },
 ]
 
 interface OnboardingWizardProps {
   academyId: string
-  onComplete: () => void
+  onComplete?: () => void
 }
 
 export function OnboardingWizard({ academyId, onComplete }: OnboardingWizardProps) {
@@ -97,21 +95,17 @@ export function OnboardingWizard({ academyId, onComplete }: OnboardingWizardProp
   const canProceed = (stepIndex: number): boolean => {
     const step = STEPS[stepIndex]
     if (!step.required) return true
-
     switch (step.id) {
       case "academy":
         return !!(data.academyName && data.discipline)
       case "branding":
         return !!(data.brandPrimary && data.logoUrl)
-      case "branches":
-        return !!(data.branches && data.branches.length > 0)
       case "plans":
         return !!(data.plans && data.plans.length > 0)
       default:
         return true
     }
   }
-
   const handleNext = () => {
     if (canProceed(currentStep)) {
       markStepComplete(currentStep)
@@ -142,7 +136,7 @@ export function OnboardingWizard({ academyId, onComplete }: OnboardingWizardProp
         throw new Error("Error al completar la configuración")
       }
 
-      onComplete()
+      onComplete?.()
       router.push("/admin/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido")
@@ -161,18 +155,17 @@ export function OnboardingWizard({ academyId, onComplete }: OnboardingWizardProp
         return <AcademyDataStep data={data} onUpdate={updateData} />
       case "branding":
         return <BrandingStep data={data} onUpdate={updateData} academyId={academyId} />
-      case "branches":
-        return <BranchesStep data={data} onUpdate={updateData} />
+      // removed branches step UI
+      // case "branches":
+      //   return <BranchesStep data={data} onUpdate={updateData} />
       case "plans":
         return <PlansStep data={data} onUpdate={updateData} />
       case "review":
-        return <ReviewStep data={data} onUpdate={updateData} />
+        return <ReviewStep data={data} />
       default:
         return null
     }
   }
-
-  const progress = ((currentStep + 1) / STEPS.length) * 100
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -182,7 +175,7 @@ export function OnboardingWizard({ academyId, onComplete }: OnboardingWizardProp
           <p className="text-muted-foreground mb-4">
             Configura tu academia paso a paso para comenzar a usar la plataforma
           </p>
-          <Progress value={progress} className="w-full" />
+          <Progress value={(completedSteps.size / STEPS.length) * 100} className="w-full" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

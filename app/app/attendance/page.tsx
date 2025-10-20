@@ -39,10 +39,10 @@ export default async function AttendancePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Asistencia</h1>
-        <p className="text-muted-foreground">Registra tu asistencia a clases programadas</p>
+        <p className="text-gray-400">Registra tu asistencia a clases programadas</p>
       </div>
 
-      <Card>
+      <Card className="glass-effect rounded-2xl border-gray-700/50">
         <CardHeader>
           <CardTitle>Próximas clases (24h)</CardTitle>
           <CardDescription>
@@ -55,7 +55,7 @@ export default async function AttendancePage() {
           ) : (
             <div className="space-y-3">
               {classes.map((c) => (
-                <div key={c.id} className="flex items-center justify-between p-3 border rounded-md">
+                <div key={c.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-700/50 bg-white/5 backdrop-blur">
                   <div>
                     <div className="font-medium">{c.title}</div>
                     <div className="text-sm text-muted-foreground">
