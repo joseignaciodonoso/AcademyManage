@@ -2,7 +2,7 @@
 # Docs: https://docs.netlify.com/integrations/frameworks/next-js/overview/
 
 [build]
-  command = "npm run build"
+  command = "npm run build:netlify"
   publish = ".next"
   functions = "netlify/functions"
 
