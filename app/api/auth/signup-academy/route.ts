@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     // Create academy and admin user in a transaction
     const result = await prisma.$transaction(async (tx) => {
       // 1. Create the academy
-      const academy = await tx.academy.create({
+      const academy = await (tx as any).academy.create({
         data: {
           name: academyName,
           slug: slug.toLowerCase(),
