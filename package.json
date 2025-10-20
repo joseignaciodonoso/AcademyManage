@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "build:netlify": "prisma migrate deploy && next build",
+    "build:netlify": "prisma db push --accept-data-loss && next build",
     "dev": "next dev -p 3001",
     "lint": "next lint",
     "start": "next start",
