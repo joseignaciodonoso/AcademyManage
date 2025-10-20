@@ -43,7 +43,7 @@ export async function POST(
     }
 
     // Verify match belongs to academy
-    const match = await prisma.match.findFirst({
+    const match = await (prisma as any).match.findFirst({
       where: {
         id: params.id,
         academyId: user.academyId,
@@ -65,8 +65,8 @@ export async function POST(
     // Create evaluations in transaction
     const result = await prisma.$transaction(async (tx) => {
       const createdEvaluations = await Promise.all(
-        validatedData.evaluations.map(evaluation =>
-          tx.playerEvaluation.create({
+        validatedData.evaluations.map((evaluation: any) =>
+          (tx as any).playerEvaluation.create({
             data: {
               playerId: evaluation.playerId,
               matchId: params.id,
@@ -130,7 +130,7 @@ export async function GET(
     }
 
     // Verify match belongs to academy
-    const match = await prisma.match.findFirst({
+    const match = await (prisma as any).match.findFirst({
       where: {
         id: params.id,
         academyId: user.academyId,
@@ -145,7 +145,7 @@ export async function GET(
     }
 
     // Get evaluations
-    const evaluations = await prisma.playerEvaluation.findMany({
+    const evaluations = await (prisma as any).playerEvaluation.findMany({
       where: {
         matchId: params.id,
       },
