@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import type { UserRole } from "@/lib/types"
 import bcrypt from "bcryptjs"
 
 export async function POST(request: NextRequest) {
@@ -88,7 +87,7 @@ export async function POST(request: NextRequest) {
           email: email.toLowerCase(),
           password: hashedPassword,
           phone: phone || null,
-          role: "ACADEMY_ADMIN" as UserRole,
+          role: "ACADEMY_ADMIN",
           academyId: academy.id,
         },
       })
