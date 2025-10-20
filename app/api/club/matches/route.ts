@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const sport = searchParams.get("sport")
     const status = searchParams.get("status")
 
-    const matches = await prisma.match.findMany({
+    const matches = await (prisma as any).match.findMany({
       where: {
         academyId: user.academyId,
         ...(from && to ? {
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     const validatedData = CreateMatchSchema.parse(body)
 
     // Create match
-    const match = await prisma.match.create({
+    const match = await (prisma as any).match.create({
       data: {
         academyId: user.academyId,
         sport: validatedData.sport,
