@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Search, Plus, UserPlus, Trophy, Target, Activity } from "lucide-react"
+import { Search, Plus, UserPlus, Trophy, Target, Activity, Users } from "lucide-react"
 
 interface Member {
   id: string
@@ -109,10 +109,19 @@ export default function ClubMembersPage() {
             Gestiona los integrantes del club deportivo
           </p>
         </div>
-        <Button onClick={() => router.push(`/${params.orgSlug}/club/members/new`)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Agregar Jugador
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/${params.orgSlug}/club/players/compare`)}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Comparar Jugadores
+          </Button>
+          <Button onClick={() => router.push(`/${params.orgSlug}/club/members/new`)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Agregar Jugador
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}

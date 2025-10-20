@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, Trophy, Target, Activity, TrendingUp, Calendar } from "lucide-react"
+import { ArrowLeft, Trophy, Target, Activity, TrendingUp, Calendar, Users } from "lucide-react"
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from "recharts"
 import type { PlayerMetrics } from "@/lib/types/club"
 
@@ -107,6 +107,14 @@ export default function PlayerProfilePage() {
             {isFootball ? "⚽ Fútbol" : "🏀 Básquetbol"}
           </p>
         </div>
+
+        <Button
+          variant="outline"
+          onClick={() => router.push(`/${params.orgSlug}/club/players/compare?player1=${params.id}`)}
+        >
+          <Users className="h-4 w-4 mr-2" />
+          Comparar
+        </Button>
         
         <select
           value={period}
