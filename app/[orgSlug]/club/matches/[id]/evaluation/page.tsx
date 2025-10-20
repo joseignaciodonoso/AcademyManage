@@ -296,7 +296,7 @@ export default function MatchEvaluationPage() {
                   </div>
                   <Slider
                     value={[playerEval.technique]}
-                    onValueChange={([value]) => updateEvaluation(player.id, "technique", value)}
+                    onValueChange={([value]: [number]) => updateEvaluation(player.id, "technique", value)}
                     min={1}
                     max={10}
                     step={1}
@@ -314,7 +314,7 @@ export default function MatchEvaluationPage() {
                   </div>
                   <Slider
                     value={[playerEval.tactics]}
-                    onValueChange={([value]) => updateEvaluation(player.id, "tactics", value)}
+                    onValueChange={([value]: [number]) => updateEvaluation(player.id, "tactics", value)}
                     min={1}
                     max={10}
                     step={1}
@@ -332,7 +332,7 @@ export default function MatchEvaluationPage() {
                   </div>
                   <Slider
                     value={[playerEval.physical]}
-                    onValueChange={([value]) => updateEvaluation(player.id, "physical", value)}
+                    onValueChange={([value]: [number]) => updateEvaluation(player.id, "physical", value)}
                     min={1}
                     max={10}
                     step={1}
@@ -350,7 +350,7 @@ export default function MatchEvaluationPage() {
                   </div>
                   <Slider
                     value={[playerEval.attitude]}
-                    onValueChange={([value]) => updateEvaluation(player.id, "attitude", value)}
+                    onValueChange={([value]: [number]) => updateEvaluation(player.id, "attitude", value)}
                     min={1}
                     max={10}
                     step={1}
