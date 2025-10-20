@@ -10,8 +10,23 @@ async function settleByExternalReference(externalRef: string, providerPaymentId:
       include: { membership: true },
     })
 
-    if (payment.membershipId) {
-      // Activate membership
+    if (payment.membershipId && payment.membership) {
+      // Get the membership being activated
+      const membership = payment.membership
+
+      // First, expire any OTHER active/trial memberships for this user
+      const now = new Date()
+      await prisma.membership.updateMany({
+        where: {
+          userId: membership.userId,
+          id: { not: membership.id },
+          status: { in: ["ACTIVE", "TRIAL"] },
+          OR: [{ endDate: null }, { endDate: { gt: now } }],
+        },
+        data: { status: "EXPIRED", endDate: now },
+      })
+
+      // Then activate the new membership
       await prisma.membership.update({
         where: { id: payment.membershipId },
         data: { status: "ACTIVE" as any },
@@ -24,7 +39,28 @@ async function settleByExternalReference(externalRef: string, providerPaymentId:
     if (p) {
       await prisma.payment.update({ where: { id: p.id }, data: { status: "PAID" as any, paidAt: new Date() } })
       if (p.membershipId) {
-        await prisma.membership.update({ where: { id: p.membershipId }, data: { status: "ACTIVE" as any } })
+        // Get the membership being activated
+        const membership = await prisma.membership.findUnique({
+          where: { id: p.membershipId },
+          select: { userId: true, id: true },
+        })
+
+        if (membership) {
+          // First, expire any OTHER active/trial memberships for this user
+          const now = new Date()
+          await prisma.membership.updateMany({
+            where: {
+              userId: membership.userId,
+              id: { not: membership.id },
+              status: { in: ["ACTIVE", "TRIAL"] },
+              OR: [{ endDate: null }, { endDate: { gt: now } }],
+            },
+            data: { status: "EXPIRED", endDate: now },
+          })
+
+          // Then activate the new membership
+          await prisma.membership.update({ where: { id: p.membershipId }, data: { status: "ACTIVE" as any } })
+        }
       }
       return true
     }

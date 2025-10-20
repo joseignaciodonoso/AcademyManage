@@ -16,7 +16,7 @@ export async function PATCH(
     if (!hasPermission(session.user.role, "payment:write")) {
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
     }
-    const academyFromTenant = await requireAcademyFromRequest(request as any)
+    
     const academyId = session.user.academyId
     if (!academyId) {
       return NextResponse.json({ error: "Academia no encontrada" }, { status: 400 })
@@ -63,12 +63,33 @@ export async function PATCH(
 
     const updated = await prisma.payment.update({ where: { id }, data })
 
-    // If approving payment, activate membership (if linked)
+    // If approving payment, activate membership (if linked) and expire previous active memberships
     if ((data.status === "PAID" || (!data.status && existing.status === "PAID")) && existing.membershipId) {
-      await prisma.membership.update({
+      // Get the membership being activated
+      const membership = await prisma.membership.findUnique({
         where: { id: existing.membershipId },
-        data: { status: "ACTIVE" },
+        select: { userId: true, id: true },
       })
+
+      if (membership) {
+        // First, expire any OTHER active/trial memberships for this user
+        const now = new Date()
+        await prisma.membership.updateMany({
+          where: {
+            userId: membership.userId,
+            id: { not: membership.id }, // Don't touch the one we're activating
+            status: { in: ["ACTIVE", "TRIAL"] },
+            OR: [{ endDate: null }, { endDate: { gt: now } }],
+          },
+          data: { status: "EXPIRED", endDate: now },
+        })
+
+        // Then activate the new membership
+        await prisma.membership.update({
+          where: { id: existing.membershipId },
+          data: { status: "ACTIVE" },
+        })
+      }
     }
 
     return NextResponse.json({

@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getActiveMembership } from "@/lib/student-guards"
 import { StudentSidebar, MobileStudentSidebar } from "@/components/student/layout/student-sidebar"
-import { StudentGuard } from "@/components/student/layout/student-guard"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -18,6 +17,13 @@ import {
 import { LogOut, User, Settings } from "lucide-react"
 import Link from "next/link"
 import { SignOutButton } from "@/components/auth/sign-out-button"
+
+// Force dynamic server rendering for pages under /app/app so that
+// requestAsyncStorage is available to getServerSession calls in children
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+export const fetchCache = "force-no-store"
+export const runtime = "nodejs"
 
 export default async function StudentLayout({
   children,
@@ -120,9 +126,7 @@ export default async function StudentLayout({
         {/* Page Content wrapper para look & feel admin */}
         <div className="relative z-10 flex-1">
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 max-w-7xl w-full mx-auto bg-transparent text-[hsl(var(--foreground))]">
-            <StudentGuard hasActivePlan={hasActivePlan}>
-              {children}
-            </StudentGuard>
+            {children}
           </main>
         </div>
       </div>

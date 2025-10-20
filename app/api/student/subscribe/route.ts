@@ -29,21 +29,29 @@ export async function POST(request: Request) {
       await prisma.user.update({ where: { id: user.id }, data: { academyId: plan.academyId } })
     }
 
-    // End any existing active/trial memberships
-    const now = new Date()
-    await prisma.membership.updateMany({
+    // Check if user already has an active membership
+    const existingActiveMembership = await prisma.membership.findFirst({
       where: {
         userId: user.id,
         status: { in: ["ACTIVE", "TRIAL"] },
-        OR: [{ endDate: null }, { endDate: { gt: now } }],
+        OR: [{ endDate: null }, { endDate: { gt: new Date() } }],
       },
-      data: { status: "EXPIRED", endDate: now },
     })
 
-    // Create new membership (TRIAL if plan has trialDays, else PAST_DUE until payment)
+    // If user already has an active membership, don't allow creating a new one
+    // They should renew or upgrade through payment, not create duplicate subscriptions
+    if (existingActiveMembership) {
+      return NextResponse.json({ 
+        error: "Ya tienes una membresía activa. Para renovar o cambiar de plan, contacta con la academia.",
+        existingMembershipId: existingActiveMembership.id 
+      }, { status: 400 })
+    }
+
+    // Create new membership (TRIAL if plan has trialDays, else PENDING until payment)
+    const now = new Date()
     const startDate = now
     const trialEndDate = plan.trialDays && plan.trialDays > 0 ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000) : null
-    const status = trialEndDate ? "TRIAL" : "PAST_DUE"
+    const status = trialEndDate ? "TRIAL" : "PENDING"
 
     const membership = await prisma.membership.create({
       data: {

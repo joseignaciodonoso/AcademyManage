@@ -57,14 +57,13 @@ export default function StudentSchedulesPage() {
   }, [schedules])
 
   return (
-    <div className="w-full p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <header className="mb-2">
-          <h1 className="text-3xl font-bold tracking-tight">Horarios</h1>
-          <p className="text-gray-400">Consulta los horarios regulares de entrenamientos.</p>
-        </header>
+    <div className="w-full space-y-6">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight">Horarios</h1>
+        <p className="text-muted-foreground">Consulta los horarios regulares de entrenamientos.</p>
+      </header>
 
-        <Card className="glass-effect rounded-2xl border-gray-700/50">
+      <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Listado semanal</CardTitle>
             <CardDescription className="text-sm">Filtra por día y revisa los bloques disponibles</CardDescription>
@@ -72,7 +71,7 @@ export default function StudentSchedulesPage() {
           <CardContent>
             <div className="mb-4 flex items-center gap-2">
               <label className="text-sm text-muted-foreground">Día</label>
-              <select value={weekday} onChange={(e) => setWeekday(e.target.value as any)} className="border rounded px-2 py-1 bg-transparent">
+              <select value={weekday} onChange={(e) => setWeekday(e.target.value as any)} className="border rounded px-2 py-1 bg-background">
                 <option value="ALL">Todos</option>
                 {Object.entries(weekdayLabels).map(([k, v]) => (<option key={k} value={k}>{v}</option>))}
               </select>
@@ -93,7 +92,7 @@ export default function StudentSchedulesPage() {
                       <div className="text-xs text-muted-foreground">—</div>
                     ) : (
                       grouped[wd].map((s) => (
-                        <div key={s.id} className="rounded-xl border border-gray-700/50 p-3 bg-white/5 backdrop-blur">
+                        <div key={s.id} className="rounded-lg border p-3">
                           <div className="flex items-center justify-between gap-2">
                             <div>
                               <div className="font-medium">{s.title}</div>
@@ -113,7 +112,6 @@ export default function StudentSchedulesPage() {
             )}
           </CardContent>
         </Card>
-      </div>
     </div>
   )
 }
