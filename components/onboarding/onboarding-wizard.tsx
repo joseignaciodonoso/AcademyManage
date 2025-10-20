@@ -64,7 +64,7 @@ export interface OnboardingData {
 }
 
 const STEPS = [
-  { id: "odoo", title: "Conectar Odoo", required: false },
+  // { id: "odoo", title: "Conectar Odoo", required: false }, // HIDDEN: Odoo integration disabled for now
   { id: "academy", title: "Datos de la Academia", required: true },
   { id: "branding", title: "Branding", required: true },
   { id: "plans", title: "Planes", required: true },

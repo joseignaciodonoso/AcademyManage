@@ -6,6 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const { 
       type,
+      sport,
       academyName, 
       slug, 
       adminName, 
@@ -27,6 +28,14 @@ export async function POST(request: NextRequest) {
     if (type && !["ACADEMY", "CLUB"].includes(type)) {
       return NextResponse.json(
         { error: "Tipo de organización inválido" }, 
+        { status: 400 }
+      )
+    }
+
+    // Validate sport for clubs
+    if (type === "CLUB" && sport && !["FOOTBALL", "BASKETBALL"].includes(sport)) {
+      return NextResponse.json(
+        { error: "Deporte inválido" }, 
         { status: 400 }
       )
     }
@@ -75,6 +84,7 @@ export async function POST(request: NextRequest) {
           name: academyName,
           slug: slug.toLowerCase(),
           type: (type as "ACADEMY" | "CLUB") || "ACADEMY",
+          sport: type === "CLUB" ? (sport as "FOOTBALL" | "BASKETBALL") : null,
           discipline: discipline || (type === "CLUB" ? "Deportes" : "Artes Marciales"),
           onboardingCompleted: false, // Will complete onboarding wizard
         },

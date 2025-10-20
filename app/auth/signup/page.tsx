@@ -17,6 +17,7 @@ import AuthLayout from "@/components/auth/AuthLayout"
 export default function SignUpAcademyPage() {
   const [formData, setFormData] = useState({
     type: "ACADEMY" as "ACADEMY" | "CLUB",
+    sport: "FOOTBALL" as "FOOTBALL" | "BASKETBALL",
     academyName: "",
     slug: "",
     discipline: "",
@@ -77,6 +78,7 @@ export default function SignUpAcademyPage() {
         },
         body: JSON.stringify({
           type: formData.type,
+          sport: formData.type === "CLUB" ? formData.sport : undefined,
           academyName: formData.academyName,
           slug: formData.slug,
           discipline: formData.discipline || (formData.type === "ACADEMY" ? "Artes Marciales" : "Deportes"),
@@ -185,6 +187,45 @@ export default function SignUpAcademyPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Sport Selector - Only for CLUB */}
+              {formData.type === "CLUB" && (
+                <div className="space-y-2">
+                  <Label className="font-medium">Deporte Principal *</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, sport: "FOOTBALL" })}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        formData.sport === "FOOTBALL"
+                          ? "border-primary bg-primary/10 shadow-lg"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">⚽</div>
+                        <div className="font-semibold">Fútbol</div>
+                        <div className="text-xs text-muted-foreground">Goles, asistencias, tarjetas</div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, sport: "BASKETBALL" })}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        formData.sport === "BASKETBALL"
+                          ? "border-primary bg-primary/10 shadow-lg"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">🏀</div>
+                        <div className="font-semibold">Básquetbol</div>
+                        <div className="text-xs text-muted-foreground">Puntos, rebotes, asistencias</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="academyName" className="font-medium">
