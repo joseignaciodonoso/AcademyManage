@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
     })
 
     // Get player profiles for all members
-    const memberIds = members.map(m => m.id)
-    const profiles = await prisma.playerProfile.findMany({
+    const memberIds = members.map((m: any) => m.id)
+    const profiles = await (prisma as any).playerProfile.findMany({
       where: {
         userId: {
           in: memberIds,
@@ -46,9 +46,9 @@ export async function GET(request: NextRequest) {
     })
 
     // Merge profiles with members
-    const membersWithProfiles = members.map(member => ({
+    const membersWithProfiles = members.map((member: any) => ({
       ...member,
-      playerProfile: profiles.find(p => p.userId === member.id) || null,
+      playerProfile: profiles.find((p: any) => p.userId === member.id) || null,
     }))
 
     return NextResponse.json({ members: membersWithProfiles }, { status: 200 })
