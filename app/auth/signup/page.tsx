@@ -16,6 +16,7 @@ import AuthLayout from "@/components/auth/AuthLayout"
 
 export default function SignUpAcademyPage() {
   const [formData, setFormData] = useState({
+    type: "ACADEMY" as "ACADEMY" | "CLUB",
     academyName: "",
     slug: "",
     discipline: "",
@@ -75,9 +76,10 @@ export default function SignUpAcademyPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          type: formData.type,
           academyName: formData.academyName,
           slug: formData.slug,
-          discipline: formData.discipline || "Artes Marciales",
+          discipline: formData.discipline || (formData.type === "ACADEMY" ? "Artes Marciales" : "Deportes"),
           adminName: formData.adminName,
           email: formData.email,
           password: formData.password,
@@ -145,10 +147,49 @@ export default function SignUpAcademyPage() {
 
             {/* Academy Information */}
             <div className="space-y-4 border-b border-border pb-4">
-              <h3 className="font-semibold text-lg">Información de la Academia</h3>
+              <h3 className="font-semibold text-lg">Información de la Organización</h3>
+              
+              {/* Type Selector */}
+              <div className="space-y-2">
+                <Label className="font-medium">Tipo de Organización *</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, type: "ACADEMY" })}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      formData.type === "ACADEMY"
+                        ? "border-primary bg-primary/10 shadow-lg"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-2xl mb-2">🥋</div>
+                      <div className="font-semibold">Academia</div>
+                      <div className="text-xs text-muted-foreground">Artes marciales, disciplinas</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, type: "CLUB" })}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      formData.type === "CLUB"
+                        ? "border-primary bg-primary/10 shadow-lg"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-2xl mb-2">⚽</div>
+                      <div className="font-semibold">Club Deportivo</div>
+                      <div className="text-xs text-muted-foreground">Fútbol, básquetbol, etc.</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
               
               <div className="space-y-2">
-                <Label htmlFor="academyName" className="font-medium">Nombre de la Academia *</Label>
+                <Label htmlFor="academyName" className="font-medium">
+                  Nombre {formData.type === "ACADEMY" ? "de la Academia" : "del Club"} *
+                </Label>
                 <Input
                   id="academyName"
                   value={formData.academyName}

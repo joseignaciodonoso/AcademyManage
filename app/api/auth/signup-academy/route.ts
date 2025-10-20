@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs"
 export async function POST(request: NextRequest) {
   try {
     const { 
+      type,
       academyName, 
       slug, 
       adminName, 
@@ -19,6 +20,14 @@ export async function POST(request: NextRequest) {
     if (!academyName || !slug || !adminName || !email || !password) {
       return NextResponse.json(
         { error: "Todos los campos obligatorios deben ser completados" }, 
+        { status: 400 }
+      )
+    }
+
+    // Validate type
+    if (type && !["ACADEMY", "CLUB"].includes(type)) {
+      return NextResponse.json(
+        { error: "Tipo de organización inválido" }, 
         { status: 400 }
       )
     }
@@ -66,7 +75,8 @@ export async function POST(request: NextRequest) {
         data: {
           name: academyName,
           slug: slug.toLowerCase(),
-          discipline: discipline || "Artes Marciales",
+          type: (type as "ACADEMY" | "CLUB") || "ACADEMY",
+          discipline: discipline || (type === "CLUB" ? "Deportes" : "Artes Marciales"),
           onboardingCompleted: false, // Will complete onboarding wizard
         },
       })
