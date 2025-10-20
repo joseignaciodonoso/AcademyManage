@@ -61,7 +61,21 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ sessions }, { status: 200 })
+    // Format sessions with attendance stats
+    const formattedSessions = sessions.map((session: any) => {
+      const totalPlayers = session.attendance.length
+      const presentPlayers = session.attendance.filter((a: any) => a.status === "PRESENT").length
+      
+      return {
+        ...session,
+        attendance: totalPlayers > 0 ? {
+          present: presentPlayers,
+          total: totalPlayers,
+        } : undefined,
+      }
+    })
+
+    return NextResponse.json({ sessions: formattedSessions }, { status: 200 })
   } catch (error) {
     console.error("Error fetching training sessions:", error)
     return NextResponse.json(
@@ -112,9 +126,13 @@ export async function POST(request: NextRequest) {
       data: {
         academyId: user.academyId,
         date: new Date(validatedData.date),
+        startTime: validatedData.startTime,
+        endTime: validatedData.endTime,
         duration: validatedData.duration,
         location: validatedData.location,
+        focus: validatedData.focus,
         notes: validatedData.notes,
+        status: "SCHEDULED",
       },
     })
 

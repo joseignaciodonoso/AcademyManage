@@ -23,8 +23,11 @@ export const ExpenseCategorySchema = z.enum([
 // Training Session
 export const CreateTrainingSessionSchema = z.object({
   date: z.string().datetime(),
+  startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(), // HH:MM format
+  endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(), // HH:MM format
   duration: z.number().int().min(15).max(300), // 15 min to 5 hours
   location: z.string().optional(),
+  focus: z.string().max(100).optional(), // e.g., "Técnica", "Táctica", "Físico"
   notes: z.string().optional(),
 })
 

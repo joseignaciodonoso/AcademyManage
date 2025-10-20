@@ -965,9 +965,13 @@ model TrainingSession {
   id        String   @id @default(cuid())
   academyId String
   date      DateTime
+  startTime String?  // HH:MM format
+  endTime   String?  // HH:MM format
   duration  Int      // minutos
   location  String?
+  focus     String?  // e.g., "Técnica", "Táctica", "Físico"
   notes     String?
+  status    String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
