@@ -27,13 +27,18 @@ export const authOptions: NextAuthOptions = {
           where: {
             email: credentials.email,
           },
-          include: {
-            academy: true,
-          },
         })
 
         if (!user) {
           return null
+        }
+
+        // Fetch academy if user has academyId
+        let academy = null
+        if (user.academyId) {
+          academy = await prisma.academy.findUnique({
+            where: { id: user.academyId }
+          })
         }
 
         // Verify password
@@ -86,7 +91,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           role: user.role,
           academyId: user.academyId,
-          academy: user.academy,
+          academy: academy,
           orgId: org?.id,
           orgSlug: org?.slug,
           orgRole: orgRole ?? user.role,
