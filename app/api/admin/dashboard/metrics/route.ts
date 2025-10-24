@@ -45,10 +45,7 @@ export async function GET(request: NextRequest) {
         where: {
           academyId,
           status: "PAID",
-          OR: [
-            { paidAt: { gte: firstDayThisMonth } },
-            { createdAt: { gte: firstDayThisMonth } },
-          ],
+          paidAt: { gte: firstDayThisMonth },
         },
         _sum: { amount: true },
       }),
@@ -56,10 +53,7 @@ export async function GET(request: NextRequest) {
         where: {
           academyId,
           status: "PAID",
-          OR: [
-            { paidAt: { gte: firstDayLastMonth, lt: firstDayThisMonth } },
-            { createdAt: { gte: firstDayLastMonth, lt: firstDayThisMonth } },
-          ],
+          paidAt: { gte: firstDayLastMonth, lt: firstDayThisMonth },
         },
         _sum: { amount: true },
       }),
@@ -69,6 +63,40 @@ export async function GET(request: NextRequest) {
     const revenueMTD = sumMTD._sum.amount || 0
     const revenueLastMonth = sumPrev._sum.amount || 0
     const arpuMTD = activeStudents > 0 ? revenueMTD / activeStudents : 0
+
+    // Pending dues this month: ACTIVE memberships with nextBillingDate in [this month], excluding users who already paid this month
+    const startOfNextMonth = startOfMonth(new Date(now.getFullYear(), now.getMonth() + 1, 1))
+    const paidUsersThisMonth = await prisma.payment.findMany({
+      where: {
+        academyId,
+        status: 'PAID',
+        paidAt: { gte: firstDayThisMonth, lt: startOfNextMonth },
+      },
+      select: { userId: true },
+      distinct: ['userId'],
+    })
+    const paidUserSet = new Set((paidUsersThisMonth || []).map(p => p.userId).filter(Boolean) as string[])
+
+    const duesMemberships = await prisma.membership.findMany({
+      where: {
+        academyId,
+        status: 'ACTIVE',
+        nextBillingDate: { gte: firstDayThisMonth, lt: startOfNextMonth },
+      },
+      select: {
+        userId: true,
+        plan: { select: { price: true, currency: true } },
+      },
+    })
+
+    let pendingPayments = 0
+    let pendingAmountMTD = 0
+    for (const m of duesMemberships) {
+      if (!m.userId) continue
+      if (paidUserSet.has(m.userId)) continue
+      pendingPayments += 1
+      pendingAmountMTD += m.plan?.price || 0
+    }
 
     // Revenue trend (last 6 months, inclusive)
     const paid = await prisma.payment.findMany({
@@ -187,6 +215,8 @@ export async function GET(request: NextRequest) {
       recentPayments,
       planDistribution,
       studentsTrend,
+      pendingPayments,
+      pendingAmountMTD,
     })
   } catch (error) {
     console.error("Error dashboard metrics:", error)

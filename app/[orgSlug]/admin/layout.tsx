@@ -45,7 +45,7 @@ export default async function TenantAdminLayout({
         </div>
 
         {/* Main Content */}
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0">
           {/* Header */}
           <header className="flex h-16 items-center gap-4 border-b border-border bg-gradient-to-r from-[hsl(var(--background))] via-[hsl(var(--muted))] to-[hsl(var(--background))] backdrop-blur-md px-4 lg:px-6 shadow-lg">
             <MobileAdminSidebar prefix={prefix} role={role} organizationType={organizationType} />
@@ -124,7 +124,7 @@ export default async function TenantAdminLayout({
           </header>
 
           {/* Page Content */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+          <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">{children}</main>
         </div>
       </div>
     </div>

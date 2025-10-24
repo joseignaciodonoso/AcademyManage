@@ -2,6 +2,7 @@ import type React from "react"
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 import { AdminSidebar, MobileAdminSidebar } from "@/components/admin/layout/admin-sidebar"
 import { HeaderAcademyName } from "@/components/admin/layout/header-academy-name"
 import { Button } from "@/components/ui/button"
@@ -33,15 +34,19 @@ export default async function AdminLayout({
     redirect("/unauthorized")
   }
 
-  // Try to get academy name from branding
+  // Get academy data including type
   let academyName = "Academia"
+  let organizationType: "ACADEMY" | "CLUB" = "ACADEMY"
   try {
     const academyId = (session.user as any).academyId as string | undefined
     if (academyId) {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/admin/branding?academyId=${academyId}`, { cache: "no-store" })
-      if (res.ok) {
-        const branding = await res.json()
-        if (branding?.name) academyName = branding.name as string
+      const academy = await prisma.academy.findUnique({
+        where: { id: academyId },
+        select: { name: true, type: true }
+      })
+      if (academy) {
+        academyName = academy.name
+        organizationType = academy.type as "ACADEMY" | "CLUB"
       }
     }
   } catch {}
@@ -50,14 +55,14 @@ export default async function AdminLayout({
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       {/* Sidebar */}
       <div className="hidden md:block">
-        <AdminSidebar role={session.user.role} />
+        <AdminSidebar role={session.user.role} organizationType={organizationType} />
       </div>
 
       {/* Main Content */}
       <div className="flex flex-col">
         {/* Header */}
         <header className="flex h-16 items-center gap-4 border-b border-border bg-gradient-to-r from-[hsl(var(--background))] via-[hsl(var(--muted))] to-[hsl(var(--background))] backdrop-blur-md px-4 lg:px-6 shadow-lg">
-          <MobileAdminSidebar role={session.user.role} />
+          <MobileAdminSidebar role={session.user.role} organizationType={organizationType} />
 
           {/* Academy Info */}
           <div className="flex items-center gap-3 flex-1">

@@ -117,14 +117,14 @@ model Team {
 
 // Core Academy Management
 model Academy {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  type      OrganizationType @default(ACADEMY) // ACADEMY or CLUB
-  sport     SportType? // For CLUB: FOOTBALL or BASKETBALL
+  id         String           @id @default(cuid())
+  name       String
+  slug       String           @unique
+  type       OrganizationType @default(ACADEMY) // ACADEMY or CLUB
+  sport      SportType? // For CLUB: FOOTBALL or BASKETBALL
   discipline String? // e.g., "Jiu-Jitsu", "Karate", "Fútbol"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 
   // Odoo Integration
   odooUrl      String?
@@ -170,12 +170,15 @@ model Academy {
   eventRegistrations EventRegistration[]
   auditLogs          AuditLog[]
   kpisCache          KpiCache[]
-  
+
   // Club Deportivo relations
-  trainingSessions   TrainingSession[]
-  matches            Match[]
-  expenses           ClubExpense[]
-  announcements      Announcement[]
+  trainingSessions  TrainingSession[]
+  matches           Match[]
+  expenses          ClubExpense[]
+  announcements     Announcement[]
+  tournaments       Tournament[]       @relation("AcademyTournaments")
+  trainingSchedules TrainingSchedule[] @relation("AcademyTrainingSchedules")
+  trainingInstances TrainingInstance[] @relation("AcademyTrainingInstances")
 
   @@map("academies")
 }
@@ -276,21 +279,21 @@ model User {
   organizationMemberships OrganizationMember[]
   // Student progress tracking
   progress                StudentProgress[]
-  
+
   // Club Deportivo relations
-  playerProfile           PlayerProfile?
-  guardianOf              PlayerProfile[]      @relation("GuardianOf")
-  documents               PlayerDocument[]     @relation("PlayerDocuments")
-  verifiedDocuments       PlayerDocument[]     @relation("VerifiedDocuments")
-  trainingAttendance      TrainingAttendance[] @relation("TrainingAttendance")
-  matchCallups            MatchCallupPlayer[]  @relation("MatchCallups")
-  matchStats              MatchPlayerStat[]    @relation("MatchStats")
-  evaluationsReceived     PlayerEvaluation[]   @relation("EvaluatedPlayer")
-  evaluationsGiven        PlayerEvaluation[]   @relation("EvaluatingCoach")
-  expenses                ClubExpense[]        @relation("ClubExpenses")
-  announcements           Announcement[]       @relation("Announcements")
-  goals                   PlayerGoal[]         @relation("PlayerGoals")
-  badges                  UserBadge[]          @relation("UserBadges")
+  playerProfile       PlayerProfile?
+  guardianOf          PlayerProfile[]      @relation("GuardianOf")
+  documents           PlayerDocument[]     @relation("PlayerDocuments")
+  verifiedDocuments   PlayerDocument[]     @relation("VerifiedDocuments")
+  trainingAttendance  TrainingAttendance[] @relation("TrainingAttendance")
+  matchCallups        MatchCallupPlayer[]  @relation("MatchCallups")
+  matchStats          MatchPlayerStat[]    @relation("MatchStats")
+  evaluationsReceived PlayerEvaluation[]   @relation("EvaluatedPlayer")
+  evaluationsGiven    PlayerEvaluation[]   @relation("EvaluatingCoach")
+  expenses            ClubExpense[]        @relation("ClubExpenses")
+  announcements       Announcement[]       @relation("Announcements")
+  goals               PlayerGoal[]         @relation("PlayerGoals")
+  badges              UserBadge[]          @relation("UserBadges")
 
   @@map("users")
 }
@@ -541,8 +544,8 @@ model Technique {
   tags          String[]
 
   // Relations
-  unit             Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  studentProgress  StudentProgress[]
+  unit            Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  studentProgress StudentProgress[]
 
   @@map("techniques")
 }
@@ -880,15 +883,15 @@ model ClassSchedule {
 
 // === Student Progress Tracking ===
 model StudentProgress {
-  id           String    @id @default(cuid())
-  studentId    String
-  techniqueId  String
-  completed    Boolean   @default(false)
-  score        Float?
-  notes        String?
-  completedAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  studentId   String
+  techniqueId String
+  completed   Boolean   @default(false)
+  score       Float?
+  notes       String?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relations
   student   User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -909,54 +912,54 @@ enum SportType {
 
 // Perfil extendido para jugadores
 model PlayerProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  position        String   // Portero, Defensa, Mediocampo, Delantero (fútbol) | Base, Escolta, Alero, Ala-Pívot, Pívot (básquet)
-  shirtSize       String   // XS, S, M, L, XL, XXL
+  id              String @id @default(cuid())
+  userId          String @unique
+  position        String // Portero, Defensa, Mediocampo, Delantero (fútbol) | Base, Escolta, Alero, Ala-Pívot, Pívot (básquet)
+  shirtSize       String // XS, S, M, L, XL, XXL
   preferredNumber Int?
-  
+
   // Si es menor
-  isMinor         Boolean  @default(false)
-  guardianId      String?
-  
+  isMinor    Boolean @default(false)
+  guardianId String?
+
   // Estadísticas acumuladas
-  totalGoals      Int      @default(0)
-  totalAssists    Int      @default(0)
-  totalPoints     Int      @default(0)
-  totalRebounds   Int      @default(0)
-  totalSteals     Int      @default(0)
-  totalBlocks     Int      @default(0)
-  yellowCards     Int      @default(0)
-  redCards        Int      @default(0)
-  fouls           Int      @default(0)
-  matchesPlayed   Int      @default(0)
-  minutesPlayed   Int      @default(0)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  totalGoals    Int @default(0)
+  totalAssists  Int @default(0)
+  totalPoints   Int @default(0)
+  totalRebounds Int @default(0)
+  totalSteals   Int @default(0)
+  totalBlocks   Int @default(0)
+  yellowCards   Int @default(0)
+  redCards      Int @default(0)
+  fouls         Int @default(0)
+  matchesPlayed Int @default(0)
+  minutesPlayed Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   user     User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   guardian User? @relation("GuardianOf", fields: [guardianId], references: [id])
-  
+
   @@map("player_profiles")
 }
 
 // Documentos de jugadores
 model PlayerDocument {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String
-  type       String   // ID_CARD, MEDICAL_CERT, PHOTO, GUARDIAN_AUTH
+  type       String // ID_CARD, MEDICAL_CERT, PHOTO, GUARDIAN_AUTH
   fileUrl    String
   fileName   String
-  status     String   @default("PENDING") // PENDING, VERIFIED, REJECTED
-  uploadedAt DateTime @default(now())
+  status     String    @default("PENDING") // PENDING, VERIFIED, REJECTED
+  uploadedAt DateTime  @default(now())
   verifiedBy String?
   verifiedAt DateTime?
   notes      String?
-  
+
   user     User  @relation("PlayerDocuments", fields: [userId], references: [id], onDelete: Cascade)
   verifier User? @relation("VerifiedDocuments", fields: [verifiedBy], references: [id])
-  
+
   @@map("player_documents")
 }
 
@@ -965,63 +968,71 @@ model TrainingSession {
   id        String   @id @default(cuid())
   academyId String
   date      DateTime
-  startTime String?  // HH:MM format
-  endTime   String?  // HH:MM format
-  duration  Int      // minutos
+  startTime String? // HH:MM format
+  endTime   String? // HH:MM format
+  duration  Int // minutos
   location  String?
-  focus     String?  // e.g., "Técnica", "Táctica", "Físico"
+  focus     String? // e.g., "Técnica", "Táctica", "Físico"
   notes     String?
   status    String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   attendance TrainingAttendance[]
-  academy    Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
-  
+  academy    Academy              @relation(fields: [academyId], references: [id], onDelete: Cascade)
+
   @@map("training_sessions")
 }
 
-// Asistencia a entrenamientos
+// Asistencia a entrenamientos (compatible con ambos sistemas)
 model TrainingAttendance {
-  id          String   @id @default(cuid())
-  sessionId   String
+  id          String    @id @default(cuid())
+  sessionId   String? // Para sistema antiguo de TrainingSession
+  instanceId  String? // Para nuevo sistema de TrainingInstance
   playerId    String
-  status      String   // PRESENT, ABSENT, JUSTIFIED
+  status      String    @default("PENDING") // PENDING, CONFIRMED, DECLINED, PRESENT, ABSENT, JUSTIFIED, ATTENDED
+  confirmedAt DateTime?
   checkedInAt DateTime?
   notes       String?
-  createdAt   DateTime @default(now())
-  
-  session TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  player  User            @relation("TrainingAttendance", fields: [playerId], references: [id], onDelete: Cascade)
-  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  session  TrainingSession?  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  instance TrainingInstance? @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  player   User              @relation("TrainingAttendance", fields: [playerId], references: [id], onDelete: Cascade)
+
   @@unique([sessionId, playerId])
+  @@unique([instanceId, playerId])
   @@map("training_attendance")
 }
 
 // Partidos
 model Match {
-  id           String    @id @default(cuid())
-  academyId    String
-  sport        SportType
-  date         DateTime
-  opponent     String
-  location     String
-  homeAway     String?   // HOME, AWAY
-  goalsFor     Int?
-  goalsAgainst Int?
-  pointsFor    Int?      // Para básquetbol
-  pointsAgainst Int?     // Para básquetbol
-  result       String?   // WIN, DRAW, LOSS
-  status       String    @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, FINISHED, CANCELLED
-  notes        String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  
+  id            String    @id @default(cuid())
+  academyId     String
+  tournamentId  String? // Relación con torneo
+  sport         SportType
+  date          DateTime
+  opponent      String
+  location      String
+  homeAway      String? // HOME, AWAY
+  goalsFor      Int?
+  goalsAgainst  Int?
+  pointsFor     Int? // Para básquetbol
+  pointsAgainst Int? // Para básquetbol
+  result        String? // WIN, DRAW, LOSS
+  status        String    @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, FINISHED, CANCELLED
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
   callup      MatchCallup?
   stats       MatchPlayerStat[]
   evaluations PlayerEvaluation[]
-  academy     Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
-  
+  academy     Academy            @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  tournament  Tournament?        @relation("TournamentMatches", fields: [tournamentId], references: [id], onDelete: SetNull)
+
+  @@index([tournamentId])
   @@map("matches")
 }
 
@@ -1029,14 +1040,14 @@ model Match {
 model MatchCallup {
   id          String    @id @default(cuid())
   matchId     String    @unique
-  formation   String?   // 4-4-2, 4-3-3, etc (solo fútbol)
+  formation   String? // 4-4-2, 4-3-3, etc (solo fútbol)
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  
-  match    Match               @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  players  MatchCallupPlayer[]
-  
+
+  match   Match               @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  players MatchCallupPlayer[]
+
   @@map("match_callups")
 }
 
@@ -1044,73 +1055,73 @@ model MatchCallupPlayer {
   id        String  @id @default(cuid())
   callupId  String
   playerId  String
-  type      String  // STARTER, SUBSTITUTE
+  type      String // STARTER, SUBSTITUTE
   confirmed Boolean @default(false)
-  
+
   callup MatchCallup @relation(fields: [callupId], references: [id], onDelete: Cascade)
   player User        @relation("MatchCallups", fields: [playerId], references: [id], onDelete: Cascade)
-  
+
   @@unique([callupId, playerId])
   @@map("match_callup_players")
 }
 
 // Estadísticas de partido por jugador
 model MatchPlayerStat {
-  id        String @id @default(cuid())
-  matchId   String
-  playerId  String
-  
+  id       String @id @default(cuid())
+  matchId  String
+  playerId String
+
   // Fútbol
-  goals     Int    @default(0)
-  assists   Int    @default(0)
-  yellow    Int    @default(0)
-  red       Int    @default(0)
-  
+  goals   Int @default(0)
+  assists Int @default(0)
+  yellow  Int @default(0)
+  red     Int @default(0)
+
   // Básquetbol
-  points    Int    @default(0)
-  rebounds  Int    @default(0)
-  steals    Int    @default(0)
-  blocks    Int    @default(0)
-  fouls     Int    @default(0)
-  
+  points   Int @default(0)
+  rebounds Int @default(0)
+  steals   Int @default(0)
+  blocks   Int @default(0)
+  fouls    Int @default(0)
+
   // Común
-  minutes   Int    @default(0)
-  
+  minutes Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   match  Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
   player User  @relation("MatchStats", fields: [playerId], references: [id], onDelete: Cascade)
-  
+
   @@unique([matchId, playerId])
   @@map("match_player_stats")
 }
 
 // Evaluaciones de jugadores
 model PlayerEvaluation {
-  id           String   @id @default(cuid())
-  playerId     String
-  coachId      String
-  matchId      String?
-  trainingId   String?
-  
+  id         String  @id @default(cuid())
+  playerId   String
+  coachId    String
+  matchId    String?
+  trainingId String?
+
   // Puntuaciones 1-10
-  technique    Int
-  tactics      Int
-  physical     Int
-  attitude     Int
-  
+  technique Int
+  tactics   Int
+  physical  Int
+  attitude  Int
+
   // Comentarios
   strengths    String?
   improvements String?
   notes        String?
-  
-  createdAt    DateTime @default(now())
-  
-  player   User   @relation("EvaluatedPlayer", fields: [playerId], references: [id], onDelete: Cascade)
-  coach    User   @relation("EvaluatingCoach", fields: [coachId], references: [id], onDelete: Cascade)
-  match    Match? @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  
+
+  createdAt DateTime @default(now())
+
+  player User   @relation("EvaluatedPlayer", fields: [playerId], references: [id], onDelete: Cascade)
+  coach  User   @relation("EvaluatingCoach", fields: [coachId], references: [id], onDelete: Cascade)
+  match  Match? @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
   @@map("player_evaluations")
 }
 
@@ -1119,7 +1130,7 @@ model ClubExpense {
   id          String   @id @default(cuid())
   academyId   String
   concept     String
-  category    String   // FIELD_RENTAL, EQUIPMENT, TRANSPORTATION, BALLS, REFEREES, OTHER
+  category    String // FIELD_RENTAL, EQUIPMENT, TRANSPORTATION, BALLS, REFEREES, OTHER
   amount      Float
   currency    String   @default("CLP")
   date        DateTime
@@ -1128,28 +1139,28 @@ model ClubExpense {
   createdBy   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
   creator User    @relation("ClubExpenses", fields: [createdBy], references: [id])
-  
+
   @@map("club_expenses")
 }
 
 // Anuncios
 model Announcement {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   academyId   String
   title       String
   body        String
-  audience    String   // TEAM, CATEGORY, ALL
+  audience    String // TEAM, CATEGORY, ALL
   publishedAt DateTime?
   createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
   creator User    @relation("Announcements", fields: [createdBy], references: [id])
-  
+
   @@map("announcements")
 }
 
@@ -1158,16 +1169,16 @@ model PlayerGoal {
   id        String    @id @default(cuid())
   userId    String
   title     String
-  metric    String?   // goals, assists, points, rebounds, etc
+  metric    String? // goals, assists, points, rebounds, etc
   target    Float?
   dueDate   DateTime?
   status    String    @default("ACTIVE") // ACTIVE, DONE, FAILED
   progress  Float     @default(0)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  
+
   user User @relation("PlayerGoals", fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@map("player_goals")
 }
 
@@ -1179,9 +1190,9 @@ model Badge {
   icon        String
   description String
   ruleJson    String // JSON con reglas para otorgar
-  
+
   awards UserBadge[]
-  
+
   @@map("badges")
 }
 
@@ -1191,10 +1202,105 @@ model UserBadge {
   badgeId   String
   awardedAt DateTime @default(now())
   reason    String?
-  
+
   user  User  @relation("UserBadges", fields: [userId], references: [id], onDelete: Cascade)
   badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
-  
+
   @@unique([userId, badgeId])
   @@map("user_badges")
+}
+
+// ============================
+// SISTEMA DE TORNEOS
+// ============================
+
+model Tournament {
+  id           String    @id @default(cuid())
+  academyId    String
+  name         String
+  description  String?   @db.Text
+  season       String // "2025", "2025-2026"
+  type         String    @default("LEAGUE") // LEAGUE, CUP, FRIENDLY, PLAYOFF
+  startDate    DateTime
+  endDate      DateTime?
+  rules        String?   @db.Text // Markdown o HTML
+  rulesFileUrl String?
+  logoUrl      String?
+  status       String    @default("ACTIVE") // ACTIVE, FINISHED, CANCELLED
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  academy   Academy              @relation("AcademyTournaments", fields: [academyId], references: [id], onDelete: Cascade)
+  matches   Match[]              @relation("TournamentMatches")
+  standings TournamentStanding[]
+
+  @@map("tournaments")
+}
+
+model TournamentStanding {
+  id           String @id @default(cuid())
+  tournamentId String
+  teamName     String // Puede ser el nombre de la academia o equipo rival
+  played       Int    @default(0)
+  won          Int    @default(0)
+  drawn        Int    @default(0)
+  lost         Int    @default(0)
+  goalsFor     Int    @default(0)
+  goalsAgainst Int    @default(0)
+  goalDiff     Int    @default(0)
+  points       Int    @default(0)
+  position     Int?
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, teamName])
+  @@map("tournament_standings")
+}
+
+// ============================
+// SISTEMA DE ENTRENAMIENTOS
+// ============================
+
+model TrainingSchedule {
+  id        String    @id @default(cuid())
+  academyId String
+  dayOfWeek Int // 0=Domingo, 1=Lunes, ..., 6=Sábado
+  startTime String // "18:00"
+  endTime   String // "20:00"
+  location  String
+  type      String? // TECHNICAL, PHYSICAL, TACTICAL, GAME
+  category  String? // Sub-15, Senior, etc
+  startDate DateTime // Desde cuándo aplica
+  endDate   DateTime? // Hasta cuándo (null = indefinido)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  academy   Academy            @relation("AcademyTrainingSchedules", fields: [academyId], references: [id], onDelete: Cascade)
+  instances TrainingInstance[]
+
+  @@map("training_schedules")
+}
+
+model TrainingInstance {
+  id         String   @id @default(cuid())
+  scheduleId String? // null si es entrenamiento único
+  academyId  String
+  date       DateTime
+  startTime  String
+  endTime    String
+  location   String
+  type       String?
+  category   String?
+  status     String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
+  notes      String?  @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  schedule   TrainingSchedule?    @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  academy    Academy              @relation("AcademyTrainingInstances", fields: [academyId], references: [id], onDelete: Cascade)
+  attendance TrainingAttendance[]
+
+  @@index([academyId, date])
+  @@map("training_instances")
 }

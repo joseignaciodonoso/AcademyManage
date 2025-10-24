@@ -50,35 +50,139 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Transform data for frontend
-    const transformedStudents = students.map((student: any) => ({
-      id: student.id,
-      name: student.name,
-      email: student.email,
-      phone: student.phone,
-      status: student.status,
-      createdAt: student.createdAt.toISOString(),
-      membership: student.memberships[0] ? {
-        id: student.memberships[0].id,
-        status: student.memberships[0].status,
-        startDate: student.memberships[0].startDate.toISOString(),
-        endDate: student.memberships[0].endDate?.toISOString(),
-        nextBillingDate: student.memberships[0].nextBillingDate?.toISOString(),
-        plan: {
-          name: student.memberships[0].plan.name,
-          price: student.memberships[0].plan.price,
-          currency: student.memberships[0].plan.currency,
-          type: student.memberships[0].plan.type
-        }
-      } : null,
-      payments: student.memberships[0]?.payments.map((payment: any) => ({
+    // Pull PAID payments this month per userId to ensure student view reflects real payments even if not linked to membership
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    const studentIds = students.map((s: any) => s.id)
+    const membershipIds = students.map((s: any) => s.memberships?.[0]?.id).filter(Boolean) as string[]
+    const paidThisMonthByUser = studentIds.length ? await prisma.payment.findMany({
+      where: {
+        academyId,
+        userId: { in: studentIds },
+        status: "PAID",
+        paidAt: { gte: startOfMonth, lt: startOfNextMonth },
+      },
+      select: { id: true, userId: true, amount: true, currency: true, status: true, paidAt: true },
+      orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
+    }) : []
+    const paidThisMonthByMembershipUser = studentIds.length ? await prisma.payment.findMany({
+      where: {
+        academyId,
+        status: 'PAID',
+        paidAt: { gte: startOfMonth, lt: startOfNextMonth },
+        membership: { userId: { in: studentIds } },
+      },
+      select: { id: true, amount: true, currency: true, status: true, paidAt: true, membership: { select: { userId: true } } },
+      orderBy: [{ paidAt: 'desc' }, { createdAt: 'desc' }],
+    }) : []
+    const paymentsMap = new Map<string, { id: string; amount: number; currency: string; status: string; paidAt?: Date }[]>()
+    for (const p of paidThisMonthByUser) {
+      const arr = paymentsMap.get(p.userId as string) || []
+      arr.push({ id: p.id, amount: p.amount, currency: p.currency, status: p.status, paidAt: p.paidAt ?? undefined })
+      paymentsMap.set(p.userId as string, arr)
+    }
+    for (const p of paidThisMonthByMembershipUser) {
+      const u = (p as any).membership?.userId as string | undefined
+      if (!u) continue
+      const arr = paymentsMap.get(u) || []
+      arr.push({ id: p.id, amount: p.amount, currency: p.currency, status: p.status, paidAt: p.paidAt ?? undefined })
+      paymentsMap.set(u, arr)
+    }
+    // By membershipId for completeness
+    const paidThisMonthByMembershipId = membershipIds.length ? await prisma.payment.findMany({
+      where: {
+        academyId,
+        status: 'PAID',
+        paidAt: { gte: startOfMonth, lt: startOfNextMonth },
+        membershipId: { in: membershipIds },
+      },
+      select: { id: true, amount: true, currency: true, status: true, paidAt: true, membershipId: true },
+      orderBy: [{ paidAt: 'desc' }, { createdAt: 'desc' }],
+    }) : []
+    const membershipIdToUser = new Map<string, string>()
+    for (const s of students) {
+      const m = s.memberships?.[0]
+      if (m?.id) membershipIdToUser.set(m.id, s.id)
+    }
+    for (const p of paidThisMonthByMembershipId) {
+      const uid = membershipIdToUser.get(p.membershipId as string)
+      if (!uid) continue
+      const arr = paymentsMap.get(uid) || []
+      arr.push({ id: p.id, amount: p.amount, currency: p.currency, status: p.status, paidAt: p.paidAt ?? undefined })
+      paymentsMap.set(uid, arr)
+    }
+
+    // Transform data for frontend, merging membership payments with user-based monthly payments
+    const transformedStudents = students.map((student: any) => {
+      const membership = student.memberships[0] || null
+      const membershipPayments = (membership?.payments || []).map((payment: any) => ({
         id: payment.id,
         amount: payment.amount,
         currency: payment.currency,
         status: payment.status,
-        paidAt: payment.paidAt?.toISOString()
-      })) || []
-    }))
+        paidAt: payment.paidAt ?? null,
+      }))
+      const extraPaid = (paymentsMap.get(student.id) || []).map((p) => ({
+        id: p.id,
+        amount: p.amount,
+        currency: p.currency,
+        status: p.status,
+        paidAt: p.paidAt ?? null,
+      }))
+      // de-duplicate by id, prioritize membershipPayments order
+      const mergedById = new Map<string, any>()
+      for (const pm of [...membershipPayments, ...extraPaid]) mergedById.set(pm.id, pm)
+      const mergedPayments = Array.from(mergedById.values())
+
+      // compute reconciled nextBillingDate from last PAID payment
+      const latestPaid = mergedPayments
+        .filter((p: any) => p.status === 'PAID' && p.paidAt)
+        .sort((a: any, b: any) => new Date(b.paidAt as string).getTime() - new Date(a.paidAt as string).getTime())[0]
+      let reconciledNext: Date | null = null
+      if (latestPaid && membership?.plan?.type) {
+        const months = membership.plan.type === 'MONTHLY' ? 1 : membership.plan.type === 'QUARTERLY' ? 3 : membership.plan.type === 'YEARLY' ? 12 : 1
+        const base = new Date(latestPaid.paidAt as string)
+        const day = base.getDate()
+        const next = new Date(base)
+        next.setMonth(next.getMonth() + months)
+        if (next.getDate() < day) next.setDate(0)
+        reconciledNext = next
+      }
+
+      return {
+        id: student.id,
+        name: student.name,
+        email: student.email,
+        phone: student.phone,
+        status: student.status,
+        createdAt: student.createdAt.toISOString(),
+        membership: membership ? {
+          id: membership.id,
+          status: membership.status,
+          startDate: membership.startDate.toISOString(),
+          endDate: membership.endDate?.toISOString(),
+          nextBillingDate: (() => {
+            const nb = membership.nextBillingDate ? new Date(membership.nextBillingDate) : null
+            if (reconciledNext && (!nb || reconciledNext > nb)) return reconciledNext.toISOString()
+            return nb?.toISOString()
+          })(),
+          plan: {
+            name: membership.plan.name,
+            price: membership.plan.price,
+            currency: membership.plan.currency,
+            type: membership.plan.type
+          }
+        } : null,
+        payments: mergedPayments.map((payment: any) => ({
+          id: payment.id,
+          amount: payment.amount,
+          currency: payment.currency,
+          status: payment.status,
+          paidAt: payment.paidAt ? new Date(payment.paidAt).toISOString() : undefined,
+        }))
+      }
+    })
 
     return NextResponse.json({
       students: transformedStudents,

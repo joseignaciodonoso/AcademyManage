@@ -90,6 +90,10 @@ export async function POST(request: NextRequest) {
       published = true,
       important = false,
       branchId,
+      // Match-specific fields for CHAMPIONSHIP events
+      opponent,
+      location,
+      homeAway,
     } = body || {}
 
     if (!title || !date) {
@@ -123,6 +127,30 @@ export async function POST(request: NextRequest) {
         important: Boolean(important),
       },
     })
+
+    // Auto-create Match for CHAMPIONSHIP events (for club-type academies)
+    if (typeEnum === "CHAMPIONSHIP") {
+      try {
+        const academy = await prisma.academy.findUnique({ where: { id: academyId } })
+        if (academy?.type === "CLUB") {
+          await (prisma as any).match.create({
+            data: {
+              academyId,
+              sport: academy.sport || "BASKETBALL", // Default to BASKETBALL if not set
+              date: eventDate,
+              opponent: opponent || `Rival (${title})`,
+              location: location || "Por definir", 
+              homeAway: homeAway || "HOME",
+              status: "SCHEDULED",
+              notes: `Generado desde evento: ${title}`,
+            },
+          })
+        }
+      } catch (err) {
+        console.warn("Failed to create associated match:", err)
+        // Continue - don't fail event creation if match fails
+      }
+    }
 
     return NextResponse.json({
       id: created.id,

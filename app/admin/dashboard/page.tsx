@@ -9,7 +9,9 @@ import {
   Users,
   BarChart3,
   ShieldCheck,
-  FileText
+  FileText,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +49,8 @@ type DashboardMetrics = {
   recentPayments: { id: string; amount: number; currency: string; paidAt?: string; userName?: string; planName?: string }[]
   planDistribution: { planId: string; name: string; count: number }[]
   studentsTrend: { month: string; signups: number; starts: number; ends: number }[]
+  pendingPayments: number
+  pendingAmountMTD: number
 }
 
 function formatCurrency(amount: number, currency = "CLP") {
@@ -103,6 +107,22 @@ export default function DashboardPage() {
       icon: DollarSign,
       color: 'from-blue-500 to-indigo-600',
       progress: Math.min(100, Math.round((metrics.revenueMTD / Math.max(1, metrics.revenueLastMonth || metrics.revenueMTD)) * 80)),
+    },
+    {
+      title: 'Pagos Pendientes (mes)',
+      value: metrics.pendingPayments,
+      change: 'Cantidad por cobrar',
+      icon: Clock,
+      color: 'from-amber-500 to-yellow-600',
+      progress: 0,
+    },
+    {
+      title: 'Monto Pendiente (mes)',
+      value: formatCurrency(metrics.pendingAmountMTD, 'CLP'),
+      change: 'Total por cobrar',
+      icon: AlertTriangle,
+      color: 'from-orange-500 to-red-500',
+      progress: 0,
     },
     {
       title: 'Alumnos Activos',

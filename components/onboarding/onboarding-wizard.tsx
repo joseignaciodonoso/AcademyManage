@@ -73,16 +73,20 @@ const STEPS = [
 
 interface OnboardingWizardProps {
   academyId: string
+  organizationType?: "ACADEMY" | "CLUB" | "OTHER"
   onComplete?: () => void
 }
 
-export function OnboardingWizard({ academyId, onComplete }: OnboardingWizardProps) {
+export function OnboardingWizard({ academyId, organizationType = "ACADEMY", onComplete }: OnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [data, setData] = useState<OnboardingData>({})
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+
+  const isClub = organizationType === "CLUB"
+  const entityLabel = isClub ? "Club" : "Academia"
 
   const updateData = (stepData: Partial<OnboardingData>) => {
     setData((prev) => ({ ...prev, ...stepData }))
@@ -97,13 +101,32 @@ export function OnboardingWizard({ academyId, onComplete }: OnboardingWizardProp
     if (!step.required) return true
     switch (step.id) {
       case "academy":
-        return !!(data.academyName && data.discipline)
+        return !!(data.academyName?.trim() && data.discipline?.trim())
       case "branding":
-        return !!(data.brandPrimary && data.logoUrl)
+        return true // optional: fallback to platform defaults if empty
       case "plans":
         return !!(data.plans && data.plans.length > 0)
       default:
         return true
+    }
+  }
+  const missingFields = (stepIndex: number): string[] => {
+    const step = STEPS[stepIndex]
+    if (!step.required) return []
+    switch (step.id) {
+      case "academy": {
+        const m: string[] = []
+        if (!data.academyName?.trim()) m.push(isClub ? "Nombre del Club" : "Nombre de la Academia")
+        if (!data.discipline?.trim()) m.push(isClub ? "Deporte Principal" : "Disciplina Principal")
+        return m
+      }
+      case "branding": {
+        return [] // branding fields are optional in onboarding
+      }
+      case "plans":
+        return (data.plans && data.plans.length > 0) ? [] : ["Al menos 1 plan"]
+      default:
+        return []
     }
   }
   const handleNext = () => {
@@ -152,7 +175,7 @@ export function OnboardingWizard({ academyId, onComplete }: OnboardingWizardProp
       case "odoo":
         return <OdooConnectionStep data={data} onUpdate={updateData} />
       case "academy":
-        return <AcademyDataStep data={data} onUpdate={updateData} />
+        return <AcademyDataStep data={data} onUpdate={updateData} organizationType={organizationType} />
       case "branding":
         return <BrandingStep data={data} onUpdate={updateData} academyId={academyId} />
       // removed branches step UI
@@ -168,43 +191,50 @@ export function OnboardingWizard({ academyId, onComplete }: OnboardingWizardProp
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+      {/* Decorative background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="gradient-bg opacity-20 absolute inset-0" />
+        <div className="absolute top-10 -left-24 w-72 h-72 bg-[hsl(var(--primary,210_90%_56%))] rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float" />
+        <div className="absolute bottom-5 -right-20 w-80 h-80 bg-[hsl(var(--accent,262_83%_58%))] rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000" />
+      </div>
+
+      <div className="max-w-4xl mx-auto relative z-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Configuración Inicial</h1>
-          <p className="text-muted-foreground mb-4">
-            Configura tu academia paso a paso para comenzar a usar la plataforma
+          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-[hsl(var(--primary))] via-[hsl(var(--accent))] to-[hsl(var(--primary))] bg-clip-text text-transparent">Configuración Inicial</h1>
+          <p className="text-[hsl(var(--foreground))]/70 mb-6 text-lg">
+            Configura tu {entityLabel.toLowerCase()} paso a paso para comenzar a usar la plataforma
           </p>
-          <Progress value={(completedSteps.size / STEPS.length) * 100} className="w-full" />
+          <Progress value={(completedSteps.size / STEPS.length) * 100} className="w-full h-3 bg-[hsl(var(--muted))]/50" indicatorClassName="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))]" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Steps Sidebar */}
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Pasos</CardTitle>
+            <Card className="glass-effect rounded-2xl border-[hsl(var(--border))]/50 backdrop-blur-xl shadow-2xl">
+              <CardHeader className="bg-gradient-to-br from-[hsl(var(--primary))]/10 to-[hsl(var(--accent))]/10 border-b border-[hsl(var(--border))]/30">
+                <CardTitle className="text-lg font-semibold text-[hsl(var(--foreground))]">Pasos</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-2 pt-4">
                 {STEPS.map((step, index) => (
                   <div
                     key={step.id}
-                    className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${
+                    className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 ${
                       index === currentStep
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-gradient-to-r from-[hsl(var(--primary))]/30 to-[hsl(var(--accent))]/30 text-[hsl(var(--foreground))] shadow-lg border border-[hsl(var(--primary))]/40"
                         : completedSteps.has(index)
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                          : "text-muted-foreground"
+                          ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 border border-green-500/30"
+                          : "text-[hsl(var(--foreground))]/60 hover:bg-[hsl(var(--muted))]/30"
                     }`}
                   >
                     {completedSteps.has(index) ? (
-                      <CheckCircle className="h-4 w-4" />
+                      <CheckCircle className="h-5 w-5 text-green-400" />
                     ) : step.required ? (
-                      <AlertCircle className="h-4 w-4" />
+                      <AlertCircle className="h-5 w-5 text-amber-400" />
                     ) : (
-                      <div className="h-4 w-4 rounded-full border-2 border-current" />
+                      <div className="h-5 w-5 rounded-full border-2 border-current" />
                     )}
-                    <span className="text-sm font-medium">{step.title}</span>
+                    <span className="text-sm font-medium">{step.id === 'academy' ? `Datos del ${entityLabel}` : step.title}</span>
                   </div>
                 ))}
               </CardContent>
@@ -213,14 +243,14 @@ export function OnboardingWizard({ academyId, onComplete }: OnboardingWizardProp
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>{STEPS[currentStep].title}</CardTitle>
-                <CardDescription>
+            <Card className="glass-effect rounded-2xl border-[hsl(var(--border))]/50 backdrop-blur-xl shadow-2xl">
+              <CardHeader className="bg-gradient-to-br from-[hsl(var(--primary))]/10 to-[hsl(var(--accent))]/10 border-b border-[hsl(var(--border))]/30">
+                <CardTitle className="text-2xl font-bold text-[hsl(var(--foreground))]">{STEPS[currentStep].id === 'academy' ? `Datos del ${entityLabel}` : STEPS[currentStep].title}</CardTitle>
+                <CardDescription className="text-[hsl(var(--foreground))]/60">
                   Paso {currentStep + 1} de {STEPS.length}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-6">
                 {error && (
                   <Alert variant="destructive" className="mb-6">
                     <AlertDescription>{error}</AlertDescription>
@@ -229,17 +259,36 @@ export function OnboardingWizard({ academyId, onComplete }: OnboardingWizardProp
 
                 {renderStep()}
 
+                {!canProceed(currentStep) && (
+                  <div className="mt-4 text-sm text-[hsl(var(--foreground))]/70">
+                    <span className="font-medium">Faltan campos:</span> {missingFields(currentStep).join(", ")}
+                  </div>
+                )}
+
                 <div className="flex justify-between mt-8">
-                  <Button variant="outline" onClick={handlePrevious} disabled={currentStep === 0}>
+                  <Button 
+                    variant="outline" 
+                    onClick={handlePrevious} 
+                    disabled={currentStep === 0}
+                    className="border-[hsl(var(--border))] hover:bg-[hsl(var(--muted))]/50 hover:border-[hsl(var(--primary))]/40 transition-all duration-200"
+                  >
                     Anterior
                   </Button>
 
                   {currentStep === STEPS.length - 1 ? (
-                    <Button onClick={handleComplete} disabled={loading}>
+                    <Button 
+                      onClick={handleComplete} 
+                      disabled={loading}
+                      className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] hover:shadow-lg hover:scale-105 transition-all duration-200 font-semibold"
+                    >
                       {loading ? "Completando..." : "Completar Configuración"}
                     </Button>
                   ) : (
-                    <Button onClick={handleNext} disabled={!canProceed(currentStep)}>
+                    <Button 
+                      onClick={handleNext} 
+                      disabled={!canProceed(currentStep)}
+                      className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] hover:shadow-lg hover:scale-105 transition-all duration-200 font-semibold"
+                    >
                       Siguiente
                     </Button>
                   )}

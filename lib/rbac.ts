@@ -28,6 +28,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "audit:read",
   ],
   [UserRole.ACADEMY_ADMIN]: [
+    "academy:read",
+    "academy:write",
     "branch:read",
     "branch:write",
     "user:read",

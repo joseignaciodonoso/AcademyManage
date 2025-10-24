@@ -548,21 +548,37 @@ export default function StudentsPage() {
     return d
   }
 
+  function addMonthsUTCAnchored(date: Date, months: number) {
+    const y = date.getUTCFullYear()
+    const m = date.getUTCMonth()
+    const d = date.getUTCDate()
+    const base = new Date(Date.UTC(y, m, d, 12, 0, 0))
+    const day = base.getUTCDate()
+    base.setUTCMonth(base.getUTCMonth() + months)
+    if (base.getUTCDate() < day) base.setUTCDate(0)
+    return base
+  }
+
   function getNextPayment(student: Student): { date: Date | null; overdue: boolean } {
     const m = student.membership
     if (!m) return { date: null, overdue: false }
-    if (m.nextBillingDate) {
-      const dt = new Date(m.nextBillingDate)
-      return { date: dt, overdue: Date.now() > dt.getTime() }
-    }
-    // fallback: last paidAt or membership startDate
     const lastPaid = (student.payments || [])
       .filter((p) => p.status === "PAID" && p.paidAt)
       .sort((a, b) => new Date(b.paidAt as string).getTime() - new Date(a.paidAt as string).getTime())[0]
+    const months = monthsForPlanType(m.plan?.type)
+    if (m.nextBillingDate) {
+      const nb = new Date(m.nextBillingDate)
+      if (lastPaid?.paidAt) {
+        const computed = addMonthsUTCAnchored(new Date(lastPaid.paidAt), months)
+        const chosen = computed > nb ? computed : nb
+        return { date: chosen, overdue: Date.now() > chosen.getTime() }
+      }
+      return { date: nb, overdue: Date.now() > nb.getTime() }
+    }
+    // fallback: last paidAt or membership startDate
     const base = lastPaid?.paidAt ? new Date(lastPaid.paidAt) : (m.startDate ? new Date(m.startDate) : null)
     if (!base) return { date: null, overdue: false }
-    const months = monthsForPlanType(m.plan?.type)
-    const next = addMonths(base, months)
+    const next = addMonthsUTCAnchored(base, months)
     return { date: next, overdue: Date.now() > next.getTime() }
   }
 
@@ -994,15 +1010,25 @@ export default function StudentsPage() {
                                 info.date >= startOfMonth &&
                                 info.date < startOfNextMonth
                               )
+                              const paidThisStudent = (student.payments || []).some((p) => {
+                                if (p.status !== "PAID" || !p.paidAt) return false
+                                const d = new Date(p.paidAt)
+                                return d >= startOfMonth && d < startOfNextMonth
+                              })
+                              const showOverdue = info.overdue && !paidThisStudent
+                              const showDueBadge = dueThisMonth && !paidThisStudent
                               return (
-                                <div className={`flex items-center gap-2 text-sm ${info.overdue ? 'text-[hsl(var(--destructive))]/80' : 'text-[hsl(var(--foreground))]'}`}>
+                                <div className={`flex items-center gap-2 text-sm ${showOverdue ? 'text-[hsl(var(--destructive))]/80' : 'text-[hsl(var(--foreground))]'}`}>
                                   <div className="flex items-center">
-                                    <Calendar className={`mr-2 h-4 w-4 ${info.overdue ? 'text-[hsl(var(--destructive))]' : 'text-[hsl(var(--foreground))]/60'}`} />
+                                    <Calendar className={`mr-2 h-4 w-4 ${showOverdue ? 'text-[hsl(var(--destructive))]' : 'text-[hsl(var(--foreground))]/60'}`} />
                                     {formatDate(info.date.toISOString())}
-                                    {info.overdue && <span className="ml-2 text-[hsl(var(--destructive))]">⚠️</span>}
+                                    {showOverdue && <span className="ml-2 text-[hsl(var(--destructive))]">⚠️</span>}
                                   </div>
-                                  {dueThisMonth && (
+                                  {showDueBadge && (
                                     <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">Paga este mes</Badge>
+                                  )}
+                                  {!showDueBadge && paidThisStudent && (
+                                    <Badge className="bg-green-500/20 text-green-300 border-green-500/30">Pagado</Badge>
                                   )}
                                 </div>
                               )

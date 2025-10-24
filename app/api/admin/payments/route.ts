@@ -141,6 +141,19 @@ export async function POST(request: NextRequest) {
       include: { membership: { include: { plan: true, user: true } } },
     })
 
+    if (payment.membership?.plan) {
+      const months = payment.membership.plan.type === 'MONTHLY' ? 1 : payment.membership.plan.type === 'QUARTERLY' ? 3 : payment.membership.plan.type === 'YEARLY' ? 12 : 1
+      const base = payment.paidAt || new Date()
+      const next = new Date(base)
+      const day = next.getDate()
+      next.setMonth(next.getMonth() + months)
+      if (next.getDate() < day) next.setDate(0)
+      await prisma.membership.update({
+        where: { id: payment.membership.id },
+        data: { nextBillingDate: next, status: 'ACTIVE' },
+      })
+    }
+
     return NextResponse.json({
       payment: {
         id: payment.id,

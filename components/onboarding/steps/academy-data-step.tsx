@@ -9,6 +9,7 @@ import type { OnboardingData } from "../onboarding-wizard"
 interface AcademyDataStepProps {
   data: OnboardingData
   onUpdate: (data: Partial<OnboardingData>) => void
+  organizationType?: "ACADEMY" | "CLUB" | "OTHER"
 }
 
 const DISCIPLINES = [
@@ -25,31 +26,47 @@ const DISCIPLINES = [
   "Otro",
 ]
 
-export function AcademyDataStep({ data, onUpdate }: AcademyDataStepProps) {
+const SPORTS = [
+  "Basketball",
+  "Football",
+  "Volleyball",
+  "Tennis",
+  "Rugby",
+  "Hockey",
+  "Otro",
+]
+
+export function AcademyDataStep({ data, onUpdate, organizationType = "ACADEMY" }: AcademyDataStepProps) {
+  const isClub = organizationType === "CLUB"
+  const nameLabel = isClub ? "Nombre del Club *" : "Nombre de la Academia *"
+  const namePlaceholder = isClub ? "Club Deportivo Shohoku" : "Academia de Karate Santiago"
+  const primaryLabel = isClub ? "Deporte Principal *" : "Disciplina Principal *"
+  const primaryPlaceholder = isClub ? "Selecciona un deporte" : "Selecciona una disciplina"
+  const scheduleLabel = isClub ? "Horarios de Entrenamientos" : "Horarios de Atención"
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="academyName">Nombre de la Academia *</Label>
+          <Label htmlFor="academyName">{nameLabel}</Label>
           <Input
             id="academyName"
             value={data.academyName || ""}
             onChange={(e) => onUpdate({ academyName: e.target.value })}
-            placeholder="Academia de Karate Santiago"
+            placeholder={namePlaceholder}
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="discipline">Disciplina Principal *</Label>
+          <Label htmlFor="discipline">{primaryLabel}</Label>
           <Select value={data.discipline || ""} onValueChange={(value) => onUpdate({ discipline: value })}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecciona una disciplina" />
+              <SelectValue placeholder={primaryPlaceholder} />
             </SelectTrigger>
             <SelectContent>
-              {DISCIPLINES.map((discipline) => (
-                <SelectItem key={discipline} value={discipline}>
-                  {discipline}
+              {(isClub ? SPORTS : DISCIPLINES).map((val) => (
+                <SelectItem key={val} value={val}>
+                  {val}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -90,7 +107,7 @@ export function AcademyDataStep({ data, onUpdate }: AcademyDataStepProps) {
       </div>
 
       <div className="space-y-4">
-        <Label>Horarios de Atención</Label>
+        <Label>{scheduleLabel}</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[
             { key: "monday", label: "Lunes" },

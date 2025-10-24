@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
 
     // KPIs restricted to current month
-    const [paidSumAgg, totalCount, successCount, failedCount] = await Promise.all([
+    const [paidSumAgg, totalCount, successCount, failedCount, pendingCount, pendingSumAgg] = await Promise.all([
       prisma.payment.aggregate({
         where: { academyId, status: "PAID", paidAt: { gte: startOfMonth, lt: startOfNextMonth } },
         _sum: { amount: true },
@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
       prisma.payment.count({ where: { academyId, createdAt: { gte: startOfMonth, lt: startOfNextMonth } } }),
       prisma.payment.count({ where: { academyId, status: "PAID", paidAt: { gte: startOfMonth, lt: startOfNextMonth } } }),
       prisma.payment.count({ where: { academyId, status: "FAILED", createdAt: { gte: startOfMonth, lt: startOfNextMonth } } }),
+      prisma.payment.count({ where: { academyId, status: "PENDING", createdAt: { gte: startOfMonth, lt: startOfNextMonth } } }),
+      prisma.payment.aggregate({ where: { academyId, status: "PENDING", createdAt: { gte: startOfMonth, lt: startOfNextMonth } }, _sum: { amount: true } }),
     ])
 
     const totalRevenue = paidSumAgg._sum.amount || 0
@@ -63,6 +65,8 @@ export async function GET(request: NextRequest) {
       totalTransactions: totalCount,
       successfulPayments: successCount,
       failedPayments: failedCount,
+      pendingPayments: pendingCount,
+      pendingAmountMTD: pendingSumAgg._sum.amount || 0,
       averageTransaction,
       monthlyGrowth,
     })

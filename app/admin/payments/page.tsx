@@ -539,12 +539,20 @@ export default function PaymentsPage() {
       progress: Math.min((metrics.totalRevenue / 500000) * 100, 100),
     },
     {
-      title: 'Total Transacciones',
-      value: metrics.totalTransactions,
-      change: 'Pagos procesados',
-      icon: CreditCard,
-      color: 'from-blue-500 to-indigo-600',
-      progress: Math.min((metrics.totalTransactions / 1000) * 100, 100),
+      title: 'Pagos Pendientes',
+      value: metrics.pendingPayments ?? 0,
+      change: 'Pendientes del mes',
+      icon: Clock,
+      color: 'from-amber-500 to-yellow-600',
+      progress: 0,
+    },
+    {
+      title: 'Monto Pendiente',
+      value: formatCurrency(metrics.pendingAmountMTD ?? 0),
+      change: 'Por cobrar este mes',
+      icon: TrendingDown,
+      color: 'from-orange-500 to-red-500',
+      progress: 0,
     },
     {
       title: 'Pagos Exitosos',
@@ -553,14 +561,6 @@ export default function PaymentsPage() {
       icon: CheckCircle,
       color: 'from-emerald-500 to-green-600',
       progress: metrics.totalTransactions > 0 ? (metrics.successfulPayments / metrics.totalTransactions) * 100 : 0,
-    },
-    {
-      title: 'Ticket Promedio',
-      value: formatCurrency(metrics.averageTransaction),
-      change: 'Valor medio por transacción',
-      icon: TrendingUp,
-      color: 'from-purple-500 to-violet-600',
-      progress: Math.min((metrics.averageTransaction / 100000) * 100, 100),
     },
   ];
 
@@ -576,20 +576,22 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))] p-4 sm:p-6 lg:p-8 relative overflow-hidden">
-      {/* Elementos decorativos de fondo */}
-      <div className="absolute inset-0 gradient-bg opacity-20"></div>
-      <div className="absolute top-10 -left-24 w-72 h-72 bg-[hsl(var(--primary,210_90%_56%))] rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
-      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-[hsl(var(--accent,262_83%_58%))] rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
+    <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))] p-4 sm:p-6 lg:p-8 relative overflow-x-hidden">
+      {/* Elementos decorativos de fondo (con clipping para evitar overflow) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="gradient-bg opacity-20 absolute inset-0" />
+        <div className="absolute top-10 -left-24 w-72 h-72 bg-[hsl(var(--primary,210_90%_56%))] rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float" />
+        <div className="absolute bottom-5 -right-20 w-80 h-80 bg-[hsl(var(--accent,262_83%_58%))] rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000" />
+      </div>
 
-      <div className="relative z-10 space-y-8">
+      <div className="relative z-10 space-y-8 max-w-screen-2xl mx-auto">
         {/* Header */}
-        <header className="flex items-center justify-between">
+        <header className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Gestión de Pagos</h1>
             <p className="text-[hsl(var(--foreground))]/70">Monitorea y administra todas las transacciones de tu academia</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button 
               variant="outline" 
               className="bg-[hsl(var(--muted))]/60 border-border text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-all duration-300"
@@ -638,14 +640,14 @@ export default function PaymentsPage() {
         {/* Payments Table */}
         <Card className="glass-effect rounded-2xl border-border">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-[hsl(var(--foreground))]">Historial de Pagos</CardTitle>
                 <CardDescription className="text-[hsl(var(--foreground))]/70">
                   Todas las transacciones y su estado actual
                 </CardDescription>
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
                 <div className="flex items-center space-x-2">
                   <Filter className="h-4 w-4 text-[hsl(var(--foreground))]/60" />
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -675,22 +677,23 @@ export default function PaymentsPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="rounded-lg border border-border overflow-hidden bg-[hsl(var(--background))]/40 backdrop-blur-sm">
-              <Table>
+          <CardContent className="max-w-full overflow-x-auto p-0">
+            <div className="w-full">
+              <div className="rounded-lg border border-border bg-[hsl(var(--background))]/40 backdrop-blur-sm">
+                <Table className="min-w-[1200px]">
                 <TableHeader>
                   <TableRow className="bg-[hsl(var(--muted))]/40 hover:bg-[hsl(var(--muted))]/60 border-border">
                     <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Cliente</TableHead>
                     <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Plan</TableHead>
-                    <TableHead onClick={() => toggleSort("amount")} className="font-semibold text-[hsl(var(--foreground))]/80 cursor-pointer select-none">
+                    <TableHead onClick={() => toggleSort("amount")} className="font-semibold text-[hsl(var(--foreground))]/80 cursor-pointer select-none whitespace-nowrap">
                       Monto {renderSortIcon("amount")}
                     </TableHead>
-                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Estado</TableHead>
-                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80">Método</TableHead>
-                    <TableHead onClick={() => toggleSort("date")} className="font-semibold text-[hsl(var(--foreground))]/80 cursor-pointer select-none">
+                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80 whitespace-nowrap">Estado</TableHead>
+                    <TableHead className="font-semibold text-[hsl(var(--foreground))]/80 whitespace-nowrap">Método</TableHead>
+                    <TableHead onClick={() => toggleSort("date")} className="font-semibold text-[hsl(var(--foreground))]/80 cursor-pointer select-none whitespace-nowrap">
                       Fecha {renderSortIcon("date")}
                     </TableHead>
-                    <TableHead className="text-right font-semibold text-[hsl(var(--foreground))]/80">ID Transacción</TableHead>
+                    <TableHead className="text-right font-semibold text-[hsl(var(--foreground))]/80 whitespace-nowrap">ID Transacción</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -719,8 +722,8 @@ export default function PaymentsPage() {
                       <TableRow key={payment.id} className="hover:bg-[hsl(var(--background))]/30 transition-colors border-border/50">
                         <TableCell className="py-4">
                           <div className="space-y-1">
-                            <div className="font-medium text-[hsl(var(--foreground))]">{payment.user.name}</div>
-                            <div className="text-sm text-[hsl(var(--foreground))]/70">{payment.user.email}</div>
+                            <div className="font-medium text-[hsl(var(--foreground))] break-words">{payment.user.name}</div>
+                            <div className="text-sm text-[hsl(var(--foreground))]/70 break-all">{payment.user.email}</div>
                           </div>
                         </TableCell>
                         <TableCell className="py-4">
@@ -736,25 +739,25 @@ export default function PaymentsPage() {
                             <span className="text-[hsl(var(--foreground))]/70">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="py-4">
+                        <TableCell className="py-4 whitespace-nowrap">
                           <div className="font-medium text-[hsl(var(--foreground))]">
                             {formatCurrency(payment.amount, payment.currency)}
                           </div>
                         </TableCell>
-                        <TableCell className="py-4">
+                        <TableCell className="py-4 whitespace-nowrap">
                           {getStatusBadge(payment.status)}
                         </TableCell>
-                        <TableCell className="py-4">
-                          <div className="text-[hsl(var(--foreground))]">{formatMethod(payment.method)}</div>
+                        <TableCell className="py-4 whitespace-nowrap">
+                          <div className="text-[hsl(var(--foreground))] whitespace-nowrap">{formatMethod(payment.method)}</div>
                         </TableCell>
-                        <TableCell className="py-4">
-                          <div className="text-sm text-[hsl(var(--foreground))]/75">
+                        <TableCell className="py-4 whitespace-nowrap">
+                          <div className="text-sm text-[hsl(var(--foreground))]/75 whitespace-nowrap">
                             {payment.paidAt ? formatDate(payment.paidAt) : formatDate(payment.createdAt)}
                           </div>
                         </TableCell>
                         <TableCell className="text-right py-4">
-                          <div className="flex items-center justify-end gap-2 text-sm text-[hsl(var(--foreground))]/70 font-mono">
-                            <span>{payment.transactionId || payment.id.slice(-8)}</span>
+                          <div className="flex items-center justify-end gap-2 text-sm text-[hsl(var(--foreground))]/70 font-mono break-all">
+                            <span className="break-all">{payment.transactionId || payment.id.slice(-8)}</span>
                             <Button
                               variant="outline"
                               size="sm"
@@ -827,7 +830,8 @@ export default function PaymentsPage() {
                     ))
                   )}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             </div>
           </CardContent>
         </Card>

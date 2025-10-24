@@ -55,11 +55,11 @@ export default async function OnboardingPage() {
     })
   }
 
-  // Check if onboarding is already completed
+  // Check if onboarding is already completed and get type
   const academy = academyId
     ? await prisma.academy.findUnique({
     where: { id: academyId },
-    select: { onboardingCompleted: true },
+    select: { onboardingCompleted: true, type: true },
   })
     : null
 
@@ -68,6 +68,6 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <OnboardingWizard academyId={academyId as string} />
+    <OnboardingWizard academyId={academyId as string} organizationType={(academy?.type as any) || 'ACADEMY'} />
   )
 }

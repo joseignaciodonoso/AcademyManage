@@ -26,6 +26,12 @@ interface TrainingSession {
 export default function TrainingsPage() {
   const params = useParams()
   const router = useRouter()
+  // Redirect to the builder page to use the correct weekly schedules constructor
+  useEffect(() => {
+    if (params?.orgSlug) {
+      router.replace(`/${params.orgSlug}/club/training`)
+    }
+  }, [])
   const [sessions, setSessions] = useState<TrainingSession[]>([])
   const [filteredSessions, setFilteredSessions] = useState<TrainingSession[]>([])
   const [loading, setLoading] = useState(true)

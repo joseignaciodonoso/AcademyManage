@@ -88,6 +88,10 @@ export default function AdminCalendarPage() {
     description: string
     published: boolean
     important: boolean
+    // Match-specific fields for CHAMPIONSHIP events
+    opponent?: string
+    location?: string
+    homeAway?: "HOME" | "AWAY"
   }>({ title: "", type: "other", allDay: true, date: "", startTime: "09:00", endTime: "10:00", description: "", published: true, important: false })
 
   // Simple curriculum planner (restore)
@@ -962,6 +966,44 @@ export default function AdminCalendarPage() {
                     </>
                   )}
                 </div>
+                {/* Match-specific fields for CHAMPIONSHIP */}
+                {eventForm.type === "championship" && (
+                  <div className="grid gap-3 p-3 border border-primary/20 rounded-lg bg-primary/5">
+                    <div className="text-sm font-medium text-primary">Datos del Partido</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="grid gap-1">
+                        <Label>Oponente</Label>
+                        <Input 
+                          value={eventForm.opponent || ""} 
+                          onChange={(e) => setEventForm(f => ({ ...f, opponent: e.target.value }))} 
+                          className="bg-[hsl(var(--muted))]/50 border-border" 
+                          placeholder="Ryonan"
+                        />
+                      </div>
+                      <div className="grid gap-1">
+                        <Label>Condición</Label>
+                        <Select value={eventForm.homeAway || ""} onValueChange={(v) => setEventForm(f => ({ ...f, homeAway: v as any }))}>
+                          <SelectTrigger className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
+                            <SelectValue placeholder="Local/Visita" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[hsl(var(--background))] border-border">
+                            <SelectItem value="HOME">Local</SelectItem>
+                            <SelectItem value="AWAY">Visita</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid gap-1">
+                      <Label>Ubicación</Label>
+                      <Input 
+                        value={eventForm.location || ""} 
+                        onChange={(e) => setEventForm(f => ({ ...f, location: e.target.value }))} 
+                        className="bg-[hsl(var(--muted))]/50 border-border" 
+                        placeholder="Gimnasio Municipal"
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="grid gap-1">
                   <Label>Descripción</Label>
                   <Textarea rows={3} value={eventForm.description} onChange={(e) => setEventForm(f => ({ ...f, description: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
@@ -988,6 +1030,12 @@ export default function AdminCalendarPage() {
                     setEventError(null)
                     if (!eventForm.title?.trim()) { setEventError("El título es obligatorio"); return }
                     if (!eventForm.date) { setEventError("La fecha es obligatoria"); return }
+                    // Championship-specific validations
+                    if (eventForm.type === "championship") {
+                      if (!eventForm.opponent?.trim()) { setEventError("El oponente es obligatorio para campeonatos"); return }
+                      if (!eventForm.location?.trim()) { setEventError("La ubicación es obligatoria para campeonatos"); return }
+                      if (!eventForm.homeAway) { setEventError("Debe especificar si es local o visita"); return }
+                    }
                     const payload = { ...eventForm }
                     try {
                       setSavingEvent(true)
@@ -1009,7 +1057,7 @@ export default function AdminCalendarPage() {
                       // Background sync to avoid any mismatch
                       try { await fetchMonthEvents() } catch {}
                       setOpenNewEvent(false)
-                      setEventForm((f) => ({ ...f, title: "", description: "" }))
+                      setEventForm((f) => ({ ...f, title: "", description: "", opponent: "", location: "", homeAway: undefined }))
                     } catch (e) {
                       setEventError("Error de red al guardar. Intenta nuevamente.")
                     } finally {

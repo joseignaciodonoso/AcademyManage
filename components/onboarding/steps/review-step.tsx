@@ -16,17 +16,6 @@ export function ReviewStep({ data }: ReviewStepProps) {
 
   const sections = [
     {
-      title: "Conexión con Odoo",
-      icon: Building,
-      complete: isComplete("odooConnectionVerified", ["odooBaseUrl", "odooDatabase", "odooUsername", "odooPassword"]),
-      data: {
-        "URL Base": data.odooBaseUrl,
-        "Base de Datos": data.odooDatabase,
-        Usuario: data.odooUsername,
-        Estado: data.odooConnectionVerified ? "Verificado" : "Pendiente",
-      },
-    },
-    {
       title: "Datos de la Academia",
       icon: Building,
       complete: isComplete("academyName", ["academyName", "discipline"]),
@@ -48,15 +37,6 @@ export function ReviewStep({ data }: ReviewStepProps) {
         "Logo Oscuro": data.logoDarkUrl ? "Configurado" : "No configurado",
         Favicon: data.faviconUrl ? "Configurado" : "No configurado",
         Tema: data.defaultThemeMode || "Sistema",
-      },
-    },
-    {
-      title: "Sedes",
-      icon: MapPin,
-      complete: (data.branches?.length || 0) > 0,
-      data: {
-        "Número de Sedes": data.branches?.length || 0,
-        "Sedes Configuradas": data.branches?.map((b) => b.name).join(", ") || "Ninguna",
       },
     },
     {
