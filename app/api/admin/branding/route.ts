@@ -93,6 +93,8 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json()
+    console.log("PUT /api/admin/branding - Body recibido:", body)
+    
     const {
       name,
       brandPrimary,
@@ -117,19 +119,22 @@ export async function PUT(req: Request) {
     if (!targetAcademyId) {
       return NextResponse.json({ error: "Academia no especificada" }, { status: 400 })
     }
+    
+    console.log("Target Academy ID:", targetAcademyId)
+    console.log("Valores a actualizar:", { brandPrimary, brandSecondary, brandAccent, brandNeutral, brandBackground, brandForeground })
 
     const updated = await prisma.academy.update({
       where: { id: targetAcademyId },
       data: resetToOriginal
         ? {
-            // Reset to Prisma defaults to indicate "unconfigured"
-            brandPrimary: "#000000",
-            brandSecondary: "#666666",
-            brandAccent: "#0066cc",
-            brandNeutral: "#f5f5f5",
-            brandBackground: "#ffffff",
-            brandForeground: "#000000",
-            defaultThemeMode: "system",
+            // Reset to ORIGINAL app colors (dark theme)
+            brandPrimary: "#3b82f6",    // blue-500
+            brandSecondary: "#64748b",  // slate-500
+            brandAccent: "#8b5cf6",     // violet-500
+            brandNeutral: "#1f2937",    // slate-800
+            brandBackground: "#0b1220", // dark base
+            brandForeground: "#e5e7eb", // gray-200
+            defaultThemeMode: "dark",
             logoUrl: null,
             logoDarkUrl: null,
             faviconUrl: null,
@@ -137,14 +142,14 @@ export async function PUT(req: Request) {
             ...(name ? { name } : {}),
           }
         : {
-            ...(name ? { name } : {}),
-            ...(brandPrimary ? { brandPrimary } : {}),
-            ...(brandSecondary ? { brandSecondary } : {}),
-            ...(brandAccent ? { brandAccent } : {}),
-            ...(brandNeutral ? { brandNeutral } : {}),
-            ...(brandBackground ? { brandBackground } : {}),
-            ...(brandForeground ? { brandForeground } : {}),
-            ...(defaultThemeMode ? { defaultThemeMode } : {}),
+            ...(name !== undefined ? { name } : {}),
+            ...(brandPrimary !== undefined ? { brandPrimary } : {}),
+            ...(brandSecondary !== undefined ? { brandSecondary } : {}),
+            ...(brandAccent !== undefined ? { brandAccent } : {}),
+            ...(brandNeutral !== undefined ? { brandNeutral } : {}),
+            ...(brandBackground !== undefined ? { brandBackground } : {}),
+            ...(brandForeground !== undefined ? { brandForeground } : {}),
+            ...(defaultThemeMode !== undefined ? { defaultThemeMode } : {}),
             ...(logoUrl !== undefined ? { logoUrl } : {}),
             ...(logoDarkUrl !== undefined ? { logoDarkUrl } : {}),
             ...(faviconUrl !== undefined ? { faviconUrl } : {}),

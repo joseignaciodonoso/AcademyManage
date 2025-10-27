@@ -21,7 +21,19 @@ export default async function PostSignIn({ searchParams }: { searchParams: { org
   }
 
   if (role === "SUPER_ADMIN" || role === "ACADEMY_ADMIN") {
-    if (org) redirect(`/${org}/admin/dashboard`)
+    if (org) {
+      // Check if this is a CLUB type organization to redirect appropriately
+      const academy = await prisma.academy.findUnique({ 
+        where: { id: academyId }, 
+        select: { type: true } 
+      })
+      
+      if (academy?.type === "CLUB") {
+        redirect(`/${org}/club/dashboard`)
+      } else {
+        redirect(`/${org}/admin/dashboard`)
+      }
+    }
     redirect("/admin/dashboard")
   }
 

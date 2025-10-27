@@ -1,0 +1,10 @@
+const matchDate = new Date('2025-10-11T06:00:00-03:00')
+const now = new Date()
+const fromDate30d = new Date()
+fromDate30d.setDate(now.getDate() - 30)
+
+console.log('Match date:', matchDate.toISOString())
+console.log('Now:', now.toISOString())
+console.log('From date (30d):', fromDate30d.toISOString())
+console.log('Days difference:', Math.floor((now.getTime() - matchDate.getTime()) / (1000 * 60 * 60 * 24)))
+console.log('Is within 30 days?', matchDate >= fromDate30d && matchDate <= now)

@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No academy found" }, { status: 404 })
     }
 
-    if (user.academy?.type !== "CLUB") {
+    // Allow SUPER_ADMIN to query metrics (optionally with academyId). Enforce CLUB only for non SUPER_ADMIN users.
+    if (user.role !== "SUPER_ADMIN" && user.academy?.type !== "CLUB") {
       return NextResponse.json(
         { error: "This feature is only available for clubs" },
         { status: 403 }
@@ -33,6 +34,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const sport = searchParams.get("sport") as "FOOTBALL" | "BASKETBALL" | null
     const period = searchParams.get("period") || "30d"
+    const qAcademyId = searchParams.get("academyId")
+
+    // Resolve academyId from session or explicit param (only if same academy or SUPER_ADMIN)
+    const sessionAcademyId = user.academyId
+    const academyId = (qAcademyId && (user.role === "SUPER_ADMIN" || qAcademyId === sessionAcademyId))
+      ? qAcademyId
+      : sessionAcademyId
+
+    console.log(`GET /api/club/metrics/team - Sport: ${sport}, Period: ${period}, AcademyId: ${academyId}`)
 
     // Calculate date range
     const now = new Date()
@@ -61,13 +71,15 @@ export async function GET(request: NextRequest) {
     // Get matches in period
     const matches = await prisma.match.findMany({
       where: {
-        academyId: user.academyId,
+        academyId,
         ...(sport ? { sport } : {}),
         date: {
           gte: fromDate,
           lte: now,
         },
-        status: "FINISHED",
+        status: {
+          in: ["FINISHED", "COMPLETED"] // Support both status values
+        },
       },
       include: {
         stats: {
@@ -86,12 +98,16 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    console.log(`Found ${matches.length} matches in period`)
+    
     // Calculate metrics
     const matchesPlayed = matches.length
     const wins = matches.filter(m => m.result === "WIN").length
     const draws = matches.filter(m => m.result === "DRAW").length
     const losses = matches.filter(m => m.result === "LOSS").length
     const winRate = matchesPlayed > 0 ? (wins / matchesPlayed) * 100 : 0
+    
+    console.log(`Metrics: ${wins}W ${draws}D ${losses}L - Win Rate: ${winRate.toFixed(1)}%`)
 
     // Offensive/Defensive stats
     let totalGoalsFor = 0

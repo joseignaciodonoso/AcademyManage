@@ -14,18 +14,62 @@ export default function ClubDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [sport, setSport] = useState<"FOOTBALL" | "BASKETBALL">("FOOTBALL")
   const [period, setPeriod] = useState("30d")
+  const [clubSport, setClubSport] = useState<"FOOTBALL" | "BASKETBALL" | null>(null)
+  const [academyId, setAcademyId] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchMetrics()
-  }, [sport, period])
+    fetchClubSport()
+  }, [])
+
+  // When clubSport loads, sync it into sport once
+  useEffect(() => {
+    if (clubSport) {
+      setSport(clubSport)
+    }
+  }, [clubSport])
+
+  // Fetch metrics whenever sport/period/academyId change
+  useEffect(() => {
+    if (sport) {
+      fetchMetrics()
+    }
+  }, [sport, period, academyId])
+
+  const fetchClubSport = async () => {
+    try {
+      console.log("Fetching club sport...")
+      const response = await fetch(`/api/admin/academies/current`)
+      if (response.ok) {
+        const data = await response.json()
+        console.log("Academy data:", data)
+        const sport = data.academy?.sport || "FOOTBALL"
+        console.log("Club sport:", sport)
+        setClubSport(sport)
+        if (data.academy?.id) setAcademyId(data.academy.id)
+      } else {
+        console.error("Failed to fetch academy:", response.status)
+        setClubSport("FOOTBALL")
+      }
+    } catch (error) {
+      console.error("Error fetching club sport:", error)
+      setClubSport("FOOTBALL") // Default fallback
+    }
+  }
 
   const fetchMetrics = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/club/metrics/team?sport=${sport}&period=${period}`)
+      console.log(`Fetching metrics for sport: ${sport}, period: ${period}`)
+      const academyParam = academyId ? `&academyId=${academyId}` : ""
+      const response = await fetch(`/api/club/metrics/team?sport=${sport}&period=${period}${academyParam}`)
       if (response.ok) {
         const data = await response.json()
+        console.log("Metrics data:", data)
         setMetrics(data.metrics)
+      } else {
+        console.error("Failed to fetch metrics:", response.status)
+        const errorData = await response.json()
+        console.error("Error details:", errorData)
       }
     } catch (error) {
       console.error("Error fetching metrics:", error)
@@ -68,13 +112,18 @@ export default function ClubDashboardPage() {
         </div>
         
         <div className="flex gap-2">
-          {/* Sport Selector */}
-          <Tabs value={sport} onValueChange={(v) => setSport(v as "FOOTBALL" | "BASKETBALL")}>
-            <TabsList>
-              <TabsTrigger value="FOOTBALL">⚽ Fútbol</TabsTrigger>
-              <TabsTrigger value="BASKETBALL">🏀 Básquet</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {/* Sport Selector - Only show if we have multiple sports or want to allow switching */}
+          {clubSport && (
+            <Tabs value={sport} onValueChange={(v) => setSport(v as "FOOTBALL" | "BASKETBALL")}>
+              <TabsList>
+                {clubSport === "FOOTBALL" ? (
+                  <TabsTrigger value="FOOTBALL">⚽ Fútbol</TabsTrigger>
+                ) : (
+                  <TabsTrigger value="BASKETBALL">🏀 Básquet</TabsTrigger>
+                )}
+              </TabsList>
+            </Tabs>
+          )}
 
           {/* Period Selector */}
           <select

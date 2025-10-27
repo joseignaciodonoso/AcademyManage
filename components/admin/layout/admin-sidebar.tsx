@@ -123,15 +123,15 @@ const clubNavigation = [
   },
 ]
 
-const settingsNavigation = [
+const getSettingsNavigation = (isClub: boolean) => [
   {
     name: "Branding",
-    href: "/admin/settings/branding",
+    href: isClub ? "/club/settings/branding" : "/admin/settings/branding",
     icon: Palette,
   },
   {
     name: "General",
-    href: "/admin/settings",
+    href: isClub ? "/club/settings" : "/admin/settings",
     icon: Settings,
   },
 ]
@@ -219,7 +219,7 @@ function SidebarContent({ prefix, role, organizationType }: { prefix?: string; r
               </div>
             </div>
             <div className="space-y-2">
-              {settingsNavigation.map((item) => {
+              {getSettingsNavigation(isClub).map((item) => {
                 const href = `${pref}${item.href}`
                 const isActive = pathname === href
                 return (

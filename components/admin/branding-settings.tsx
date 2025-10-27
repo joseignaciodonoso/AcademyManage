@@ -35,13 +35,13 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
   const [activeTab, setActiveTab] = useState<"general" | "colors" | "logos" | "preview">("general")
   const [data, setData] = useState<BrandingData>({
     name: academy?.name || "",
-    brandPrimary: "#0066cc",
-    brandSecondary: "#666666",
-    brandAccent: "#ff6b35",
-    brandNeutral: "#f5f5f5",
-    brandBackground: "#ffffff",
-    brandForeground: "#000000",
-    defaultThemeMode: "system",
+    brandPrimary: "#3b82f6",    // blue-500
+    brandSecondary: "#64748b",  // slate-500
+    brandAccent: "#8b5cf6",     // violet-500
+    brandNeutral: "#1f2937",    // slate-800
+    brandBackground: "#0b1220", // dark base
+    brandForeground: "#e5e7eb", // gray-200
+    defaultThemeMode: "dark",
   })
 
   const [contrastCheck, setContrastCheck] = useState<{
@@ -303,16 +303,16 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
         // Reset only general fields
         payload = { ...base, defaultThemeMode: "system" }
       } else if (activeTab === "colors") {
-        // Reset only color fields to Prisma defaults (same used in API GET comments)
+        // Reset to ORIGINAL app colors (dark theme)
         payload = {
           ...base,
-          brandPrimary: "#000000",
-          brandSecondary: "#666666",
-          brandAccent: "#0066cc",
-          brandNeutral: "#f5f5f5",
-          brandBackground: "#ffffff",
-          brandForeground: "#000000",
-          defaultThemeMode: "system",
+          brandPrimary: "#3b82f6",    // blue-500
+          brandSecondary: "#64748b",  // slate-500
+          brandAccent: "#8b5cf6",     // violet-500
+          brandNeutral: "#1f2937",    // slate-800
+          brandBackground: "#0b1220", // dark base
+          brandForeground: "#e5e7eb", // gray-200
+          defaultThemeMode: "dark",
         }
       } else if (activeTab === "logos") {
         // Reset only logos
@@ -322,17 +322,24 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
         return
       }
 
+      console.log("Enviando payload de reset:", payload)
       const res = await fetch("/api/admin/branding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
-      if (!res.ok) throw new Error("Error al restablecer")
+      console.log("Respuesta del servidor:", res.status, res.ok)
+      if (!res.ok) {
+        const errorData = await res.json()
+        console.error("Error del servidor:", errorData)
+        throw new Error("Error al restablecer")
+      }
 
       // Reload branding and apply
       const response = await fetch(`/api/admin/branding?academyId=${academy.id}`)
       if (response.ok) {
         const branding = await response.json()
+        console.log("Branding recargado desde API:", branding)
         setData((prev) => ({
           ...prev,
           name: branding.name || prev.name,
