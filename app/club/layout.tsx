@@ -36,8 +36,12 @@ export default async function ClubLayout({ children }: { children: React.ReactNo
   } catch {}
 
   return (
-    <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+    <div className="relative min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+      <div className="pointer-events-none absolute inset-0 opacity-20">
+        <div className="absolute -top-24 -left-28 h-64 w-64 rounded-full bg-[hsl(var(--primary))] blur-3xl" />
+        <div className="absolute bottom-0 -right-28 h-80 w-80 rounded-full bg-[hsl(var(--accent))] blur-3xl" />
+      </div>
+      <div className="relative z-10 grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
         {/* Sidebar */}
         <div className="hidden md:block">
           <AdminSidebar role={session.user.role} organizationType={organizationType} />

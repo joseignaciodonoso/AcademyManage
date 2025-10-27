@@ -143,10 +143,13 @@ export default function ClubDashboardPage() {
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Record */}
-        <Card>
+        <Card className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--primary))]/10 to-transparent border-[hsl(var(--primary))]/30">
+          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[hsl(var(--primary))]/15" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Récord</CardTitle>
-            <Trophy className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold text-[hsl(var(--foreground))]">Récord</CardTitle>
+            <div className="p-2 rounded-lg bg-[hsl(var(--primary))]/15">
+              <Trophy className="h-4 w-4 text-[hsl(var(--primary))]" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{record}</div>
@@ -157,12 +160,15 @@ export default function ClubDashboardPage() {
         </Card>
 
         {/* Offensive */}
-        <Card>
+        <Card className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--accent))]/10 to-transparent border-[hsl(var(--accent))]/30">
+          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[hsl(var(--accent))]/15" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-semibold text-[hsl(var(--foreground))]">
               {sport === "FOOTBALL" ? "Goles a Favor" : "Puntos a Favor"}
             </CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 rounded-lg bg-[hsl(var(--accent))]/15">
+              <Target className="h-4 w-4 text-[hsl(var(--accent))]" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -178,12 +184,15 @@ export default function ClubDashboardPage() {
         </Card>
 
         {/* Defensive */}
-        <Card>
+        <Card className="relative overflow-hidden bg-gradient-to-br from-red-500/10 to-transparent border-red-500/30">
+          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-red-500/15" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-semibold text-[hsl(var(--foreground))]">
               {sport === "FOOTBALL" ? "Goles en Contra" : "Puntos en Contra"}
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 rounded-lg bg-red-500/15">
+              <TrendingUp className="h-4 w-4 text-red-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -199,10 +208,13 @@ export default function ClubDashboardPage() {
         </Card>
 
         {/* Attendance */}
-        <Card>
+        <Card className="relative overflow-hidden bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
+          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-green-500/15" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Asistencia</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold text-[hsl(var(--foreground))]">Asistencia</CardTitle>
+            <div className="p-2 rounded-lg bg-green-500/15">
+              <Users className="h-4 w-4 text-green-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -218,7 +230,8 @@ export default function ClubDashboardPage() {
       {/* Top Performers and Recent Matches */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Top Performers */}
-        <Card>
+        <Card className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--primary))]/5 to-transparent border-[hsl(var(--primary))]/30">
+          <div className="pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-[hsl(var(--primary))]/15" />
           <CardHeader>
             <CardTitle>🏆 Top Performers</CardTitle>
             <CardDescription>Mejores jugadores del período</CardDescription>
@@ -313,7 +326,8 @@ export default function ClubDashboardPage() {
         </Card>
 
         {/* Recent Form Chart */}
-        <Card>
+        <Card className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--accent))]/5 to-transparent border-[hsl(var(--accent))]/30">
+          <div className="pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-[hsl(var(--accent))]/15" />
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />

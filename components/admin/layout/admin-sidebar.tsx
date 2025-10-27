@@ -161,7 +161,11 @@ function SidebarContent({ prefix, role, organizationType }: { prefix?: string; r
   const mainNav = filtered
 
   return (
-    <div className="flex h-full flex-col bg-[hsl(var(--background))]">
+    <div className="relative flex h-full flex-col bg-gradient-to-b from-[hsl(var(--background))] via-[hsl(var(--background))]/85 to-[hsl(var(--muted))]/35 backdrop-blur-md border-r border-[hsl(var(--muted))]/40">
+      <div className="pointer-events-none absolute inset-0 opacity-30">
+        <div className="absolute -top-16 -left-20 h-44 w-44 rounded-full bg-[hsl(var(--primary))] blur-2xl" />
+        <div className="absolute bottom-10 -right-16 h-56 w-56 rounded-full bg-[hsl(var(--accent))] blur-3xl" />
+      </div>
       {/* Header */}
       <div className="flex h-16 items-center border-b border-border px-6 bg-[hsl(var(--background))]">
         <Link href={`${pref}${isClub ? '/club/dashboard' : '/admin/dashboard'}`} className="flex items-center gap-3 font-bold text-white group transition-all duration-200 hover:scale-105">
