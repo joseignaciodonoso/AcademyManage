@@ -468,6 +468,7 @@ export default function ExpensesPage() {
             </CardContent>
           </Card>
         </div>
+      )}
 
       {/* Filters */}
       <Card>

@@ -16,10 +16,7 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell,
-  LineChart,
-  Line,
-  Legend
+  Cell
 } from "recharts"
 import { 
   TrendingUp, 
@@ -28,8 +25,7 @@ import {
   FileText, 
   Calendar,
   Target,
-  AlertTriangle,
-  CheckCircle
+  AlertTriangle
 } from "lucide-react"
 import { ExpensesNavigation } from "@/components/club/expenses/ExpensesNavigation"
 
@@ -161,10 +157,13 @@ export default function ExpensesDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Cargando dashboard...</p>
+      <div className="min-h-screen">
+        <ExpensesNavigation />
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Cargando dashboard...</p>
+          </div>
         </div>
       </div>
     )
@@ -172,14 +171,16 @@ export default function ExpensesDashboardPage() {
 
   if (!stats) {
     return (
-      <div className="container mx-auto p-6">
-        <Card>
-          <CardContent className="text-center py-8">
-            <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No se pudieron cargar las estadísticas</p>
-          </CardContent>
-        </Card>
-      </div>
+      <div className="min-h-screen">
+        <ExpensesNavigation />
+        <div className="container mx-auto p-6">
+          <Card>
+            <CardContent className="text-center py-8">
+              <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No se pudieron cargar las estadísticas</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
@@ -188,235 +189,269 @@ export default function ExpensesDashboardPage() {
     <div className="min-h-screen">
       <ExpensesNavigation />
       <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard de Gastos</h1>
-          <p className="text-muted-foreground">Análisis y KPIs de gastos del club</p>
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard de Gastos</h1>
+            <p className="text-muted-foreground">Análisis y KPIs de gastos del club</p>
+          </div>
+          
+          <div className="flex gap-4">
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 5 }, (_, i) => {
+                  const year = new Date().getFullYear() - i
+                  return (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todo el año</SelectItem>
+                {Array.from({ length: 12 }, (_, i) => {
+                  const month = i + 1
+                  const monthName = new Date(2024, i, 1).toLocaleDateString('es-ES', { month: 'long' })
+                  return (
+                    <SelectItem key={month} value={month.toString()}>
+                      {monthName}
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        
-        <div className="flex gap-4">
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 5 }, (_, i) => {
-                const year = new Date().getFullYear() - i
-                return (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
 
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todo el año</SelectItem>
-              {Array.from({ length: 12 }, (_, i) => {
-                const month = i + 1
-                const monthName = new Date(2024, i, 1).toLocaleDateString('es-ES', { month: 'long' })
-                return (
-                  <SelectItem key={month} value={month.toString()}>
-                    {monthName}
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Gastos</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(stats.summary.totalExpenses)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {stats.summary.totalCount} gastos en {stats.summary.period}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Promedio por Gasto</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(stats.summary.averageExpense)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Gasto promedio
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Variación</CardTitle>
+              {stats.summary.growthRate >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-red-500" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-green-500" />
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${
+                stats.summary.growthRate >= 0 ? 'text-red-500' : 'text-green-500'
+              }`}>
+                {stats.summary.growthRate >= 0 ? '+' : ''}{stats.summary.growthRate.toFixed(1)}%
+              </div>
+              <p className="text-xs text-muted-foreground">
+                vs período anterior
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Categoría Principal</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {stats.categoryStats[0]?.percentage.toFixed(1) || 0}%
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {stats.categoryStats[0]?.categoryName || "Sin gastos"}
+              </p>
+            </CardContent>
+          </Card>
         </div>
-      </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Gastos</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(stats.summary.totalExpenses)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {stats.summary.totalCount} gastos en {stats.summary.period}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Monthly Expenses Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Gastos Mensuales</CardTitle>
+              <CardDescription>Evolución de gastos por mes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlyChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis tickFormatter={formatCompactCurrency} />
+                  <Tooltip 
+                    formatter={(value: number) => [formatCurrency(value), "Total"]}
+                    labelFormatter={(label) => `Mes: ${label}`}
+                  />
+                  <Bar dataKey="total" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Promedio por Gasto</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(stats.summary.averageExpense)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Gasto promedio
-            </p>
-          </CardContent>
-        </Card>
+          {/* Category Distribution Pie Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Distribución por Categoría</CardTitle>
+              <CardDescription>Porcentaje de gastos por categoría</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Variación</CardTitle>
-            {stats.summary.growthRate >= 0 ? (
-              <TrendingUp className="h-4 w-4 text-red-500" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-green-500" />
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${
-              stats.summary.growthRate >= 0 ? 'text-red-500' : 'text-green-500'
-            }`}>
-              {stats.summary.growthRate >= 0 ? '+' : ''}{stats.summary.growthRate.toFixed(1)}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              vs período anterior
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Categoría Principal</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.categoryStats[0]?.percentage.toFixed(1) || 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {stats.categoryStats[0]?.categoryName || "Sin gastos"}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Expenses Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Gastos Mensuales</CardTitle>
-            <CardDescription>Evolución de gastos por mes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis tickFormatter={formatCompactCurrency} />
-                <Tooltip 
-                  formatter={(value: number) => [formatCurrency(value), "Total"]}
-                  labelFormatter={(label) => `Mes: ${label}`}
-                />
-                <Bar dataKey="total" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Category Distribution Pie Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribución por Categoría</CardTitle>
-            <CardDescription>Porcentaje de gastos por categoría</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Category Stats and Top Expenses */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Category Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Gastos por Categoría</CardTitle>
-            <CardDescription>Detalle de gastos por categoría</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {stats.categoryStats.map((category, index) => (
-                <div key={category.category} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    />
-                    <div>
-                      <p className="font-medium">{category.categoryName}</p>
+        {/* Category Stats and Top Expenses */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Category Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Gastos por Categoría</CardTitle>
+              <CardDescription>Detalle de gastos por categoría</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {stats.categoryStats.map((category, index) => (
+                  <div key={category.category} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-4 h-4 rounded-full"
+                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      />
+                      <div>
+                        <p className="font-medium">{category.categoryName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {category.count} gastos
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{formatCurrency(category.total)}</p>
                       <p className="text-sm text-muted-foreground">
-                        {category.count} gastos
+                        {category.percentage.toFixed(1)}%
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">{formatCurrency(category.total)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {category.percentage.toFixed(1)}%
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Top Expenses */}
+          {/* Top Expenses */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Gastos Más Altos</CardTitle>
+              <CardDescription>Los 5 gastos individuales más altos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {stats.topExpenses.map((expense, index) => (
+                  <div key={expense.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-sm font-medium">{index + 1}</span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{expense.concept}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {EXPENSE_CATEGORIES[expense.category as keyof typeof EXPENSE_CATEGORIES]}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{formatCurrency(expense.amount)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(expense.date).toLocaleDateString('es-ES')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Expenses */}
         <Card>
           <CardHeader>
-            <CardTitle>Gastos Más Altos</CardTitle>
-            <CardDescription>Los 5 gastos individuales más altos</CardDescription>
+            <CardTitle>Gastos Recientes</CardTitle>
+            <CardDescription>Últimos gastos registrados</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {stats.topExpenses.map((expense, index) => (
-                <div key={expense.id} className="flex items-center justify-between">
+            <div className="space-y-3">
+              {stats.recentExpenses.slice(0, 5).map((expense) => (
+                <div key={expense.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-medium">{index + 1}</span>
-                    </div>
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="font-medium">{expense.concept}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {EXPENSE_CATEGORIES[expense.category as keyof typeof EXPENSE_CATEGORIES]}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {expense.categoryName}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(expense.date).toLocaleDateString('es-ES')}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-medium">{formatCurrency(expense.amount)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(expense.date).toLocaleDateString('es-ES')}
-                    </p>
                   </div>
                 </div>
               ))}
@@ -424,39 +459,6 @@ export default function ExpensesDashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Recent Expenses */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Gastos Recientes</CardTitle>
-          <CardDescription>Últimos gastos registrados</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {stats.recentExpenses.slice(0, 5).map((expense) => (
-              <div key={expense.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">{expense.concept}</p>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {expense.categoryName}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(expense.date).toLocaleDateString('es-ES')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">{formatCurrency(expense.amount)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
