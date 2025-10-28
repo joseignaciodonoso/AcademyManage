@@ -3,6 +3,21 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+// Componente client-side para marcar el login
+function MarkLoginFlag() {
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('justLoggedIn', 'true');
+          }
+        `,
+      }}
+    />
+  )
+}
+
 export default async function PostSignIn({ searchParams }: { searchParams: { org?: string } }) {
   const session = await getServerSession(authOptions)
 
@@ -29,19 +44,19 @@ export default async function PostSignIn({ searchParams }: { searchParams: { org
       })
       
       if (academy?.type === "CLUB") {
-        redirect(`/${org}/club/dashboard`)
+        redirect(`/${org}/club/dashboard?from=login`)
       } else {
-        redirect(`/${org}/admin/dashboard`)
+        redirect(`/${org}/admin/dashboard?from=login`)
       }
     }
-    redirect("/admin/dashboard")
+    redirect("/admin/dashboard?from=login")
   }
 
   if (role === "COACH") {
-    if (org) redirect(`/${org}/coach/schedule`)
-    redirect("/coach/schedule")
+    if (org) redirect(`/${org}/coach/schedule?from=login`)
+    redirect("/coach/schedule?from=login")
   }
 
-  if (org) redirect(`/${org}/app`)
-  redirect("/app")
+  if (org) redirect(`/${org}/app?from=login`)
+  redirect("/app?from=login")
 }

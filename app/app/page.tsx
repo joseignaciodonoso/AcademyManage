@@ -11,6 +11,9 @@ import { BookOpen, Calendar, Clock, CreditCard, Trophy, User, Users } from "luci
 import Link from "next/link"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { Suspense } from "react"
+import { MetricsRefresh } from "@/components/dashboard/MetricsRefresh"
+import { MetricsLoader } from "@/components/dashboard/MetricsLoader"
 // Removed legacy SubscribeModal to avoid intrusive modal on dashboard
 
 // Ensure this page is always rendered dynamically on the server so that
@@ -102,6 +105,14 @@ export default async function StudentDashboardPage() {
       minimumFractionDigits: 0,
     }).format(amount)
   }
+
+  // Detectar si hay datos suficientes para mostrar métricas
+  const hasMetricsData = Boolean(
+    activeMembership || 
+    user.attendances.length > 0 || 
+    upcomingClasses.length > 0 ||
+    user.enrollments.length > 0
+  )
 
   return (
     <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
@@ -392,6 +403,10 @@ export default async function StudentDashboardPage() {
         </Card>
       </div>
 
+      {/* Componente para refrescar métricas si es necesario */}
+      <Suspense fallback={<MetricsLoader />}>
+        <MetricsRefresh userId={user.id} hasData={hasMetricsData} />
+      </Suspense>
     </div>
   )
 }
