@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "build:netlify": "prisma db push --accept-data-loss && next build",
+    "build:netlify": "node scripts/debug-env.js && prisma db push --accept-data-loss && next build",
+    "build:netlify:migrate": "node scripts/debug-env.js && prisma migrate deploy && next build",
     "dev": "next dev -p 3001",
     "lint": "next lint",
     "start": "next start",
@@ -12,6 +13,13 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:status": "prisma migrate status",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset",
+    "deploy:neon": "./scripts/deploy-to-neon.sh",
+    "check:db": "./scripts/check-db-status.sh",
     "postinstall": "prisma generate"
   },
   "dependencies": {
