@@ -49,6 +49,7 @@ export const CreateMatchSchema = z.object({
   location: z.string().min(1).max(200),
   homeAway: z.enum(["HOME", "AWAY"]).optional(),
   notes: z.string().optional(),
+  tournamentId: z.string().cuid(), // Required tournament association
 })
 
 export const UpdateMatchResultSchema = z.object({

@@ -38,7 +38,8 @@ export async function POST(req: Request) {
     switch (String(provider)) {
       case "mercadopago": {
         if (!process.env.MERCADOPAGO_ACCESS_TOKEN) return notConfigured("Mercado Pago")
-        const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || "http://localhost:3001"
+        const url = new URL(req.url)
+        const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || `${url.protocol}//${url.host}`
         const pref = await createMercadoPagoPreference({ plan: { id: plan.id, name: plan.name, price: plan.price, currency: plan.currency || "CLP" }, paymentId: intent.id, baseUrl: base, userId: session.user.id })
         return NextResponse.json({ checkoutUrl: pref.init_point })
       }
@@ -46,7 +47,8 @@ export async function POST(req: Request) {
         const receiver = process.env.KHIPU_RECEIVER_ID
         const secret = process.env.KHIPU_SECRET
         if (!receiver || !secret) return notConfigured("Khipu")
-        const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || "http://localhost:3001"
+        const url = new URL(req.url)
+        const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || `${url.protocol}//${url.host}`
         const checkoutUrl = `${base}/app/subscribe/success?provider=khipu&status=success&paymentId=${intent.id}`
         return NextResponse.json({ checkoutUrl })
       }
@@ -54,7 +56,8 @@ export async function POST(req: Request) {
         const code = process.env.WEBPAY_COMMERCE_CODE
         const apiKey = process.env.WEBPAY_API_KEY
         if (!code || !apiKey) return notConfigured("Webpay")
-        const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || "http://localhost:3001"
+        const url = new URL(req.url)
+        const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || `${url.protocol}//${url.host}`
         const checkoutUrl = `${base}/app/subscribe/success?provider=webpay&status=success&paymentId=${intent.id}`
         return NextResponse.json({ checkoutUrl })
       }

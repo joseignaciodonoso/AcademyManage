@@ -8,7 +8,7 @@ const UpdateTournamentSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
   season: z.string().optional(),
-  type: z.enum(["LEAGUE", "CUP", "FRIENDLY", "PLAYOFF"]).optional(),
+  type: z.enum(["APERTURA", "CLAUSURA", "LIGA_LARGA", "CUP", "FRIENDLY", "PLAYOFF"]).optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional().nullable(),
   rules: z.string().optional(),

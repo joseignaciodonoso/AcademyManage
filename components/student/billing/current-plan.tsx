@@ -120,7 +120,7 @@ export function CurrentPlan({ membership, onUpgrade, onPayNow }: CurrentPlanProp
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Plan Features */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <div className="text-sm font-medium">Clases</div>
               <div className="text-sm text-muted-foreground">

@@ -8,7 +8,7 @@ const CreateTournamentSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   season: z.string().min(1),
-  type: z.enum(["LEAGUE", "CUP", "FRIENDLY", "PLAYOFF"]).default("LEAGUE"),
+  type: z.enum(["APERTURA", "CLAUSURA", "LIGA_LARGA", "CUP", "FRIENDLY", "PLAYOFF"]).default("APERTURA"),
   startDate: z.coerce.date(),
   endDate: z.coerce.date().optional().nullable(),
   rules: z.string().optional(),

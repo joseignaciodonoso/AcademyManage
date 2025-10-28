@@ -45,14 +45,14 @@ export default async function ClubTenantLayout({
       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
         {/* Sidebar */}
         <div className="hidden md:block">
-          <AdminSidebar role={session.user.role} organizationType={organizationType} />
+          <AdminSidebar role={session.user.role} organizationType={organizationType} prefix={`/${params.orgSlug}`} />
         </div>
 
         {/* Main Content */}
         <div className="flex flex-col min-w-0">
           {/* Header */}
           <header className="flex h-16 items-center gap-4 border-b border-border bg-gradient-to-r from-[hsl(var(--background))] via-[hsl(var(--muted))] to-[hsl(var(--background))] backdrop-blur-md px-4 lg:px-6 shadow-lg">
-            <MobileAdminSidebar role={session.user.role} organizationType={organizationType} />
+            <MobileAdminSidebar role={session.user.role} organizationType={organizationType} prefix={`/${params.orgSlug}`} />
 
             {/* Title/Context */}
             <div className="flex items-center gap-3 flex-1">

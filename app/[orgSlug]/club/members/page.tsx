@@ -1,12 +1,17 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { useParams, useRouter } from "next/navigation"
+import { ComparePlayersModal } from "@/components/club/players/compare-modal"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -44,16 +49,34 @@ export default function ClubMembersPage() {
   const [filteredMembers, setFilteredMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  const [openCompare, setOpenCompare] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [openCreate, setOpenCreate] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    position: "",
-    jerseyNumber: "",
-    shirtSize: "M",
+
+  const playerSchema = z.object({
+    name: z.string().min(1, "El nombre es requerido"),
+    email: z.string().min(1, "El email es requerido").email("Ingresa un email válido"),
+    position: z.string().optional().transform(v => (v || "").trim()),
+    jerseyNumber: z
+      .string()
+      .optional()
+      .transform(v => (v || "").replace(/[^0-9]/g, "")),
+    shirtSize: z.enum(["XS", "S", "M", "L", "XL", "XXL"]).default("M"),
   })
-  const canCreate = form.name.trim() && form.email.trim()
+  type PlayerForm = z.infer<typeof playerSchema>
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isValid },
+  } = useForm<PlayerForm>({
+    resolver: zodResolver(playerSchema),
+    mode: "onChange",
+    defaultValues: { name: "", email: "", position: "", jerseyNumber: "", shirtSize: "M" },
+  })
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [roleFilter, setRoleFilter] = useState<"ALL" | "STUDENT" | "COACH">("ALL")
   const [positionFilter, setPositionFilter] = useState<string>("")
@@ -137,6 +160,14 @@ export default function ClubMembersPage() {
   const players = members.filter(m => m.role === "STUDENT")
   const coaches = members.filter(m => m.role === "COACH")
 
+  const toggleSelection = (id: string) => {
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id)
+      if (prev.length >= 4) return prev
+      return [...prev, id]
+    })
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -158,10 +189,11 @@ export default function ClubMembersPage() {
           </div>
           <Button
             variant="outline"
-            onClick={() => router.push(`/${params.orgSlug}/club/players/compare`)}
+            onClick={() => setOpenCompare(true)}
+            disabled={selectedIds.length < 1}
           >
             <Users className="h-4 w-4 mr-2" />
-            Comparar Jugadores
+            Comparar / Métricas {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
           </Button>
           <Button onClick={() => setOpenCreate(true)}>
             <UserPlus className="h-4 w-4 mr-2" />
@@ -172,30 +204,39 @@ export default function ClubMembersPage() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--primary))]/10 to-transparent border-[hsl(var(--primary))]/30">
+          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[hsl(var(--primary))]/15" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Jugadores</CardTitle>
-            <Trophy className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold text-[hsl(var(--foreground))]">Total Jugadores</CardTitle>
+            <div className="p-2 rounded-lg bg-[hsl(var(--primary))]/15">
+              <Trophy className="h-4 w-4 text-[hsl(var(--primary))]" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{players.length}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--accent))]/10 to-transparent border-[hsl(var(--accent))]/30">
+          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[hsl(var(--accent))]/15" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Entrenadores</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold text-[hsl(var(--foreground))]">Entrenadores</CardTitle>
+            <div className="p-2 rounded-lg bg-[hsl(var(--accent))]/15">
+              <Target className="h-4 w-4 text-[hsl(var(--accent))]" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{coaches.length}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="relative overflow-hidden bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
+          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-green-500/15" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Integrantes</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold text-[hsl(var(--foreground))]">Total Integrantes</CardTitle>
+            <div className="p-2 rounded-lg bg-green-500/15">
+              <Activity className="h-4 w-4 text-green-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{members.length}</div>
@@ -268,10 +309,11 @@ export default function ClubMembersPage() {
         ) : viewMode === "grid" ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredMembers.map((member) => (
-              <Card key={member.id} className="hover:shadow-lg transition-shadow cursor-pointer"
+              <Card key={member.id} className={`hover:shadow-lg transition-shadow cursor-pointer ${selectedIds.includes(member.id) ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary))]/5" : ""}`}
                 onClick={() => router.push(`/${params.orgSlug}/club/members/${member.id}`)}>
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
+                    <Checkbox checked={selectedIds.includes(member.id)} onCheckedChange={(v) => { v; toggleSelection(member.id) }} onClick={(e) => e.stopPropagation()} className="mt-1" />
                     <Avatar className="h-12 w-12">
                       <AvatarFallback className="bg-primary text-primary-foreground">
                         {getInitials(member.name)}
@@ -305,7 +347,8 @@ export default function ClubMembersPage() {
             <CardContent className="p-0">
               <div className="divide-y">
                 {filteredMembers.map((member) => (
-                  <div key={member.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/${params.orgSlug}/club/members/${member.id}`)}>
+                  <div key={member.id} className={`flex items-center gap-4 p-4 hover:bg-muted/50 cursor-pointer ${selectedIds.includes(member.id) ? "bg-[hsl(var(--primary))]/5" : ""}`} onClick={() => router.push(`/${params.orgSlug}/club/members/${member.id}`)}>
+                    <Checkbox checked={selectedIds.includes(member.id)} onCheckedChange={(v) => { v; toggleSelection(member.id) }} onClick={(e) => e.stopPropagation()} />
                     <Avatar className="h-10 w-10">
                       <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                         {getInitials(member.name)}
@@ -344,50 +387,56 @@ export default function ClubMembersPage() {
             <DialogTitle>Inscripción de Jugador</DialogTitle>
             <DialogDescription>Registra un nuevo jugador del club.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-2">
+          <form
+            onSubmit={handleSubmit(async (data) => {
+              try {
+                setCreating(true)
+                const res = await fetch("/api/club/members", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    name: data.name.trim(),
+                    email: data.email.trim(),
+                    position: data.position || undefined,
+                    preferredNumber: data.jerseyNumber ? Number(data.jerseyNumber) : undefined,
+                    shirtSize: data.shirtSize,
+                  }),
+                })
+                if (!res.ok) throw new Error("No se pudo crear el jugador")
+                setOpenCreate(false)
+                reset()
+                await fetchMembers()
+              } catch (e) {
+                console.error(e)
+              } finally {
+                setCreating(false)
+              }
+            })}
+            className="grid gap-4 py-2"
+          >
             <div className="grid gap-2">
-              <Label htmlFor="name">Nombre</Label>
-              <Input
-                id="name"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="Juan Pérez"
-              />
+              <Label htmlFor="name">Nombre <span className="text-red-500">*</span></Label>
+              <Input id="name" placeholder="Juan Pérez" className={`placeholder:text-foreground/60 ${errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}`} {...register("name")} />
+              {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                placeholder="juan@club.cl"
-              />
+              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+              <Input id="email" type="email" placeholder="juan@club.cl" className={`placeholder:text-foreground/60 ${errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`} {...register("email")} />
+              {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="position">Posición</Label>
-                <Input
-                  id="position"
-                  value={form.position}
-                  onChange={(e) => setForm((f) => ({ ...f, position: e.target.value }))}
-                  placeholder="Base / Alero / Pívot"
-                />
+                <Input id="position" placeholder="Base / Alero / Pívot" className="placeholder:text-foreground/60" {...register("position")} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="jerseyNumber">Nº Camiseta</Label>
-                <Input
-                  id="jerseyNumber"
-                  inputMode="numeric"
-                  value={form.jerseyNumber}
-                  onChange={(e) => setForm((f) => ({ ...f, jerseyNumber: e.target.value.replace(/[^0-9]/g, "") }))}
-                  placeholder="10"
-                />
+                <Input id="jerseyNumber" inputMode="numeric" placeholder="10" className="placeholder:text-foreground/60" {...register("jerseyNumber")} />
               </div>
             </div>
             <div className="grid gap-2">
               <Label>Talla de Polera</Label>
-              <Select value={form.shirtSize} onValueChange={(v) => setForm((f) => ({ ...f, shirtSize: v }))}>
+              <Select value={watch("shirtSize")} onValueChange={(v) => reset({ ...watch(), shirtSize: v as PlayerForm["shirtSize"] })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona talla" />
                 </SelectTrigger>
@@ -401,43 +450,25 @@ export default function ClubMembersPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenCreate(false)} disabled={creating}>
-              Cancelar
-            </Button>
-            <Button
-              disabled={!canCreate || creating}
-              onClick={async () => {
-                try {
-                  setCreating(true)
-                  const res = await fetch("/api/club/members", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      name: form.name.trim(),
-                      email: form.email.trim(),
-                      position: form.position.trim() || undefined,
-                      preferredNumber: form.jerseyNumber ? Number(form.jerseyNumber) : undefined,
-                      shirtSize: form.shirtSize,
-                    }),
-                  })
-                  if (!res.ok) throw new Error("No se pudo crear el jugador")
-                  setOpenCreate(false)
-                  setForm({ name: "", email: "", position: "", jerseyNumber: "", shirtSize: "M" })
-                  await fetchMembers()
-                } catch (e) {
-                  console.error(e)
-                } finally {
-                  setCreating(false)
-                }
-              }}
-            >
-              {creating ? "Creando..." : "Crear"}
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpenCreate(false)} disabled={creating}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={!isValid || creating}>
+                {creating ? "Creando..." : "Crear"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
+
+      <ComparePlayersModal
+        open={openCompare}
+        onOpenChange={(v) => { if (!v) setOpenCompare(false) }}
+        players={members}
+        selectedIds={selectedIds}
+        onRemoveSelected={(id) => setSelectedIds((prev) => prev.filter(x => x !== id))}
+      />
     </div>
   )
 }

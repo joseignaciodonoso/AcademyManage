@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -10,11 +10,12 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Trophy, Plus, Calendar, Users } from "lucide-react"
+import { Trophy, Plus, Calendar, Users, Upload, FileText, X } from "lucide-react"
 import { toast } from "sonner"
 
 export default function TournamentsPage() {
   const router = useRouter()
+  const params = useParams() as { orgSlug: string }
   const [tournaments, setTournaments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [openDialog, setOpenDialog] = useState(false)
@@ -22,11 +23,13 @@ export default function TournamentsPage() {
     name: "",
     description: "",
     season: new Date().getFullYear().toString(),
-    type: "LEAGUE",
+    type: "APERTURA",
     startDate: new Date().toISOString().split('T')[0],
     endDate: "",
     rules: "",
   })
+  const [rulesFile, setRulesFile] = useState<File | null>(null)
+  const [uploadingFile, setUploadingFile] = useState(false)
 
   useEffect(() => {
     fetchTournaments()
@@ -48,38 +51,80 @@ export default function TournamentsPage() {
 
   const createTournament = async () => {
     try {
+      setUploadingFile(true)
+      
+      let rulesFileUrl = ""
+      
+      // Upload PDF file if selected
+      if (rulesFile) {
+        const formData = new FormData()
+        formData.append("file", rulesFile)
+        formData.append("type", "tournament-rules")
+        
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+        
+        if (!uploadRes.ok) {
+          throw new Error("Error al subir el archivo PDF")
+        }
+        
+        const uploadData = await uploadRes.json()
+        rulesFileUrl = uploadData.url
+      }
+      
+      // Create tournament with PDF URL
+      const tournamentData = {
+        ...form,
+        rulesFileUrl: rulesFileUrl || undefined
+      }
+      
       const res = await fetch("/api/club/tournaments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(tournamentData),
       })
-      if (!res.ok) throw new Error("Error")
+      
+      if (!res.ok) throw new Error("Error al crear torneo")
+      
       toast.success("Torneo creado exitosamente")
       setOpenDialog(false)
       fetchTournaments()
+      
+      // Reset form
       setForm({
         name: "",
         description: "",
         season: new Date().getFullYear().toString(),
-        type: "LEAGUE",
+        type: "APERTURA",
         startDate: new Date().toISOString().split('T')[0],
         endDate: "",
         rules: "",
       })
+      setRulesFile(null)
+      
     } catch (error) {
-      toast.error("Error al crear torneo")
+      console.error("Error creating tournament:", error)
+      toast.error(error instanceof Error ? error.message : "Error al crear torneo")
+    } finally {
+      setUploadingFile(false)
     }
   }
 
   const getTypeBadge = (type: string) => {
     const colors: any = {
-      LEAGUE: "bg-blue-100 text-blue-700",
-      CUP: "bg-purple-100 text-purple-700",
-      FRIENDLY: "bg-green-100 text-green-700",
-      PLAYOFF: "bg-red-100 text-red-700",
+      APERTURA: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
+      CLAUSURA: "bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300",
+      LIGA_LARGA: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300",
+      CUP: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
+      FRIENDLY: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+      PLAYOFF: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
     }
     const labels: any = {
-      LEAGUE: "Liga",
+      APERTURA: "Liga Apertura",
+      CLAUSURA: "Liga Clausura",
+      LIGA_LARGA: "Liga Larga",
       CUP: "Copa",
       FRIENDLY: "Amistoso",
       PLAYOFF: "Playoff",
@@ -136,7 +181,7 @@ export default function TournamentsPage() {
               <Card
                 key={tournament.id}
                 className="cursor-pointer hover:shadow-lg transition-all"
-                onClick={() => router.push(`/club/tournaments/${tournament.id}`)}
+                onClick={() => router.push(`/${params.orgSlug}/club/tournaments/${tournament.id}`)}
               >
                 <CardHeader>
                   <div className="flex justify-between items-start mb-2">
@@ -173,21 +218,24 @@ export default function TournamentsPage() {
         )}
 
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Crear Nuevo Torneo</DialogTitle>
-              <DialogDescription>
-                Configura un nuevo torneo o liga para tu equipo
-              </DialogDescription>
-            </DialogHeader>
+          <DialogContent className="sm:w-[min(90vw,800px)] w-screen p-0 overflow-hidden sm:rounded-xl rounded-none sm:h-auto h-[100dvh] sm:shadow-2xl sm:max-w-[800px]">
+            <div className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b">
+              <DialogHeader className="px-6 py-5">
+                <DialogTitle className="text-xl font-bold">Crear Nuevo Torneo</DialogTitle>
+                <DialogDescription className="text-base">
+                  Configura un nuevo torneo o liga para tu equipo
+                </DialogDescription>
+              </DialogHeader>
+            </div>
 
-            <div className="grid gap-4 py-4">
+            <div className="px-6 pb-6 space-y-4 overflow-y-auto sm:max-h-[80vh] max-h-[calc(100dvh-80px)]">
               <div className="grid gap-2">
                 <Label>Nombre del Torneo *</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Liga Nacional 2025"
+                  className="placeholder:text-muted-foreground/50"
                 />
               </div>
 
@@ -198,6 +246,7 @@ export default function TournamentsPage() {
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="Descripción del torneo..."
                   rows={3}
+                  className="placeholder:text-muted-foreground/50"
                 />
               </div>
 
@@ -208,6 +257,7 @@ export default function TournamentsPage() {
                     value={form.season}
                     onChange={(e) => setForm({ ...form, season: e.target.value })}
                     placeholder="2025"
+                    className="placeholder:text-muted-foreground/50"
                   />
                 </div>
 
@@ -218,7 +268,9 @@ export default function TournamentsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="LEAGUE">Liga</SelectItem>
+                      <SelectItem value="APERTURA">Liga Apertura</SelectItem>
+                      <SelectItem value="CLAUSURA">Liga Clausura</SelectItem>
+                      <SelectItem value="LIGA_LARGA">Liga Larga</SelectItem>
                       <SelectItem value="CUP">Copa</SelectItem>
                       <SelectItem value="FRIENDLY">Amistoso</SelectItem>
                       <SelectItem value="PLAYOFF">Playoff</SelectItem>
@@ -253,19 +305,101 @@ export default function TournamentsPage() {
                   value={form.rules}
                   onChange={(e) => setForm({ ...form, rules: e.target.value })}
                   placeholder="Reglas específicas del torneo..."
-                  rows={4}
+                  rows={3}
+                  className="placeholder:text-muted-foreground/50"
                 />
+              </div>
+
+              {/* PDF Upload Section */}
+              <div className="grid gap-2">
+                <Label className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Bases del Torneo (PDF)
+                </Label>
+                <div className="space-y-3">
+                  {/* File Input */}
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          if (file.type !== 'application/pdf') {
+                            toast.error('Solo se permiten archivos PDF')
+                            return
+                          }
+                          if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                            toast.error('El archivo no puede superar los 10MB')
+                            return
+                          }
+                          setRulesFile(file)
+                        }
+                      }}
+                      className="hidden"
+                      id="rules-file-input"
+                    />
+                    <label
+                      htmlFor="rules-file-input"
+                      className="flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center cursor-pointer hover:border-muted-foreground/50 hover:bg-muted/30 transition-colors"
+                    >
+                      <Upload className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">Subir archivo PDF</p>
+                        <p className="text-xs text-muted-foreground">Máximo 10MB</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Selected File Display */}
+                  {rulesFile && (
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900">
+                          <FileText className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{rulesFile.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(rulesFile.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setRulesFile(null)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpenDialog(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={createTournament} disabled={!form.name || !form.season}>
-                Crear Torneo
-              </Button>
-            </DialogFooter>
+            <div className="sticky bottom-0 bg-background/80 backdrop-blur border-t px-6 py-4">
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setOpenDialog(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={createTournament} 
+                  disabled={!form.name || !form.season || uploadingFile}
+                  className="min-w-[120px]"
+                >
+                  {uploadingFile ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+                      Creando...
+                    </div>
+                  ) : (
+                    'Crear Torneo'
+                  )}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

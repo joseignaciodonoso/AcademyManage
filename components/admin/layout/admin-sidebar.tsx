@@ -102,6 +102,11 @@ const clubNavigation = [
     icon: Trophy,
   },
   {
+    name: "Torneos",
+    href: "/club/tournaments",
+    icon: Target,
+  },
+  {
     name: "Entrenamientos",
     href: "/club/trainings",
     icon: Activity,

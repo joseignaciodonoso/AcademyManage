@@ -134,6 +134,7 @@ export async function POST(request: NextRequest) {
         location: validatedData.location,
         homeAway: validatedData.homeAway,
         notes: validatedData.notes,
+        tournamentId: validatedData.tournamentId,
         status: "SCHEDULED",
       },
     })
