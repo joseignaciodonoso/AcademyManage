@@ -8,11 +8,12 @@ const CreateTournamentSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   season: z.string().min(1),
-  type: z.enum(["APERTURA", "CLAUSURA", "LIGA_LARGA", "CUP", "FRIENDLY", "PLAYOFF"]).default("APERTURA"),
+  type: z.enum(["APERTURA", "CLAUSURA", "LIGA_LARGA", "CUP", "FRIENDLY", "PLAYOFF", "OTHER"]).default("APERTURA"),
+  customType: z.string().optional(), // Nombre personalizado cuando type = "OTHER"
   startDate: z.coerce.date(),
   endDate: z.coerce.date().optional().nullable(),
   rules: z.string().optional(),
-  rulesFileUrl: z.string().optional(),
+  rulesFileUrls: z.array(z.string()).optional(), // Array de URLs para múltiples archivos
   logoUrl: z.string().optional(),
 })
 

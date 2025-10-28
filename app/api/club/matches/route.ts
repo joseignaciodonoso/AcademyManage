@@ -124,18 +124,28 @@ export async function POST(request: NextRequest) {
     // Validate
     const validatedData = CreateMatchSchema.parse(body)
 
+    // Determinar estado automáticamente según la fecha
+    const matchDate = new Date(validatedData.date)
+    const now = new Date()
+    let status = "SCHEDULED"
+    
+    // Si la fecha del partido ya pasó, marcarlo como FINISHED
+    if (matchDate < now) {
+      status = "FINISHED"
+    }
+
     // Create match
     const match = await (prisma as any).match.create({
       data: {
         academyId: user.academyId,
         sport: validatedData.sport,
-        date: new Date(validatedData.date),
+        date: matchDate,
         opponent: validatedData.opponent,
         location: validatedData.location,
         homeAway: validatedData.homeAway,
         notes: validatedData.notes,
         tournamentId: validatedData.tournamentId,
-        status: "SCHEDULED",
+        status,
       },
     })
 

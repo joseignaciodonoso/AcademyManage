@@ -1215,20 +1215,21 @@ model UserBadge {
 // ============================
 
 model Tournament {
-  id           String    @id @default(cuid())
-  academyId    String
-  name         String
-  description  String?   @db.Text
-  season       String // "2025", "2025-2026"
-  type         String    @default("LEAGUE") // LEAGUE, CUP, FRIENDLY, PLAYOFF
-  startDate    DateTime
-  endDate      DateTime?
-  rules        String?   @db.Text // Markdown o HTML
-  rulesFileUrl String?
-  logoUrl      String?
-  status       String    @default("ACTIVE") // ACTIVE, FINISHED, CANCELLED
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  academyId     String
+  name          String
+  description   String?   @db.Text
+  season        String // "2025", "2025-2026"
+  type          String    @default("LEAGUE") // APERTURA, CLAUSURA, LIGA_LARGA, CUP, FRIENDLY, PLAYOFF, OTHER
+  customType    String? // Nombre personalizado cuando type = "OTHER"
+  startDate     DateTime
+  endDate       DateTime?
+  rules         String?   @db.Text // Markdown o HTML
+  rulesFileUrls String[] // Array de URLs para múltiples archivos de bases
+  logoUrl       String?
+  status        String    @default("ACTIVE") // ACTIVE, FINISHED, CANCELLED
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   academy   Academy              @relation("AcademyTournaments", fields: [academyId], references: [id], onDelete: Cascade)
   matches   Match[]              @relation("TournamentMatches")

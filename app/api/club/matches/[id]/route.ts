@@ -10,7 +10,7 @@ const UpdateMatchSchema = z.object({
   homeAway: z.enum(["HOME", "AWAY"]).optional(),
   date: z.coerce.date().optional(),
   notes: z.string().optional(),
-  status: z.enum(["SCHEDULED", "COMPLETED", "CANCELLED"]).optional(),
+  status: z.enum(["SCHEDULED", "IN_PROGRESS", "FINISHED", "CANCELLED"]).optional(),
   scoreFor: z.number().int().min(0).nullable().optional(),
   scoreAgainst: z.number().int().min(0).nullable().optional(),
   result: z.enum(["WIN", "LOSS", "DRAW"]).nullable().optional(),
@@ -80,20 +80,34 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       if ("scoreAgainst" in data) updateData[againstKey] = data.scoreAgainst
     }
 
-    // If result not explicitly provided, compute it when we have both scores and status COMPLETED
+    // If result not explicitly provided, compute it when we have both scores and status FINISHED
     const statusAfter = ("status" in data ? data.status : exists.status)
-    const isCompleted = statusAfter === "COMPLETED"
+    const isFinished = statusAfter === "FINISHED"
     if (!("result" in data)) {
       const isFootball = exists.sport === "FOOTBALL"
       const forKey = isFootball ? "goalsFor" : "pointsFor"
       const againstKey = isFootball ? "goalsAgainst" : "pointsAgainst"
       const currentFor = ("scoreFor" in data ? data.scoreFor : (exists as any)[forKey])
       const currentAgainst = ("scoreAgainst" in data ? data.scoreAgainst : (exists as any)[againstKey])
-      if (isCompleted && currentFor != null && currentAgainst != null) {
+      if (isFinished && currentFor != null && currentAgainst != null) {
         updateData.result = currentFor > currentAgainst ? "WIN" : currentFor < currentAgainst ? "LOSS" : "DRAW"
       }
     } else {
       updateData.result = data.result
+    }
+    
+    // Auto-update status based on date if being updated
+    if ("date" in data) {
+      const newDate = data.date as Date
+      const now = new Date()
+      // Si se está cambiando la fecha y el partido no está CANCELLED, actualizar estado automáticamente
+      if (statusAfter !== "CANCELLED") {
+        if (newDate < now && statusAfter === "SCHEDULED") {
+          updateData.status = "FINISHED"
+        } else if (newDate >= now && statusAfter === "FINISHED") {
+          updateData.status = "SCHEDULED"
+        }
+      }
     }
 
     const updated = await (prisma as any).match.update({

@@ -24,11 +24,12 @@ export default function TournamentsPage() {
     description: "",
     season: new Date().getFullYear().toString(),
     type: "APERTURA",
+    customType: "",
     startDate: new Date().toISOString().split('T')[0],
     endDate: "",
     rules: "",
   })
-  const [rulesFile, setRulesFile] = useState<File | null>(null)
+  const [rulesFiles, setRulesFiles] = useState<File[]>([])
   const [uploadingFile, setUploadingFile] = useState(false)
 
   useEffect(() => {
@@ -51,33 +52,43 @@ export default function TournamentsPage() {
 
   const createTournament = async () => {
     try {
+      // Validación: si el tipo es OTHER, customType es requerido
+      if (form.type === "OTHER" && !form.customType.trim()) {
+        toast.error("Debes especificar el nombre del torneo personalizado")
+        return
+      }
+
       setUploadingFile(true)
       
-      let rulesFileUrl = ""
+      const rulesFileUrls: string[] = []
       
-      // Upload PDF file if selected
-      if (rulesFile) {
-        const formData = new FormData()
-        formData.append("file", rulesFile)
-        formData.append("type", "tournament-rules")
-        
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        })
-        
-        if (!uploadRes.ok) {
-          throw new Error("Error al subir el archivo PDF")
+      // Upload múltiples PDF files if selected
+      if (rulesFiles.length > 0) {
+        for (const file of rulesFiles) {
+          const formData = new FormData()
+          formData.append("file", file)
+          formData.append("type", "tournament-rules")
+          
+          const uploadRes = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          })
+          
+          if (!uploadRes.ok) {
+            throw new Error(`Error al subir el archivo ${file.name}`)
+          }
+          
+          const uploadData = await uploadRes.json()
+          rulesFileUrls.push(uploadData.url)
         }
-        
-        const uploadData = await uploadRes.json()
-        rulesFileUrl = uploadData.url
+        toast.success(`${rulesFileUrls.length} archivo(s) subido(s) exitosamente`)
       }
       
-      // Create tournament with PDF URL
+      // Create tournament with PDF URLs
       const tournamentData = {
         ...form,
-        rulesFileUrl: rulesFileUrl || undefined
+        rulesFileUrls: rulesFileUrls.length > 0 ? rulesFileUrls : undefined,
+        customType: form.type === "OTHER" ? form.customType : undefined
       }
       
       const res = await fetch("/api/club/tournaments", {
@@ -98,11 +109,12 @@ export default function TournamentsPage() {
         description: "",
         season: new Date().getFullYear().toString(),
         type: "APERTURA",
+        customType: "",
         startDate: new Date().toISOString().split('T')[0],
         endDate: "",
         rules: "",
       })
-      setRulesFile(null)
+      setRulesFiles([])
       
     } catch (error) {
       console.error("Error creating tournament:", error)
@@ -120,6 +132,7 @@ export default function TournamentsPage() {
       CUP: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
       FRIENDLY: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
       PLAYOFF: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+      OTHER: "bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300",
     }
     const labels: any = {
       APERTURA: "Liga Apertura",
@@ -128,8 +141,9 @@ export default function TournamentsPage() {
       CUP: "Copa",
       FRIENDLY: "Amistoso",
       PLAYOFF: "Playoff",
+      OTHER: "Otro",
     }
-    return <Badge className={colors[type] || ""}>{labels[type] || type}</Badge>
+    return <Badge className={colors[type] || colors.OTHER}>{labels[type] || type}</Badge>
   }
 
   const getStatusBadge = (status: string) => {
@@ -274,10 +288,24 @@ export default function TournamentsPage() {
                       <SelectItem value="CUP">Copa</SelectItem>
                       <SelectItem value="FRIENDLY">Amistoso</SelectItem>
                       <SelectItem value="PLAYOFF">Playoff</SelectItem>
+                      <SelectItem value="OTHER">Otro (personalizado)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+
+              {/* Custom Type Input - Solo visible cuando type = OTHER */}
+              {form.type === "OTHER" && (
+                <div className="grid gap-2">
+                  <Label>Nombre del Torneo Personalizado *</Label>
+                  <Input
+                    value={form.customType}
+                    onChange={(e) => setForm({ ...form, customType: e.target.value })}
+                    placeholder="Ej: Copa de Verano, Torneo Regional..."
+                    required={form.type === "OTHER"}
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -310,11 +338,11 @@ export default function TournamentsPage() {
                 />
               </div>
 
-              {/* PDF Upload Section */}
+              {/* PDF Upload Section - Múltiples Archivos */}
               <div className="grid gap-2">
                 <Label className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
-                  Bases del Torneo (PDF)
+                  Bases del Torneo (PDF) - Puedes subir múltiples archivos
                 </Label>
                 <div className="space-y-3">
                   {/* File Input */}
@@ -322,19 +350,29 @@ export default function TournamentsPage() {
                     <input
                       type="file"
                       accept=".pdf"
+                      multiple
                       onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) {
+                        const files = Array.from(e.target.files || [])
+                        const validFiles: File[] = []
+                        
+                        for (const file of files) {
                           if (file.type !== 'application/pdf') {
-                            toast.error('Solo se permiten archivos PDF')
-                            return
+                            toast.error(`${file.name}: Solo se permiten archivos PDF`)
+                            continue
                           }
-                          if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                            toast.error('El archivo no puede superar los 10MB')
-                            return
+                          if (file.size > 10 * 1024 * 1024) {
+                            toast.error(`${file.name}: El archivo no puede superar los 10MB`)
+                            continue
                           }
-                          setRulesFile(file)
+                          validFiles.push(file)
                         }
+                        
+                        if (validFiles.length > 0) {
+                          setRulesFiles(prev => [...prev, ...validFiles])
+                          toast.success(`${validFiles.length} archivo(s) agregado(s)`)
+                        }
+                        // Reset input
+                        e.target.value = ''
                       }}
                       className="hidden"
                       id="rules-file-input"
@@ -345,34 +383,39 @@ export default function TournamentsPage() {
                     >
                       <Upload className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="text-sm font-medium">Subir archivo PDF</p>
-                        <p className="text-xs text-muted-foreground">Máximo 10MB</p>
+                        <p className="text-sm font-medium">Subir archivos PDF</p>
+                        <p className="text-xs text-muted-foreground">Máximo 10MB por archivo - Múltiples archivos permitidos</p>
                       </div>
                     </label>
                   </div>
 
-                  {/* Selected File Display */}
-                  {rulesFile && (
-                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900">
-                          <FileText className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  {/* Selected Files Display */}
+                  {rulesFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">{rulesFiles.length} archivo(s) seleccionado(s):</p>
+                      {rulesFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900">
+                              <FileText className="h-4 w-4 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">{file.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {(file.size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setRulesFiles(prev => prev.filter((_, i) => i !== index))}
+                            className="h-8 w-8 p-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium">{rulesFile.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {(rulesFile.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setRulesFile(null)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      ))}
                     </div>
                   )}
                 </div>
