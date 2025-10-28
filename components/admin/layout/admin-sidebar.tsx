@@ -22,6 +22,7 @@ import {
   Trophy,
   Target,
   Activity,
+  Receipt,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -110,6 +111,11 @@ const clubNavigation = [
     name: "Entrenamientos",
     href: "/club/trainings",
     icon: Activity,
+  },
+  {
+    name: "Gastos",
+    href: "/club/expenses",
+    icon: Receipt,
   },
   {
     name: "Planes",
