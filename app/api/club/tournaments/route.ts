@@ -13,7 +13,9 @@ const CreateTournamentSchema = z.object({
   startDate: z.coerce.date(),
   endDate: z.coerce.date().optional().nullable(),
   rules: z.string().optional(),
-  rulesFileUrls: z.array(z.string()).optional(), // Array de URLs para múltiples archivos
+  // Soportar tanto arreglo como campo único para compatibilidad
+  rulesFileUrls: z.array(z.string()).optional(),
+  rulesFileUrl: z.string().optional(),
   logoUrl: z.string().optional(),
 })
 
@@ -60,7 +62,17 @@ export async function POST(request: NextRequest) {
 
     const tournament = await (prisma as any).tournament.create({
       data: {
-        ...data,
+        name: data.name,
+        description: data.description,
+        season: data.season,
+        type: data.type,
+        customType: data.customType,
+        startDate: data.startDate,
+        endDate: data.endDate ?? undefined,
+        rules: data.rules,
+        // Preferir el arreglo; si viene rulesFileUrl único, envolverlo
+        rulesFileUrls: data.rulesFileUrls ?? (data.rulesFileUrl ? [data.rulesFileUrl] : []),
+        logoUrl: data.logoUrl,
         academyId: user.academyId,
       },
     })

@@ -31,7 +31,11 @@ interface Match {
   pointsFor?: number
   pointsAgainst?: number
   result?: "WIN" | "DRAW" | "LOSS"
-  tournamentId?: string
+  tournamentId?: string | null
+  tournament?: {
+    id: string
+    name: string
+  }
   _count?: { evaluations: number }
 }
 
@@ -69,6 +73,8 @@ export default function MatchesPage() {
     goalsAgainst: "",
     pointsFor: "",
     pointsAgainst: "",
+    sport: "FOOTBALL" as "FOOTBALL" | "BASKETBALL",
+    tournamentId: "",
   })
   
   // Day matches modal
@@ -77,11 +83,25 @@ export default function MatchesPage() {
   // Result confirmation modal
   const [resultModalOpen, setResultModalOpen] = useState(false)
   const [confirmingMatchId, setConfirmingMatchId] = useState<string | null>(null)
+  const [clubSport, setClubSport] = useState<"FOOTBALL" | "BASKETBALL">("FOOTBALL")
 
   useEffect(() => {
     setMounted(true)
     fetchMatches()
+    fetchClubInfo()
   }, [])
+
+  const fetchClubInfo = async () => {
+    try {
+      const res = await fetch("/api/club/info")
+      if (res.ok) {
+        const data = await res.json()
+        setClubSport(data.primarySport || "FOOTBALL")
+      }
+    } catch (error) {
+      console.error("Error fetching club info:", error)
+    }
+  }
 
   const fetchMatches = async () => {
     try {
@@ -152,8 +172,29 @@ export default function MatchesPage() {
     const dayMatches = getMatchesForDate(date)
     
     if (dayMatches.length > 0) {
+      // If there are matches on this day, show them
       setSelectedDate(date)
       setDayMatchesModalOpen(true)
+    } else {
+      // If no matches, open create modal with this date preselected
+      setSelectedDate(date)
+      setMatchForm({
+        opponent: "",
+        location: "",
+        homeAway: "HOME",
+        date: format(date, "yyyy-MM-dd"),
+        time: "15:00",
+        notes: "",
+        goalsFor: "",
+        goalsAgainst: "",
+        pointsFor: "",
+        pointsAgainst: "",
+        sport: clubSport, // Use club's sport automatically
+        tournamentId: "",
+      })
+      setSelectedMatchId(null)
+      setEditMode(true)
+      setDetailModalOpen(true)
     }
   }
 
@@ -181,61 +222,77 @@ export default function MatchesPage() {
         goalsAgainst: match.goalsAgainst?.toString() || "",
         pointsFor: match.pointsFor?.toString() || "",
         pointsAgainst: match.pointsAgainst?.toString() || "",
+        sport: (match as any).sport || "FOOTBALL",
+        tournamentId: (match as any).tournamentId || "",
       })
     }
   }
 
-  // Update match
+  // Update or create match
   const handleUpdateMatch = async () => {
-    if (!selectedMatchId) return
-
     try {
-      const match = matches.find(m => m.id === selectedMatchId)
-      if (!match) return
-
       const dateTime = new Date(`${matchForm.date}T${matchForm.time}`)
       
-      const updateData: any = {
+      const matchData: any = {
         opponent: matchForm.opponent,
         location: matchForm.location,
         homeAway: matchForm.homeAway,
         date: dateTime.toISOString(),
         notes: matchForm.notes,
+        sport: matchForm.sport,
+        tournamentId: matchForm.tournamentId || null,
       }
 
-      // Add scores if provided
-      if (match.sport === "FOOTBALL") {
-        if (matchForm.goalsFor) updateData.scoreFor = parseInt(matchForm.goalsFor)
-        if (matchForm.goalsAgainst) updateData.scoreAgainst = parseInt(matchForm.goalsAgainst)
+      if (selectedMatchId) {
+        // Update existing match
+        const match = matches.find(m => m.id === selectedMatchId)
+        if (!match) return
+
+        // Add scores if provided
+        if (match.sport === "FOOTBALL") {
+          if (matchForm.goalsFor) matchData.scoreFor = parseInt(matchForm.goalsFor)
+          if (matchForm.goalsAgainst) matchData.scoreAgainst = parseInt(matchForm.goalsAgainst)
+        } else {
+          if (matchForm.pointsFor) matchData.scoreFor = parseInt(matchForm.pointsFor)
+          if (matchForm.pointsAgainst) matchData.scoreAgainst = parseInt(matchForm.pointsAgainst)
+        }
+
+        // If scores are complete, mark as FINISHED
+        if (matchData.scoreFor !== undefined && matchData.scoreAgainst !== undefined) {
+          matchData.status = "FINISHED"
+        }
+
+        const res = await fetch(`/api/club/matches/${selectedMatchId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(matchData),
+        })
+
+        if (!res.ok) throw new Error("Error al actualizar")
+        toast.success("Partido actualizado correctamente")
       } else {
-        if (matchForm.pointsFor) updateData.scoreFor = parseInt(matchForm.pointsFor)
-        if (matchForm.pointsAgainst) updateData.scoreAgainst = parseInt(matchForm.pointsAgainst)
+        // Create new match
+        const res = await fetch("/api/club/matches", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(matchData),
+        })
+
+        if (!res.ok) throw new Error("Error al crear")
+        toast.success("Partido creado correctamente")
       }
 
-      // If scores are complete, mark as FINISHED
-      if (updateData.scoreFor !== undefined && updateData.scoreAgainst !== undefined) {
-        updateData.status = "FINISHED"
-      }
-
-      const res = await fetch(`/api/club/matches/${selectedMatchId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
-      })
-
-      if (!res.ok) throw new Error("Error al actualizar")
-
-      toast.success("Partido actualizado correctamente")
       setEditMode(false)
+      setDetailModalOpen(false)
       fetchMatches()
     } catch (error) {
       console.error("Error:", error)
-      toast.error("Error al actualizar el partido")
+      toast.error(selectedMatchId ? "Error al actualizar el partido" : "Error al crear el partido")
     }
   }
 
   // Confirm match result
-  const handleConfirmResult = async (confirmed: boolean) => {
+  const handleConfirmResult = async (confirmed: boolean, options?: { reschedule?: boolean; dateISO?: string }) => {
     if (!confirmingMatchId) return
 
     try {
@@ -257,21 +314,34 @@ export default function MatchesPage() {
             goalsAgainst: "",
             pointsFor: "",
             pointsAgainst: "",
+            sport: (match as any).sport || "FOOTBALL",
+            tournamentId: (match as any).tournamentId || "",
           })
           setEditMode(true)
           setDetailModalOpen(true)
         }
       } else {
-        // User says match wasn't played - mark as cancelled
-        const res = await fetch(`/api/club/matches/${confirmingMatchId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "CANCELLED" }),
-        })
-
-        if (!res.ok) throw new Error("Error")
-        
-        toast.success("Partido cancelado")
+        // User says match wasn't played
+        if (options?.reschedule && options.dateISO) {
+          // Reschedule to a new date/time and set status to SCHEDULED
+          const res = await fetch(`/api/club/matches/${confirmingMatchId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date: options.dateISO, status: "SCHEDULED" }),
+          })
+          if (!res.ok) throw new Error("Error")
+          toast.success("Partido reagendado")
+        } else {
+          // Cancel the match
+          const res = await fetch(`/api/club/matches/${confirmingMatchId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "CANCELLED" }),
+          })
+  
+          if (!res.ok) throw new Error("Error")
+          toast.success("Partido cancelado")
+        }
         fetchMatches()
         setResultModalOpen(false)
       }
@@ -285,9 +355,9 @@ export default function MatchesPage() {
 
   if (!mounted) return null
 
-  const selectedMatch = selectedMatchId ? matches.find(m => m.id === selectedMatchId) : null
+  const selectedMatch = selectedMatchId ? (matches.find(m => m.id === selectedMatchId) || null) : null
   const selectedDayMatches = selectedDate ? getMatchesForDate(selectedDate) : []
-  const confirmingMatch = confirmingMatchId ? matches.find(m => m.id === confirmingMatchId) : null
+  const confirmingMatch = confirmingMatchId ? (matches.find(m => m.id === confirmingMatchId) || null) : null
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -305,9 +375,9 @@ export default function MatchesPage() {
 
       {/* Pending Results Alert */}
       {pendingResults.length > 0 && (
-        <Alert className="border-orange-200 bg-orange-50">
-          <AlertCircle className="h-4 w-4 text-orange-600" />
-          <AlertDescription className="text-orange-800">
+        <Alert className="border-red-400 bg-transparent">
+          <AlertCircle className="h-4 w-4 text-red-500" />
+          <AlertDescription className="text-foreground">
             <div className="flex justify-between items-center">
               <span>
                 <strong>{pendingResults.length}</strong> partido(s) finalizado(s) sin resultados cargados.
@@ -315,7 +385,7 @@ export default function MatchesPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-orange-300"
+                className="border-red-300"
                 onClick={() => {
                   setListView("upcoming")
                   setActiveTab("list")
@@ -332,10 +402,10 @@ export default function MatchesPage() {
       <div className="flex gap-2 border-b">
         <button
           onClick={() => setActiveTab("calendar")}
-          className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+          className={`px-4 py-2 font-medium transition-colors border-b-2 rounded-t-md ${
             activeTab === "calendar"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
+              ? "border-primary text-primary bg-primary/10 shadow-inner"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40"
           }`}
         >
           <Calendar className="h-4 w-4 inline mr-2" />
@@ -343,10 +413,10 @@ export default function MatchesPage() {
         </button>
         <button
           onClick={() => setActiveTab("list")}
-          className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+          className={`px-4 py-2 font-medium transition-colors border-b-2 rounded-t-md ${
             activeTab === "list"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
+              ? "border-primary text-primary bg-primary/10 shadow-inner"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40"
           }`}
         >
           <FileText className="h-4 w-4 inline mr-2" />
@@ -359,7 +429,9 @@ export default function MatchesPage() {
         <Card className="w-full">
           <CardHeader>
             <CardTitle>Calendario de Partidos</CardTitle>
-            <CardDescription>Haz click en un día con partido (punto azul) para ver los detalles</CardDescription>
+            <CardDescription>
+              Haz click en un día con partido (punto azul) para ver los detalles, o en un día vacío para crear un nuevo partido
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="w-full flex justify-center">

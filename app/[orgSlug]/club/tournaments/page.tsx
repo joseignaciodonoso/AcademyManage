@@ -58,6 +58,16 @@ export default function TournamentsPage() {
         return
       }
 
+      // Validación: endDate no puede ser anterior a startDate
+      if (form.endDate) {
+        const start = new Date(form.startDate)
+        const end = new Date(form.endDate)
+        if (end < start) {
+          toast.error("La fecha de término no puede ser anterior a la fecha de inicio")
+          return
+        }
+      }
+
       setUploadingFile(true)
       
       const rulesFileUrls: string[] = []
@@ -85,10 +95,16 @@ export default function TournamentsPage() {
       }
       
       // Create tournament with PDF URLs
-      const tournamentData = {
-        ...form,
+      const tournamentData: any = {
+        name: form.name,
+        description: form.description || undefined,
+        season: form.season,
+        type: form.type,
+        customType: form.type === "OTHER" ? form.customType : undefined,
+        startDate: new Date(form.startDate).toISOString(),
+        endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
+        rules: form.rules || undefined,
         rulesFileUrls: rulesFileUrls.length > 0 ? rulesFileUrls : undefined,
-        customType: form.type === "OTHER" ? form.customType : undefined
       }
       
       const res = await fetch("/api/club/tournaments", {
@@ -97,7 +113,14 @@ export default function TournamentsPage() {
         body: JSON.stringify(tournamentData),
       })
       
-      if (!res.ok) throw new Error("Error al crear torneo")
+      if (!res.ok) {
+        let msg = "Error al crear torneo"
+        try {
+          const err = await res.json()
+          if (err?.error) msg = err.error
+        } catch {}
+        throw new Error(msg)
+      }
       
       toast.success("Torneo creado exitosamente")
       setOpenDialog(false)

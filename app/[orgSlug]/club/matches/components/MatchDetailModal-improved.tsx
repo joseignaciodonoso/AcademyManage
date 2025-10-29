@@ -79,32 +79,13 @@ export function MatchDetailModal({
   const isCreating = !match
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loadingTournaments, setLoadingTournaments] = useState(false)
-  const [clubSport, setClubSport] = useState<"FOOTBALL" | "BASKETBALL">("FOOTBALL")
 
-  // Load tournaments and club info when modal opens in create/edit mode
+  // Load tournaments when modal opens in create/edit mode
   useEffect(() => {
     if (open && (isCreating || editMode)) {
       loadTournaments()
-      loadClubInfo()
     }
   }, [open, isCreating, editMode])
-
-  const loadClubInfo = async () => {
-    try {
-      const res = await fetch("/api/club/info")
-      if (res.ok) {
-        const data = await res.json()
-        const sport = data.primarySport || "FOOTBALL"
-        setClubSport(sport)
-        // Auto-set sport in form if creating
-        if (isCreating) {
-          setMatchForm((prev: any) => ({ ...prev, sport }))
-        }
-      }
-    } catch (error) {
-      console.error("Error loading club info:", error)
-    }
-  }
 
   const loadTournaments = async () => {
     try {
@@ -230,7 +211,7 @@ export function MatchDetailModal({
 
                 <div>
                   <h3 className="font-semibold mb-4 text-lg">Resultado</h3>
-                  {match.status === "FINISHED" ? (
+                  {match?.status === "FINISHED" ? (
                     <div className="space-y-3">
                       <div className="text-center p-6 bg-muted/30 rounded-lg">
                         <p className="font-mono text-4xl font-bold mb-2">
@@ -247,7 +228,7 @@ export function MatchDetailModal({
                 </div>
               </div>
 
-              {match.notes && (
+              {match?.notes && (
                 <div>
                   <h3 className="font-semibold mb-2">Notas</h3>
                   <p className="text-muted-foreground">{match.notes}</p>
@@ -270,7 +251,7 @@ export function MatchDetailModal({
                   <Users className="h-4 w-4 mr-2" />
                   Convocar
                 </Button>
-                {match.status === "FINISHED" && (
+                {match?.status === "FINISHED" && (
                   <Button
                     className="flex-1"
                     variant="outline"
@@ -286,20 +267,24 @@ export function MatchDetailModal({
             // Edit/Create Mode
             <>
               <div className="space-y-4">
-                {/* Tournament Selection and Sport Info */}
-                <div className="grid grid-cols-3 gap-4">
+                {/* Sport and Tournament Selection */}
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Deporte</Label>
-                    <div className="flex items-center h-10 px-3 py-2 border border-input bg-muted/50 rounded-md">
-                      <span className="text-sm font-medium">
-                        {getSportLabel(matchForm.sport)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Detectado automáticamente del club
-                    </p>
+                    <Label>Deporte *</Label>
+                    <Select 
+                      value={matchForm.sport} 
+                      onValueChange={(value: "FOOTBALL" | "BASKETBALL") => setMatchForm({ ...matchForm, sport: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="FOOTBALL">Fútbol</SelectItem>
+                        <SelectItem value="BASKETBALL">Básquetbol</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="col-span-2">
+                  <div>
                     <Label>Campeonato</Label>
                     <Select 
                       value={matchForm.tournamentId || "FRIENDLY"} 
@@ -307,19 +292,18 @@ export function MatchDetailModal({
                       disabled={loadingTournaments}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar campeonato..." />
+                        <SelectValue placeholder="Amistoso" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="FRIENDLY">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-gray-400"></div>
-                            <span>Partido Amistoso</span>
+                          <div className="flex items-center">
+                            <span>Amistoso</span>
                           </div>
                         </SelectItem>
                         {tournaments.map((tournament) => (
                           <SelectItem key={tournament.id} value={tournament.id}>
                             <div className="flex items-center gap-2">
-                              <Trophy className="h-3 w-3 text-yellow-600" />
+                              <Trophy className="h-3 w-3" />
                               <span>{tournament.name}</span>
                               <span className="text-xs text-muted-foreground">({tournament.season})</span>
                             </div>
@@ -328,88 +312,63 @@ export function MatchDetailModal({
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {matchForm.tournamentId ? "Partido de campeonato oficial" : "Por defecto será un partido amistoso"}
+                      Si no seleccionas un campeonato, será un partido amistoso
                     </p>
                   </div>
                 </div>
 
-                {/* Match Details Section */}
-                <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
-                  <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                    Detalles del Partido
-                  </h4>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Oponente *</Label>
-                      <Input
-                        value={matchForm.opponent}
-                        onChange={(e) => setMatchForm({ ...matchForm, opponent: e.target.value })}
-                        placeholder="Ej: Club Deportivo Rival"
-                        className="font-medium"
-                      />
-                    </div>
-                    <div>
-                      <Label>Ubicación *</Label>
-                      <Input
-                        value={matchForm.location}
-                        onChange={(e) => setMatchForm({ ...matchForm, location: e.target.value })}
-                        placeholder="Ej: Estadio Municipal"
-                      />
-                    </div>
+                {/* Basic Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Oponente *</Label>
+                    <Input
+                      value={matchForm.opponent}
+                      onChange={(e) => setMatchForm({ ...matchForm, opponent: e.target.value })}
+                      placeholder="Nombre del equipo rival"
+                    />
+                  </div>
+                  <div>
+                    <Label>Ubicación *</Label>
+                    <Input
+                      value={matchForm.location}
+                      onChange={(e) => setMatchForm({ ...matchForm, location: e.target.value })}
+                      placeholder="Estadio o cancha"
+                    />
                   </div>
                 </div>
 
-                {/* Schedule Section */}
-                <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
-                  <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                    Fecha y Hora
-                  </h4>
-                  
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label>Fecha *</Label>
-                      <Input
-                        type="date"
-                        value={matchForm.date}
-                        onChange={(e) => setMatchForm({ ...matchForm, date: e.target.value })}
-                        className="font-mono"
-                      />
-                    </div>
-                    <div>
-                      <Label>Hora *</Label>
-                      <Input
-                        type="time"
-                        value={matchForm.time}
-                        onChange={(e) => setMatchForm({ ...matchForm, time: e.target.value })}
-                        className="font-mono"
-                      />
-                    </div>
-                    <div>
-                      <Label>Condición *</Label>
-                      <Select 
-                        value={matchForm.homeAway} 
-                        onValueChange={(value: "HOME" | "AWAY") => setMatchForm({ ...matchForm, homeAway: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="HOME">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              <span>Local</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="AWAY">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                              <span>Visita</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                {/* Date and Time */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label>Fecha *</Label>
+                    <Input
+                      type="date"
+                      value={matchForm.date}
+                      onChange={(e) => setMatchForm({ ...matchForm, date: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Hora *</Label>
+                    <Input
+                      type="time"
+                      value={matchForm.time}
+                      onChange={(e) => setMatchForm({ ...matchForm, time: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Local/Visita *</Label>
+                    <Select 
+                      value={matchForm.homeAway} 
+                      onValueChange={(value: "HOME" | "AWAY") => setMatchForm({ ...matchForm, homeAway: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="HOME">Local</SelectItem>
+                        <SelectItem value="AWAY">Visita</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -432,52 +391,52 @@ export function MatchDetailModal({
                     </p>
                     <div className="grid grid-cols-2 gap-4">
                       {matchForm.sport === "FOOTBALL" ? (
-                      <>
-                        <div>
-                          <Label>Goles a Favor</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={matchForm.goalsFor}
-                            onChange={(e) => setMatchForm({ ...matchForm, goalsFor: e.target.value })}
-                            placeholder="0"
-                          />
-                        </div>
-                        <div>
-                          <Label>Goles en Contra</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={matchForm.goalsAgainst}
-                            onChange={(e) => setMatchForm({ ...matchForm, goalsAgainst: e.target.value })}
-                            placeholder="0"
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div>
-                          <Label>Puntos a Favor</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={matchForm.pointsFor}
-                            onChange={(e) => setMatchForm({ ...matchForm, pointsFor: e.target.value })}
-                            placeholder="0"
-                          />
-                        </div>
-                        <div>
-                          <Label>Puntos en Contra</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={matchForm.pointsAgainst}
-                            onChange={(e) => setMatchForm({ ...matchForm, pointsAgainst: e.target.value })}
-                            placeholder="0"
-                          />
-                        </div>
-                      </>
-                    )}
+                        <>
+                          <div>
+                            <Label>Goles a Favor</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={matchForm.goalsFor}
+                              onChange={(e) => setMatchForm({ ...matchForm, goalsFor: e.target.value })}
+                              placeholder="0"
+                            />
+                          </div>
+                          <div>
+                            <Label>Goles en Contra</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={matchForm.goalsAgainst}
+                              onChange={(e) => setMatchForm({ ...matchForm, goalsAgainst: e.target.value })}
+                              placeholder="0"
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div>
+                            <Label>Puntos a Favor</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={matchForm.pointsFor}
+                              onChange={(e) => setMatchForm({ ...matchForm, pointsFor: e.target.value })}
+                              placeholder="0"
+                            />
+                          </div>
+                          <div>
+                            <Label>Puntos en Contra</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={matchForm.pointsAgainst}
+                              onChange={(e) => setMatchForm({ ...matchForm, pointsAgainst: e.target.value })}
+                              placeholder="0"
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}

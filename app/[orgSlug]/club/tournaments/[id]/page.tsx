@@ -106,6 +106,18 @@ export default function TournamentDetailPage() {
     rules: ""
   })
   const [saving, setSaving] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState<number | null>(null)
+
+  const getOriginalFileName = (url: string) => {
+    try {
+      const base = url.split('/').pop() || ''
+      const idx = base.indexOf('_')
+      const name = idx >= 0 ? base.slice(idx + 1) : base
+      return decodeURIComponent(name)
+    } catch {
+      return url
+    }
+  }
 
   useEffect(() => {
     fetchTournamentDetail()
@@ -400,15 +412,59 @@ export default function TournamentDetailPage() {
                         </div>
                       )}
                     </div>
-                    {tournament.rules && (
+                    {(tournament.rules || (tournament as any).rulesFileUrls?.length || (tournament as any).rulesFileUrl) && (
                       <div className="mt-4">
                         <h4 className="font-semibold mb-2 flex items-center gap-2">
                           <FileText className="h-4 w-4" />
                           Reglas y Bases
                         </h4>
-                        <div className="bg-muted/30 rounded-lg p-4 text-sm whitespace-pre-wrap">
-                          {tournament.rules}
-                        </div>
+                        {tournament.rules && (
+                          <div className="bg-muted/30 rounded-lg p-4 text-sm whitespace-pre-wrap">
+                            {tournament.rules}
+                          </div>
+                        )}
+                        {/* Files list (multiple PDFs) */}
+                        {(tournament as any).rulesFileUrls?.length ? (
+                          <div className="mt-3 space-y-2">
+                            <h5 className="text-sm font-medium">Archivos PDF</h5>
+                            <div className="space-y-3">
+                              {(tournament as any).rulesFileUrls.map((url: string, idx: number) => (
+                                <div key={idx} className="space-y-2">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span className="text-sm">{getOriginalFileName(url)}</span>
+                                    <div className="flex items-center gap-2">
+                                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm">Abrir</a>
+                                      <Button variant="outline" size="sm" onClick={() => setPreviewOpen(previewOpen === idx ? null : idx)}>
+                                        {previewOpen === idx ? 'Ocultar' : 'Previsualizar'}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  {previewOpen === idx && (
+                                    <div className="border rounded-md overflow-hidden">
+                                      <iframe src={url} className="w-full h-96" />
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (tournament as any).rulesFileUrl ? (
+                          <div className="mt-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <a href={(tournament as any).rulesFileUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                                {getOriginalFileName((tournament as any).rulesFileUrl)}
+                              </a>
+                              <Button variant="outline" size="sm" onClick={() => setPreviewOpen(previewOpen === 0 ? null : 0)}>
+                                {previewOpen === 0 ? 'Ocultar' : 'Previsualizar'}
+                              </Button>
+                            </div>
+                            {previewOpen === 0 && (
+                              <div className="mt-2 border rounded-md overflow-hidden">
+                                <iframe src={(tournament as any).rulesFileUrl} className="w-full h-96" />
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                     )}
                   </>

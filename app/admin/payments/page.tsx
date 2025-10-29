@@ -106,6 +106,10 @@ export default function PaymentsPage() {
   })
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("ALL")
+  const [methodFilter, setMethodFilter] = useState("ALL")
+  const [dateFilter, setDateFilter] = useState("ALL") // ALL, TODAY, THIS_WEEK, THIS_MONTH, CUSTOM
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
   const [loading, setLoading] = useState(true)
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [sortBy, setSortBy] = useState<"date" | "amount" | "status">("date")
@@ -190,9 +194,23 @@ export default function PaymentsPage() {
   }, [selectedStudent, selectedPlan, studentsOptions])
 
   const resetManual = () => {
-    setManualPayment({ amount: "", method: "TRANSFER", paidAt: "" })
+    // Set today's date by default
+    const today = new Date()
+    const todayStr = today.toISOString().slice(0, 16) // Format: YYYY-MM-DDTHH:MM
+    setManualPayment({ amount: "", method: "TRANSFER", paidAt: todayStr })
     setSelectedStudent(null)
+    setSelectedPlan(null)
   }
+
+  // Auto-fill amount when plan is selected
+  useEffect(() => {
+    if (selectedPlan && selectedPlan.price > 0) {
+      setManualPayment(prev => ({
+        ...prev,
+        amount: String(selectedPlan.price)
+      }))
+    }
+  }, [selectedPlan])
 
   const submitManualPayment = async () => {
     try {
@@ -416,14 +434,51 @@ export default function PaymentsPage() {
   }
 
   const filteredPayments = payments.filter(payment => {
+    // Search filter
     const term = debouncedSearch.toLowerCase()
     const matchesSearch = payment.user.name.toLowerCase().includes(term) ||
                          payment.user.email.toLowerCase().includes(term) ||
                          payment.transactionId?.toLowerCase().includes(term)
     
+    // Status filter
     const matchesStatus = statusFilter === "ALL" || payment.status === statusFilter
     
-    return matchesSearch && matchesStatus
+    // Method filter
+    const matchesMethod = methodFilter === "ALL" || payment.method === methodFilter
+    
+    // Date filter
+    let matchesDate = true
+    const paymentDate = new Date(payment.paidAt || payment.createdAt)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    if (dateFilter === "TODAY") {
+      const tomorrow = new Date(today)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      matchesDate = paymentDate >= today && paymentDate < tomorrow
+    } else if (dateFilter === "THIS_WEEK") {
+      const weekStart = new Date(today)
+      weekStart.setDate(today.getDate() - today.getDay())
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekStart.getDate() + 7)
+      matchesDate = paymentDate >= weekStart && paymentDate < weekEnd
+    } else if (dateFilter === "THIS_MONTH") {
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+      matchesDate = paymentDate >= monthStart && paymentDate < monthEnd
+    } else if (dateFilter === "CUSTOM") {
+      if (dateFrom) {
+        const from = new Date(dateFrom)
+        matchesDate = matchesDate && paymentDate >= from
+      }
+      if (dateTo) {
+        const to = new Date(dateTo)
+        to.setHours(23, 59, 59, 999)
+        matchesDate = matchesDate && paymentDate <= to
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesMethod && matchesDate
   })
 
   const sortedPayments = useMemo(() => {
@@ -602,7 +657,10 @@ export default function PaymentsPage() {
             </Button>
             <Button 
               className="font-semibold transition-all duration-300 transform hover:scale-105"
-              onClick={() => setOpenManual(true)}
+              onClick={() => {
+                resetManual() // Initialize with today's date
+                setOpenManual(true)
+              }}
             >
               Registrar Pago
             </Button>
@@ -648,31 +706,112 @@ export default function PaymentsPage() {
                 </CardDescription>
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto">
-                <div className="flex items-center space-x-2">
-                  <Filter className="h-4 w-4 text-[hsl(var(--foreground))]/60" />
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-40 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[hsl(var(--background))] border-border">
-                      <SelectItem value="ALL">Todos</SelectItem>
-                      <SelectItem value="PAID">Pagados</SelectItem>
-                      <SelectItem value="PENDING">Pendientes</SelectItem>
-                      <SelectItem value="FAILED">Fallidos</SelectItem>
-                      <SelectItem value="CANCELED">Cancelados</SelectItem>
-                      <SelectItem value="REFUNDED">Reembolsados</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Search className="h-4 w-4 text-[hsl(var(--foreground))]/60" />
-                  <Input
-                    ref={inputRef}
-                    placeholder="Buscar pagos..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
-                  />
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
+                    {/* Status Filter */}
+                    <div className="flex items-center space-x-2">
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-[180px] bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
+                          <SelectValue placeholder="Estado" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[hsl(var(--background))] border-border">
+                          <SelectItem value="ALL">Todos los estados</SelectItem>
+                          <SelectItem value="PAID">Pagados</SelectItem>
+                          <SelectItem value="PENDING">Pendientes</SelectItem>
+                          <SelectItem value="FAILED">Fallidos</SelectItem>
+                          <SelectItem value="CANCELED">Cancelados</SelectItem>
+                          <SelectItem value="REFUNDED">Reembolsados</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Method Filter */}
+                    <div className="flex items-center space-x-2">
+                      <Select value={methodFilter} onValueChange={setMethodFilter}>
+                        <SelectTrigger className="w-[180px] bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
+                          <SelectValue placeholder="Método" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[hsl(var(--background))] border-border">
+                          <SelectItem value="ALL">Todos los métodos</SelectItem>
+                          <SelectItem value="TRANSFER">Transferencia</SelectItem>
+                          <SelectItem value="CASH">Efectivo</SelectItem>
+                          <SelectItem value="CARD">Tarjeta</SelectItem>
+                          <SelectItem value="ODOO">Odoo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Date Filter */}
+                    <div className="flex items-center space-x-2">
+                      <Select value={dateFilter} onValueChange={setDateFilter}>
+                        <SelectTrigger className="w-[180px] bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
+                          <SelectValue placeholder="Fecha" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[hsl(var(--background))] border-border">
+                          <SelectItem value="ALL">Todas las fechas</SelectItem>
+                          <SelectItem value="TODAY">Hoy</SelectItem>
+                          <SelectItem value="THIS_WEEK">Esta semana</SelectItem>
+                          <SelectItem value="THIS_MONTH">Este mes</SelectItem>
+                          <SelectItem value="CUSTOM">Personalizado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Search */}
+                    <div className="flex items-center space-x-2 flex-1">
+                      <Search className="h-4 w-4 text-[hsl(var(--foreground))]/60" />
+                      <Input
+                        ref={inputRef}
+                        placeholder="Buscar por nombre, email o ID..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="max-w-sm bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
+                      />
+                    </div>
+
+                    {/* Reset Filters Button */}
+                    {(statusFilter !== "ALL" || methodFilter !== "ALL" || dateFilter !== "ALL" || searchTerm) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setStatusFilter("ALL")
+                          setMethodFilter("ALL")
+                          setDateFilter("ALL")
+                          setSearchTerm("")
+                          setDateFrom("")
+                          setDateTo("")
+                        }}
+                        className="bg-[hsl(var(--muted))]/50 border-border"
+                      >
+                        Limpiar filtros
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Custom Date Range */}
+                  {dateFilter === "CUSTOM" && (
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm text-[hsl(var(--foreground))]/70">Desde:</Label>
+                        <Input
+                          type="date"
+                          value={dateFrom}
+                          onChange={(e) => setDateFrom(e.target.value)}
+                          className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm text-[hsl(var(--foreground))]/70">Hasta:</Label>
+                        <Input
+                          type="date"
+                          value={dateTo}
+                          onChange={(e) => setDateTo(e.target.value)}
+                          className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -706,9 +845,9 @@ export default function PaymentsPage() {
                           </div>
                           <div className="space-y-2">
                             <p className="text-lg font-medium text-[hsl(var(--foreground))]/70">
-                              {searchTerm || statusFilter !== "ALL" ? "No se encontraron pagos" : "No hay pagos registrados"}
+                              {searchTerm || statusFilter !== "ALL" || methodFilter !== "ALL" || dateFilter !== "ALL" ? "No se encontraron pagos con los filtros aplicados" : "No hay pagos registrados"}
                             </p>
-                            {!searchTerm && statusFilter === "ALL" && (
+                            {!searchTerm && statusFilter === "ALL" && methodFilter === "ALL" && dateFilter === "ALL" && (
                               <p className="text-sm text-[hsl(var(--foreground))]/60">
                                 Los pagos aparecerán aquí cuando los estudiantes realicen transacciones
                               </p>

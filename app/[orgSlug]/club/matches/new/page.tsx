@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "lucide-react"
@@ -9,14 +9,19 @@ import { Calendar } from "lucide-react"
 export default function NewMatchPage() {
   const params = useParams() as { orgSlug: string }
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const dateParam = searchParams.get("date")
 
   useEffect(() => {
     // Auto redirect to calendar after a brief delay to show the message
     const timer = setTimeout(() => {
-      router.push(`/${params.orgSlug}/admin/calendar`)
+      const calendarUrl = dateParam 
+        ? `/${params.orgSlug}/admin/calendar?date=${dateParam}&type=match`
+        : `/${params.orgSlug}/admin/calendar`
+      router.push(calendarUrl)
     }, 3000)
     return () => clearTimeout(timer)
-  }, [params.orgSlug, router])
+  }, [params.orgSlug, router, dateParam])
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -37,7 +42,12 @@ export default function NewMatchPage() {
           </p>
           <div className="flex justify-center gap-2">
             <Button 
-              onClick={() => router.push(`/${params.orgSlug}/admin/calendar`)}
+              onClick={() => {
+                const calendarUrl = dateParam 
+                  ? `/${params.orgSlug}/admin/calendar?date=${dateParam}&type=match`
+                  : `/${params.orgSlug}/admin/calendar`
+                router.push(calendarUrl)
+              }}
               className="flex items-center gap-2"
             >
               <Calendar className="h-4 w-4" />

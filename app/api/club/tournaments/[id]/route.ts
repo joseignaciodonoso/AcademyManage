@@ -134,8 +134,8 @@ async function calculateTournamentPlayerStats(tournamentId: string, sport: strin
       fouls: true,
       minutes: true,
       goals: true,
-      yellowCards: true,
-      redCards: true,
+      yellow: true,
+      red: true,
     },
     _count: {
       matchId: true,
