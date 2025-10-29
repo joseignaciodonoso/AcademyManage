@@ -27,7 +27,11 @@ export default async function ClubTenantLayout({
 }) {
   const session = await getServerSession(authOptions)
   if (!session?.user) redirect("/auth/signin")
-  if (session.user.role !== "ACADEMY_ADMIN" && session.user.role !== "SUPER_ADMIN") {
+  if (
+    session.user.role !== "ACADEMY_ADMIN" &&
+    session.user.role !== "SUPER_ADMIN" &&
+    session.user.role !== "COACH"
+  ) {
     redirect("/unauthorized")
   }
 

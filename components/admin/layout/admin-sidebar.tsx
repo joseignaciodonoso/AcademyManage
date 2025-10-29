@@ -113,6 +113,11 @@ const clubNavigation = [
     icon: Activity,
   },
   {
+    name: "Armar Jugadas",
+    href: "/club/coach/plays",
+    icon: Target,
+  },
+  {
     name: "Gastos",
     href: "/club/expenses",
     icon: Receipt,
