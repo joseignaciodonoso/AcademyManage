@@ -54,6 +54,11 @@ const academyNavigation = [
     icon: CreditCard,
   },
   {
+    name: "Gastos",
+    href: "/admin/expenses",
+    icon: Receipt,
+  },
+  {
     name: "Calendario",
     href: "/admin/calendar",
     icon: Calendar,

@@ -12,6 +12,9 @@ import {
   FileText,
   Clock,
   AlertTriangle,
+  TrendingDown,
+  TrendingUp,
+  Target,
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +54,15 @@ type DashboardMetrics = {
   studentsTrend: { month: string; signups: number; starts: number; ends: number }[]
   pendingPayments: number
   pendingAmountMTD: number
+  // New expense and profit metrics
+  expensesMTD: number
+  expensesLastMonth: number
+  expensesCountThisMonth: number
+  actualProfitMTD: number
+  projectedRevenueMTD: number
+  projectedProfitMTD: number
+  expensesTrend: { month: string; expenses: number }[]
+  profitTrend: { month: string; revenue: number; expenses: number; profit: number }[]
 }
 
 function formatCurrency(amount: number, currency = "CLP") {
@@ -109,6 +121,32 @@ export default function DashboardPage() {
       progress: Math.min(100, Math.round((metrics.revenueMTD / Math.max(1, metrics.revenueLastMonth || metrics.revenueMTD)) * 80)),
     },
     {
+      title: 'Gastos del Mes (MTD)',
+      value: formatCurrency(metrics.expensesMTD, 'CLP'),
+      change: metrics.expensesLastMonth > 0
+        ? `${(((metrics.expensesMTD - metrics.expensesLastMonth) / Math.max(1, metrics.expensesLastMonth)) * 100).toFixed(1)}% vs mes anterior`
+        : '—',
+      icon: TrendingDown,
+      color: 'from-red-500 to-pink-600',
+      progress: Math.min(100, Math.round((metrics.expensesMTD / Math.max(1, metrics.expensesLastMonth || metrics.expensesMTD)) * 80)),
+    },
+    {
+      title: 'Ganancia Efectiva (MTD)',
+      value: formatCurrency(metrics.actualProfitMTD, 'CLP'),
+      change: metrics.actualProfitMTD >= 0 ? 'Utilidad del mes' : 'Pérdida del mes',
+      icon: metrics.actualProfitMTD >= 0 ? TrendingUp : TrendingDown,
+      color: metrics.actualProfitMTD >= 0 ? 'from-green-500 to-emerald-600' : 'from-red-500 to-orange-600',
+      progress: Math.min(100, Math.max(0, Math.round((metrics.actualProfitMTD / Math.max(1, metrics.revenueMTD)) * 100))),
+    },
+    {
+      title: 'Ganancia Proyectada (MTD)',
+      value: formatCurrency(metrics.projectedProfitMTD, 'CLP'),
+      change: 'Incluye pagos pendientes',
+      icon: Target,
+      color: metrics.projectedProfitMTD >= 0 ? 'from-purple-500 to-indigo-600' : 'from-orange-500 to-red-600',
+      progress: Math.min(100, Math.max(0, Math.round((metrics.projectedProfitMTD / Math.max(1, metrics.projectedRevenueMTD)) * 100))),
+    },
+    {
       title: 'Pagos Pendientes (mes)',
       value: metrics.pendingPayments,
       change: 'Cantidad por cobrar',
@@ -131,14 +169,6 @@ export default function DashboardPage() {
       icon: Users,
       color: 'from-green-500 to-emerald-600',
       progress: Math.min(100, Math.round((metrics.activeStudents / Math.max(1, metrics.totalStudents)) * 100)),
-    },
-    {
-      title: 'Membresías Activas',
-      value: metrics.activeMemberships,
-      change: 'Suscripciones vigentes',
-      icon: Calendar,
-      color: 'from-amber-500 to-orange-600',
-      progress: Math.min(100, Math.round((metrics.activeMemberships / Math.max(1, metrics.totalStudents)) * 100)),
     },
     {
       title: 'ARPU del Mes',
@@ -193,7 +223,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Charts */}
+            {/* Revenue Evolution Chart */}
             <Card className="glass-effect rounded-2xl border-gray-700/50">
               <CardHeader>
                 <CardTitle>Evolución de Ingresos</CardTitle>
@@ -210,6 +240,32 @@ export default function DashboardPage() {
                       <YAxis stroke="#9ca3af" />
                       <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ backgroundColor: '#111827', borderColor: '#374151' }} />
                       <Line type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, stroke: '#a78bfa', strokeWidth: 1 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Profit Evolution Chart */}
+            <Card className="glass-effect rounded-2xl border-gray-700/50">
+              <CardHeader>
+                <CardTitle>Evolución de Ganancias</CardTitle>
+                <CardDescription>Ingresos vs Gastos vs Ganancia (Últimos 6 meses)</CardDescription>
+              </CardHeader>
+              <CardContent className="h-72">
+                {!metrics || metrics.profitTrend.length === 0 ? (
+                  <div className="h-full flex items-center justify-center text-gray-500">Sin datos para mostrar</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={metrics.profitTrend} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                      <XAxis dataKey="month" stroke="#9ca3af" />
+                      <YAxis stroke="#9ca3af" />
+                      <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ backgroundColor: '#111827', borderColor: '#374151' }} />
+                      <Legend />
+                      <Line type="monotone" dataKey="revenue" name="Ingresos" stroke="#10b981" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="expenses" name="Gastos" stroke="#ef4444" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="profit" name="Ganancia" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, stroke: '#a78bfa', strokeWidth: 1 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 )}

@@ -8,6 +8,7 @@ import { z } from "zod"
 const expenseSchema = z.object({
   concept: z.string().min(1, "El concepto es requerido"),
   category: z.enum([
+    // Categorías de Clubes
     "FIELD_RENTAL", 
     "EQUIPMENT", 
     "TRANSPORTATION", 
@@ -16,6 +17,18 @@ const expenseSchema = z.object({
     "INSCRIPTIONS",
     "UNIFORMS",
     "MEDICAL",
+    // Categorías de Academias
+    "FACILITY_RENTAL",    // Arriendo de dojo/gimnasio
+    "BELTS_UNIFORMS",     // Cinturones y uniformes
+    "COMPETITION_FEES",   // Inscripciones a competencias
+    "MARKETING",          // Marketing y publicidad
+    "UTILITIES",          // Servicios básicos (agua, luz, internet)
+    "INSURANCE",          // Seguros
+    "MAINTENANCE",        // Mantenimiento de instalaciones
+    "TRAINING_MATERIALS", // Materiales de entrenamiento
+    "SOFTWARE",           // Software y sistemas
+    "MEDICAL_SUPPLIES",   // Botiquín y suministros médicos
+    "CERTIFICATION",      // Certificaciones y licencias
     "OTHER"
   ]),
   amount: z.number().positive("El monto debe ser positivo"),

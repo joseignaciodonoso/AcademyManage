@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
               academyId,
               name: plan.name,
               slug: plan.name.toLowerCase().replace(/\s+/g, "-"),
-              type: plan.type,
+              type: plan.type || (plan.billingCycle === "yearly" ? "YEARLY" : "MONTHLY"),
               price: plan.price,
               status: "ACTIVE",
             },

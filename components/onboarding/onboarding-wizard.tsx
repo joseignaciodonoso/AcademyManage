@@ -57,7 +57,8 @@ export interface OnboardingData {
   plans?: Array<{
     name: string
     price: number
-    type: "MONTHLY" | "YEARLY"
+    type?: "MONTHLY" | "YEARLY"
+    billingCycle?: "monthly" | "yearly"
     description?: string
     features: string[]
   }>

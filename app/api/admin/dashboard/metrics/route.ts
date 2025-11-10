@@ -202,6 +202,71 @@ export async function GET(request: NextRequest) {
     }
     const studentsTrend = Array.from(studentBuckets.entries()).map(([month, vals]) => ({ month, ...vals }))
 
+    // Expenses metrics
+    const [expensesThisMonth, expensesLastMonthData] = await Promise.all([
+      prisma.clubExpense.aggregate({
+        where: {
+          academyId,
+          date: { gte: firstDayThisMonth, lt: startOfNextMonth }
+        },
+        _sum: { amount: true },
+        _count: { _all: true }
+      }),
+      prisma.clubExpense.aggregate({
+        where: {
+          academyId,
+          date: { gte: firstDayLastMonth, lt: firstDayThisMonth }
+        },
+        _sum: { amount: true },
+        _count: { _all: true }
+      })
+    ])
+
+    const expensesMTD = expensesThisMonth._sum.amount || 0
+    const expensesLastMonth = expensesLastMonthData._sum.amount || 0
+    const expensesCountThisMonth = expensesThisMonth._count._all || 0
+
+    // Profit calculations
+    const actualProfitMTD = revenueMTD - expensesMTD
+    const projectedRevenueMTD = revenueMTD + pendingAmountMTD
+    const projectedProfitMTD = projectedRevenueMTD - expensesMTD
+
+    // Expenses trend (last 6 months)
+    const expensesSince = sixMonthsAgo
+    const expensesData = await prisma.clubExpense.findMany({
+      where: {
+        academyId,
+        date: { gte: expensesSince }
+      },
+      select: { amount: true, date: true },
+      orderBy: { date: "asc" }
+    })
+
+    const expensesTrendBuckets = new Map<string, number>()
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+      expensesTrendBuckets.set(key, 0)
+    }
+    for (const expense of expensesData) {
+      const key = `${expense.date.getFullYear()}-${String(expense.date.getMonth() + 1).padStart(2, "0")}`
+      if (expensesTrendBuckets.has(key)) {
+        expensesTrendBuckets.set(key, (expensesTrendBuckets.get(key) || 0) + expense.amount)
+      }
+    }
+    const expensesTrend = Array.from(expensesTrendBuckets.entries()).map(([month, expenses]) => ({ month, expenses }))
+
+    // Combine revenue and expenses for profit trend
+    const profitTrend = revenueTrend.map(rev => {
+      const expense = expensesTrend.find(exp => exp.month === rev.month)
+      return {
+        month: rev.month,
+        revenue: rev.revenue,
+        expenses: expense?.expenses || 0,
+        profit: rev.revenue - (expense?.expenses || 0)
+      }
+    })
+
     return NextResponse.json({
       totalStudents,
       activeStudents,
@@ -217,6 +282,15 @@ export async function GET(request: NextRequest) {
       studentsTrend,
       pendingPayments,
       pendingAmountMTD,
+      // New expense and profit metrics
+      expensesMTD,
+      expensesLastMonth,
+      expensesCountThisMonth,
+      actualProfitMTD,
+      projectedRevenueMTD,
+      projectedProfitMTD,
+      expensesTrend,
+      profitTrend
     })
   } catch (error) {
     console.error("Error dashboard metrics:", error)
