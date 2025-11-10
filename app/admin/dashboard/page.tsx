@@ -229,7 +229,7 @@ export default function DashboardPage() {
                 <CardTitle>Evolución de Ingresos</CardTitle>
                 <CardDescription>Ingresos (Últimos 6 meses)</CardDescription>
               </CardHeader>
-              <CardContent className="h-72">
+              <CardContent className="h-64 sm:h-72 lg:h-80">
                 {!metrics || metrics.revenueTrend.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-gray-500">Sin datos para mostrar</div>
                 ) : (
@@ -252,7 +252,7 @@ export default function DashboardPage() {
                 <CardTitle>Evolución de Ganancias</CardTitle>
                 <CardDescription>Ingresos vs Gastos vs Ganancia (Últimos 6 meses)</CardDescription>
               </CardHeader>
-              <CardContent className="h-72">
+              <CardContent className="h-64 sm:h-72 lg:h-80">
                 {!metrics || metrics.profitTrend.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-gray-500">Sin datos para mostrar</div>
                 ) : (
@@ -277,7 +277,7 @@ export default function DashboardPage() {
                 <CardTitle>Evolución de Inscritos</CardTitle>
                 <CardDescription>Altas, activaciones y bajas (últimos 6 meses)</CardDescription>
               </CardHeader>
-              <CardContent className="h-72">
+              <CardContent className="h-64 sm:h-72 lg:h-80">
                 {!metrics || metrics.studentsTrend.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-gray-500">Sin datos para mostrar</div>
                 ) : (
@@ -303,7 +303,7 @@ export default function DashboardPage() {
                 <CardTitle>Distribución por Plan</CardTitle>
                 <CardDescription>Membresías activas por plan</CardDescription>
               </CardHeader>
-              <CardContent className="h-72">
+              <CardContent className="h-64 sm:h-72 lg:h-80">
                 {!metrics || metrics.planDistribution.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-gray-500">Sin datos para mostrar</div>
                 ) : (

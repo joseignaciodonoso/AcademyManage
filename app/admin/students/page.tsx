@@ -854,7 +854,65 @@ export default function StudentsPage() {
                   Busca y gestiona todos los estudiantes de tu academia
                 </CardDescription>
               </div>
-              <div className="flex items-center space-x-3">
+              {/* Mobile Filters */}
+              <div className="flex flex-col space-y-3 md:hidden">
+                <div className="flex items-center space-x-2">
+                  <Search className="h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Buscar estudiantes..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={debtFilter} onValueChange={setDebtFilter}>
+                    <SelectTrigger className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
+                      <SelectValue placeholder="Estado pago" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
+                      <SelectItem value="ALL">Todos</SelectItem>
+                      <SelectItem value="UP_TO_DATE">Al día</SelectItem>
+                      <SelectItem value="OVERDUE">Atrasado</SelectItem>
+                      <SelectItem value="DUE_THIS_MONTH">Este mes</SelectItem>
+                      <SelectItem value="NO_PLAN">Sin plan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
+                      <SelectValue placeholder="Estado" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
+                      {statusOptions.map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt === "ALL" ? "Todos" : opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex space-x-2">
+                  <Select value={planFilter} onValueChange={setPlanFilter}>
+                    <SelectTrigger className="flex-1 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
+                      <SelectValue placeholder="Plan" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
+                      {planOptions.map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt === "ALL" ? "Todos" : opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    onClick={resetFilters}
+                    className="border-border"
+                    size="sm"
+                  >
+                    Limpiar
+                  </Button>
+                </div>
+              </div>
+
+              {/* Desktop Filters */}
+              <div className="hidden md:flex items-center space-x-3">
                 <div className="flex items-center space-x-2">
                   <Search className="h-4 w-4 text-gray-400" />
                   <Input
@@ -864,38 +922,35 @@ export default function StudentsPage() {
                     className="max-w-sm bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
                   />
                 </div>
-                {/* Estado de pago */}
                 <Select value={debtFilter} onValueChange={setDebtFilter}>
                   <SelectTrigger className="w-48 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                     <SelectValue placeholder="Estado de pago" />
                   </SelectTrigger>
                   <SelectContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
-                    <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" value="ALL">Todos (estado de pago)</SelectItem>
-                    <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" value="UP_TO_DATE">Al día</SelectItem>
-                    <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" value="OVERDUE">Atrasado</SelectItem>
-                    <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" value="DUE_THIS_MONTH">Pagan este mes</SelectItem>
-                    <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" value="NO_PLAN">Sin plan</SelectItem>
+                    <SelectItem value="ALL">Todos (estado de pago)</SelectItem>
+                    <SelectItem value="UP_TO_DATE">Al día</SelectItem>
+                    <SelectItem value="OVERDUE">Atrasado</SelectItem>
+                    <SelectItem value="DUE_THIS_MONTH">Pagan este mes</SelectItem>
+                    <SelectItem value="NO_PLAN">Sin plan</SelectItem>
                   </SelectContent>
                 </Select>
-                {/* Status filter */}
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-40 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                     <SelectValue placeholder="Estado" />
                   </SelectTrigger>
                   <SelectContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
                     {statusOptions.map((opt) => (
-                      <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" key={opt} value={opt}>{opt === "ALL" ? "Todos (estado)" : opt}</SelectItem>
+                      <SelectItem key={opt} value={opt}>{opt === "ALL" ? "Todos (estado)" : opt}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {/* Plan filter */}
                 <Select value={planFilter} onValueChange={setPlanFilter}>
                   <SelectTrigger className="w-48 bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
                     <SelectValue placeholder="Plan" />
                   </SelectTrigger>
                   <SelectContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
                     {planOptions.map((opt) => (
-                      <SelectItem className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))]" key={opt} value={opt}>{opt === "ALL" ? "Todos (plan)" : opt}</SelectItem>
+                      <SelectItem key={opt} value={opt}>{opt === "ALL" ? "Todos (plan)" : opt}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -911,7 +966,137 @@ export default function StudentsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border border-border overflow-hidden bg-[hsl(var(--muted))]/30 backdrop-blur-sm">
+            {/* Mobile Card View */}
+            <div className="block md:hidden space-y-4">
+              {filteredStudents.length === 0 ? (
+                <div className="flex flex-col items-center space-y-4 py-12">
+                  <div className="p-4 bg-[hsl(var(--muted))]/50 rounded-full">
+                    <Users className="h-12 w-12 text-[hsl(var(--foreground))]/50" />
+                  </div>
+                  <div className="space-y-2 text-center">
+                    <p className="text-lg font-medium text-[hsl(var(--foreground))]/70">
+                      {searchTerm ? "No se encontraron estudiantes" : "No hay estudiantes registrados"}
+                    </p>
+                    {!searchTerm && (
+                      <p className="text-sm text-[hsl(var(--foreground))]/60">
+                        Los estudiantes aparecerán aquí cuando se registren con un plan
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                filteredStudents.map((student) => (
+                  <Card key={student.id} className="border-border bg-[hsl(var(--muted))]/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3 flex-1">
+                          <Avatar className="w-12 h-12">
+                            <AvatarImage src={(student.image || student.photoUrl || student.avatarUrl) ?? undefined} alt={student.name} />
+                            <AvatarFallback className={`${avatarBgFor(student.id || student.email || student.name)} text-white font-semibold`}>{student.name.charAt(0).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <div className="font-medium text-[hsl(var(--foreground))] truncate">{student.name}</div>
+                              {student.status === "SUSPENDED" && (
+                                <Badge className="bg-[hsl(var(--destructive))]/20 text-[hsl(var(--destructive))] border-[hsl(var(--destructive))]/30 text-xs">
+                                  Suspendido
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center text-sm text-[hsl(var(--foreground))]/70">
+                              <Mail className="mr-1 h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{student.email}</span>
+                            </div>
+                            {student.phone && (
+                              <div className="flex items-center text-sm text-[hsl(var(--foreground))]/70">
+                                <Phone className="mr-1 h-3 w-3 flex-shrink-0" />
+                                {student.phone}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleEdit(student)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleSuspend(student)}>
+                              {student.status === "SUSPENDED" ? (
+                                <>
+                                  <CheckCircle className="mr-2 h-4 w-4" />
+                                  Reactivar
+                                </>
+                              ) : (
+                                <>
+                                  <Ban className="mr-2 h-4 w-4" />
+                                  Suspender
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(student)}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-[hsl(var(--foreground))]/60">Plan:</span>
+                          {student.membership ? (
+                            <div className="text-right">
+                              <div className="font-medium text-sm">{student.membership.plan.name}</div>
+                              <div className="text-xs text-[hsl(var(--foreground))]/70">
+                                {formatCurrency(student.membership.plan.price)} / {student.membership.plan.type === "MONTHLY" ? "mes" : "año"}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-[hsl(var(--foreground))]/60">Sin plan</span>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-[hsl(var(--foreground))]/60">Estado:</span>
+                          {student.membership ? (
+                            getStatusBadge(student.membership.status)
+                          ) : (
+                            <Badge className="bg-[hsl(var(--muted))]/40 text-[hsl(var(--foreground))]/70 border-[hsl(var(--muted))]/50">Sin suscripción</Badge>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-[hsl(var(--foreground))]/60">Próximo pago:</span>
+                          <span className="text-sm">
+                            {student.membership?.endDate ? formatDate(student.membership.endDate) : "N/A"}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-[hsl(var(--foreground))]/60">Registro:</span>
+                          <span className="text-sm">{formatDate(student.createdAt)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block rounded-lg border border-border overflow-hidden bg-[hsl(var(--muted))]/30 backdrop-blur-sm">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-[hsl(var(--muted))]/40 hover:bg-[hsl(var(--muted))]/60 border-border">

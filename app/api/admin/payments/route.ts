@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => null)
-    const { studentId, email, amount, method, paidAt, planId } = body || {}
+    const { studentId, email, amount, method, paidAt, planId, bankAccountId } = body || {}
 
     if ((!studentId && !email) || !amount || !method) {
       return NextResponse.json({ error: "Alumno (o email), monto y método son obligatorios" }, { status: 400 })
@@ -137,6 +137,7 @@ export async function POST(request: NextRequest) {
         type: membership ? "SUBSCRIPTION" : "INVOICE",
         method: methodUpper as any,
         paidAt: paidAt ? new Date(paidAt) : new Date(),
+        bankAccountId: bankAccountId || null,
       } as any),
       include: { membership: { include: { plan: true, user: true } } },
     })

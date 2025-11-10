@@ -122,7 +122,10 @@ export default function PaymentsPage() {
     amount: string
     method: "TRANSFER" | "CASH"
     paidAt: string
-  }>({ amount: "", method: "TRANSFER", paidAt: "" })
+    bankAccountId: string
+  }>({ amount: "", method: "TRANSFER", paidAt: "", bankAccountId: "" })
+  const [bankAccounts, setBankAccounts] = useState<{ id: string; name: string; bank: string }[]>([])
+  const [bankAccountsLoading, setBankAccountsLoading] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<{ id: string; name: string; email: string } | null>(null)
   const [studentsOptions, setStudentsOptions] = useState<{ 
     id: string; 
@@ -233,6 +236,7 @@ export default function PaymentsPage() {
           amount: amountNum,
           method: manualPayment.method,
           paidAt: manualPayment.paidAt || undefined,
+          bankAccountId: (manualPayment.bankAccountId && manualPayment.bankAccountId !== "none") ? manualPayment.bankAccountId : undefined,
         }),
       })
       if (!res.ok) {
@@ -337,6 +341,30 @@ export default function PaymentsPage() {
       } finally {
         setStudentsLoading(false)
         setPlansLoading(false)
+      }
+    }
+    load()
+  }, [openManual])
+
+  // Load bank accounts when dialog opens
+  useEffect(() => {
+    const load = async () => {
+      if (!openManual) return
+      try {
+        setBankAccountsLoading(true)
+        const resp = await fetch("/api/admin/bank-accounts?activeOnly=true")
+        if (resp.ok) {
+          const data = await resp.json()
+          setBankAccounts((data.bankAccounts || []).map((acc: any) => ({
+            id: acc.id,
+            name: acc.name,
+            bank: acc.bank
+          })))
+        }
+      } catch (e) {
+        console.error("Error loading bank accounts", e)
+      } finally {
+        setBankAccountsLoading(false)
       }
     }
     load()
@@ -1143,6 +1171,27 @@ export default function PaymentsPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-300">Cuenta Bancaria (opcional)</Label>
+              <Select value={manualPayment.bankAccountId} onValueChange={(v) => setManualPayment((p) => ({ ...p, bankAccountId: v }))}>
+                <SelectTrigger className="bg-gray-800/50 border-gray-700 text-white">
+                  <SelectValue placeholder="Selecciona cuenta bancaria" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                  <SelectItem value="none">Sin cuenta específica</SelectItem>
+                  {bankAccountsLoading ? (
+                    <SelectItem value="loading" disabled>Cargando...</SelectItem>
+                  ) : (
+                    bankAccounts.map((acc) => (
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.name} - {acc.bank}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

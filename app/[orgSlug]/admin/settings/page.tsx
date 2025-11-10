@@ -6,7 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { 
@@ -17,9 +22,47 @@ import {
   Shield,
   Eye,
   EyeOff,
-  CheckCircle
+  CheckCircle,
+  Building2,
+  Plus,
+  Edit,
+  Trash2,
+  XCircle
 } from "lucide-react"
 import { toast } from "sonner"
+import { useEffect } from "react"
+
+interface BankAccount {
+  id: string
+  name: string
+  bank: string
+  accountType: string
+  accountNumber: string
+  currency: string
+  isActive: boolean
+}
+
+const ACCOUNT_TYPES = {
+  CHECKING: "Cuenta Corriente",
+  SAVINGS: "Cuenta de Ahorro", 
+  CREDIT: "Cuenta de Crédito",
+  OTHER: "Otra"
+}
+
+const BANKS_CHILE = [
+  "Banco de Chile",
+  "Banco Estado", 
+  "Banco Santander",
+  "BCI",
+  "Banco Scotiabank",
+  "Banco Itaú",
+  "Banco Security",
+  "Banco Falabella",
+  "Banco Ripley",
+  "Banco Consorcio",
+  "Banco BICE",
+  "Otro"
+]
 
 export default function AdminSettingsPage() {
   const { data: session, update } = useSession()
@@ -43,6 +86,22 @@ export default function AdminSettingsPage() {
   const [profileForm, setProfileForm] = useState({
     name: session?.user?.name || "",
     email: session?.user?.email || ""
+  })
+
+  // Bank accounts state
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
+  const [bankLoading, setBankLoading] = useState(true)
+  const [bankError, setBankError] = useState("")
+  const [bankSuccess, setBankSuccess] = useState("")
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null)
+  const [formData, setFormData] = useState({
+    name: "",
+    bank: "",
+    accountType: "",
+    accountNumber: "",
+    currency: "CLP",
+    isActive: true,
   })
 
   const handlePasswordChange = async () => {
@@ -134,6 +193,124 @@ export default function AdminSettingsPage() {
     }
   }
 
+  // Bank account functions
+  useEffect(() => {
+    fetchBankAccounts()
+  }, [])
+
+  const fetchBankAccounts = async () => {
+    try {
+      setBankLoading(true)
+      const response = await fetch("/api/admin/bank-accounts")
+      const data = await response.json()
+
+      if (response.ok) {
+        setBankAccounts(data.bankAccounts || [])
+      } else {
+        setBankError(data.error || "Error al cargar cuentas bancarias")
+      }
+    } catch (err) {
+      setBankError("Error de conexión")
+    } finally {
+      setBankLoading(false)
+    }
+  }
+
+  const handleBankSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setBankError("")
+    setBankSuccess("")
+
+    try {
+      const url = editingAccount 
+        ? `/api/admin/bank-accounts/${editingAccount.id}`
+        : "/api/admin/bank-accounts"
+      
+      const method = editingAccount ? "PUT" : "POST"
+      
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setBankSuccess(editingAccount ? "Cuenta actualizada" : "Cuenta creada exitosamente")
+        await fetchBankAccounts()
+        setShowCreateDialog(false)
+        setEditingAccount(null)
+        setFormData({
+          name: "",
+          bank: "",
+          accountType: "",
+          accountNumber: "",
+          currency: "CLP",
+          isActive: true,
+        })
+      } else {
+        setBankError(data.error || "Error al guardar cuenta bancaria")
+      }
+    } catch (err) {
+      setBankError("Error de conexión")
+    }
+  }
+
+  const handleBankEdit = (account: BankAccount) => {
+    setEditingAccount(account)
+    setFormData({
+      name: account.name,
+      bank: account.bank,
+      accountType: account.accountType,
+      accountNumber: account.accountNumber,
+      currency: account.currency,
+      isActive: account.isActive,
+    })
+    setShowCreateDialog(true)
+  }
+
+  const handleBankDelete = async (accountId: string) => {
+    if (!confirm("¿Estás seguro de que quieres eliminar esta cuenta bancaria?")) return
+
+    try {
+      const response = await fetch(`/api/admin/bank-accounts/${accountId}`, {
+        method: "DELETE"
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setBankSuccess("Cuenta eliminada exitosamente")
+        await fetchBankAccounts()
+      } else {
+        setBankError(data.error || "Error al eliminar cuenta bancaria")
+      }
+    } catch (err) {
+      setBankError("Error de conexión")
+    }
+  }
+
+  const handleBankToggleActive = async (account: BankAccount) => {
+    try {
+      const response = await fetch(`/api/admin/bank-accounts/${account.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !account.isActive })
+      })
+
+      if (response.ok) {
+        setBankSuccess(`Cuenta ${!account.isActive ? 'activada' : 'desactivada'} exitosamente`)
+        await fetchBankAccounts()
+      } else {
+        const data = await response.json()
+        setBankError(data.error || "Error al actualizar cuenta")
+      }
+    } catch (err) {
+      setBankError("Error de conexión")
+    }
+  }
+
   return (
     <div className="min-h-screen w-full bg-background p-6">
       <div className="container mx-auto space-y-6">
@@ -149,9 +326,10 @@ export default function AdminSettingsPage() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
             <TabsTrigger value="security">Seguridad</TabsTrigger>
+            <TabsTrigger value="banking">Cuentas Bancarias</TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
@@ -272,6 +450,227 @@ export default function AdminSettingsPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Banking Tab */}
+          <TabsContent value="banking">
+            <div className="space-y-6">
+              {bankSuccess && (
+                <Alert className="bg-green-500/10 border-green-500/50">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <AlertDescription className="text-green-500">{bankSuccess}</AlertDescription>
+                </Alert>
+              )}
+
+              {bankError && (
+                <Alert variant="destructive">
+                  <XCircle className="h-4 w-4" />
+                  <AlertDescription>{bankError}</AlertDescription>
+                </Alert>
+              )}
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building2 className="h-5 w-5" />
+                      Cuentas Bancarias
+                    </CardTitle>
+                    <CardDescription>
+                      Gestiona las cuentas bancarias para el seguimiento de pagos
+                    </CardDescription>
+                  </div>
+                  <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                    <DialogTrigger asChild>
+                      <Button onClick={() => {
+                        setEditingAccount(null)
+                        setFormData({
+                          name: "",
+                          bank: "",
+                          accountType: "",
+                          accountNumber: "",
+                          currency: "CLP",
+                          isActive: true,
+                        })
+                      }}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nueva Cuenta
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>
+                          {editingAccount ? "Editar Cuenta Bancaria" : "Nueva Cuenta Bancaria"}
+                        </DialogTitle>
+                        <DialogDescription>
+                          {editingAccount ? "Modifica los datos de la cuenta" : "Registra una nueva cuenta bancaria"}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleBankSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Nombre de la Cuenta</Label>
+                          <Input
+                            id="name"
+                            value={formData.name}
+                            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="Ej: Cuenta Principal Academia"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="bank">Banco</Label>
+                          <Select 
+                            value={formData.bank} 
+                            onValueChange={(value) => setFormData(prev => ({ ...prev, bank: value }))}
+                            required
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona un banco" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {BANKS_CHILE.map((bank) => (
+                                <SelectItem key={bank} value={bank}>{bank}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="accountType">Tipo de Cuenta</Label>
+                          <Select 
+                            value={formData.accountType} 
+                            onValueChange={(value) => setFormData(prev => ({ ...prev, accountType: value }))}
+                            required
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecciona el tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(ACCOUNT_TYPES).map(([key, label]) => (
+                                <SelectItem key={key} value={key}>{label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="accountNumber">Número de Cuenta (últimos 4 dígitos)</Label>
+                          <Input
+                            id="accountNumber"
+                            value={formData.accountNumber}
+                            onChange={(e) => setFormData(prev => ({ ...prev, accountNumber: e.target.value }))}
+                            placeholder="****1234"
+                            required
+                          />
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="isActive"
+                            checked={formData.isActive}
+                            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
+                          />
+                          <Label htmlFor="isActive">Cuenta activa</Label>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-4">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => setShowCreateDialog(false)}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button type="submit">
+                            {editingAccount ? "Actualizar" : "Crear"} Cuenta
+                          </Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </CardHeader>
+                <CardContent>
+                  {bankLoading ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Cargando cuentas bancarias...
+                    </div>
+                  ) : bankAccounts.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No hay cuentas bancarias registradas. Crea una para comenzar.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nombre</TableHead>
+                            <TableHead>Banco</TableHead>
+                            <TableHead>Tipo</TableHead>
+                            <TableHead>Número</TableHead>
+                            <TableHead>Estado</TableHead>
+                            <TableHead className="text-right">Acciones</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {bankAccounts.map((account) => (
+                            <TableRow key={account.id}>
+                              <TableCell className="font-medium">{account.name}</TableCell>
+                              <TableCell>{account.bank}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {ACCOUNT_TYPES[account.accountType as keyof typeof ACCOUNT_TYPES]}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{account.accountNumber}</TableCell>
+                              <TableCell>
+                                {account.isActive ? (
+                                  <Badge className="bg-green-500/10 text-green-500 border-green-500/50">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Activa
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary">
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    Inactiva
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleBankToggleActive(account)}
+                                  >
+                                    {account.isActive ? 'Desactivar' : 'Activar'}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleBankEdit(account)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleBankDelete(account.id)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
 

@@ -160,6 +160,7 @@ model Academy {
   plans              Plan[]
   memberships        Membership[]
   payments           Payment[]
+  bankAccounts       BankAccount[]
   curricula          Curriculum[]
   contents           Content[]
   channels           Channel[]
@@ -468,14 +469,38 @@ model Payment {
   // Payment Details
   paidAt        DateTime?
   failureReason String?
+  
+  // Bank Account Association
+  bankAccountId String?
 
   // Relations
-  academy    Academy     @relation(fields: [academyId], references: [id], onDelete: Cascade)
-  membership Membership? @relation(fields: [membershipId], references: [id])
-  event      Event?      @relation(fields: [eventId], references: [id])
-  user       User?       @relation(fields: [userId], references: [id])
+  academy     Academy      @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  membership  Membership?  @relation(fields: [membershipId], references: [id])
+  event       Event?       @relation(fields: [eventId], references: [id])
+  user        User?        @relation(fields: [userId], references: [id])
+  bankAccount BankAccount? @relation(fields: [bankAccountId], references: [id])
 
   @@map("payments")
+}
+
+// Bank Accounts for payment tracking
+model BankAccount {
+  id          String   @id @default(cuid())
+  academyId   String
+  name        String   // e.g., "Cuenta Corriente BancoEstado"
+  bank        String   // Nombre del banco
+  accountType String   // CHECKING, SAVINGS, etc.
+  accountNumber String // Últimos 4 dígitos o número enmascarado
+  currency    String   @default("CLP")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  academy  Academy   @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@map("bank_accounts")
 }
 
 // Curriculum & Content

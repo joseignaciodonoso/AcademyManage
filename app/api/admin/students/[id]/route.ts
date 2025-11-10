@@ -35,12 +35,9 @@ export async function DELETE(
       return NextResponse.json({ error: "El usuario no es un estudiante" }, { status: 400 })
     }
 
-    // Tenant scoping: resolve academy from header or session
-    // Multi-tenant support disabled
-    const resolvedAcademyId = academyFromTenant?.id ?? session.user.academyId
-
     // Academy scoping: non SUPER_ADMIN can only delete students from their academy
-    if (session.user.role !== "SUPER_ADMIN" && student.academyId !== resolvedAcademyId) {
+    const userAcademyId = (session.user as any).academyId
+    if (session.user.role !== "SUPER_ADMIN" && student.academyId !== userAcademyId) {
       return NextResponse.json({ error: "Sin permisos para este estudiante" }, { status: 403 })
     }
 
@@ -89,10 +86,9 @@ export async function PATCH(
       return NextResponse.json({ error: "El usuario no es un estudiante" }, { status: 400 })
     }
 
-    // Tenant scoping
-    // Multi-tenant support disabled
-    const resolvedAcademyId = academyFromTenant?.id ?? session.user.academyId
-    if (session.user.role !== "SUPER_ADMIN" && student.academyId !== resolvedAcademyId) {
+    // Academy scoping: non SUPER_ADMIN can only update students from their academy
+    const userAcademyId = (session.user as any).academyId
+    if (session.user.role !== "SUPER_ADMIN" && student.academyId !== userAcademyId) {
       return NextResponse.json({ error: "Sin permisos para este estudiante" }, { status: 403 })
     }
 

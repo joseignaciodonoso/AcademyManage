@@ -83,6 +83,11 @@ const academyNavigation = [
     href: "/admin/reports",
     icon: BarChart3,
   },
+  {
+    name: "Configuración",
+    href: "/admin/settings",
+    icon: Settings,
+  },
 ]
 
 // Navigation for CLUB type
