@@ -7,7 +7,7 @@ import type { UserRole } from "@/lib/types"
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 90 * 24 * 60 * 60, // 90 días (3 meses) - se ajustará dinámicamente
   },
   secret: process.env.NEXTAUTH_SECRET,
   providers: [

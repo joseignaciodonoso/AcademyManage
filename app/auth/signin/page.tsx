@@ -16,6 +16,7 @@ export default function SignInPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -24,6 +25,13 @@ export default function SignInPage() {
     setLoading(true)
 
     try {
+      // Guardar preferencia de "recordarme" en localStorage
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true')
+      } else {
+        localStorage.removeItem('rememberMe')
+      }
+
       const result = await signIn("credentials", {
         email,
         password,
@@ -103,6 +111,8 @@ export default function SignInPage() {
             <input
               id="remember"
               type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
               className="rounded border-border bg-[hsl(var(--muted))]/50 text-[hsl(var(--primary))] focus:ring-[hsl(var(--ring))]"
             />
             <Label htmlFor="remember" className="text-sm text-[hsl(var(--foreground))]/70">
