@@ -209,12 +209,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => null)
     const { name, email, phone, academyId: bodyAcademyId } = body || {}
 
-    // Resolve academyId: prefer tenant header; else session; SUPER_ADMIN may override via body when no tenant header
-    // Multi-tenant support disabled
-    let academyId = academyFromTenant?.id ?? (session.user.academyId as string | undefined)
-    if (!academyFromTenant && !academyId && session.user.role === "SUPER_ADMIN") {
+    // Multi-tenant support disabled - use academyId from session
+    let academyId = session.user.academyId as string | undefined
+    
+    // SUPER_ADMIN can override academyId via body
+    if (!academyId && session.user.role === "SUPER_ADMIN" && bodyAcademyId) {
       academyId = bodyAcademyId
     }
+    
     if (!academyId) {
       return NextResponse.json({ error: "Academia no encontrada" }, { status: 400 })
     }
