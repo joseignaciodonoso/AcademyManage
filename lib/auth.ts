@@ -134,7 +134,7 @@ export const authOptions: NextAuthOptions = {
             select: { role: true, academyId: true, academy: { select: { id: true, name: true, slug: true } } },
           })
           if (u) {
-            token.role = u.role
+            token.role = u.role as string
             token.academyId = u.academyId as any
             token.academy = u.academy as any
           }
