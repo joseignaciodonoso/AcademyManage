@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
 import CredentialsProvider from "next-auth/providers/credentials"
+import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
 import type { UserRole } from "@/lib/types"
 
@@ -63,7 +63,6 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Esta cuenta no tiene contraseña configurada")
         }
         
-        const bcrypt = require("bcryptjs")
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
         
         if (!isPasswordValid) {
