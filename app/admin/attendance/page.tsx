@@ -4,8 +4,12 @@ import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { QrCode, Users, Calendar, Clock, Download, Copy, CheckCircle } from "lucide-react"
+import { toast } from "sonner"
+import QRCode from "qrcode"
 
 type EventItem = {
   id: string
@@ -39,6 +43,11 @@ export default function AdminAttendancePage() {
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [checkingMap, setCheckingMap] = useState<Record<string, boolean>>({})
   const [emailMap, setEmailMap] = useState<Record<string, string>>({})
+  const [qrDialogOpen, setQrDialogOpen] = useState(false)
+  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null)
+  const [qrDataUrl, setQrDataUrl] = useState<string>("")
+  const [qrUrl, setQrUrl] = useState<string>("")
+  const [qrLoading, setQrLoading] = useState(false)
 
   const range = useMemo(() => {
     const s = new Date(`${start}T00:00:00`)
@@ -88,14 +97,60 @@ export default function AdminAttendancePage() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        alert(err.error || "No se pudo registrar asistencia")
+        toast.error(err.error || "No se pudo registrar asistencia")
         return
       }
-      // refrescar conteos
+      toast.success("Asistencia registrada")
       await loadClasses()
       setEmailMap((m) => ({ ...m, [classId]: "" }))
     } finally {
       setCheckingMap((m) => ({ ...m, [classId]: false }))
+    }
+  }
+
+  async function openQrDialog(cl: ClassItem) {
+    setSelectedClass(cl)
+    setQrDialogOpen(true)
+    setQrLoading(true)
+    setQrDataUrl("")
+    setQrUrl("")
+    
+    try {
+      const res = await fetch(`/api/attendance/qr?classId=${cl.id}`)
+      if (!res.ok) {
+        toast.error("No se pudo generar el QR")
+        return
+      }
+      const data = await res.json()
+      setQrUrl(data.checkinUrl)
+      
+      // Generate QR code image
+      const qrDataUrl = await QRCode.toDataURL(data.checkinUrl, {
+        width: 300,
+        margin: 2,
+        color: { dark: "#000000", light: "#ffffff" }
+      })
+      setQrDataUrl(qrDataUrl)
+    } catch (e) {
+      toast.error("Error al generar QR")
+    } finally {
+      setQrLoading(false)
+    }
+  }
+
+  function copyQrUrl() {
+    if (qrUrl) {
+      navigator.clipboard.writeText(qrUrl)
+      toast.success("URL copiada al portapapeles")
+    }
+  }
+
+  function downloadQr() {
+    if (qrDataUrl && selectedClass) {
+      const link = document.createElement("a")
+      link.download = `qr-asistencia-${selectedClass.id}.png`
+      link.href = qrDataUrl
+      link.click()
     }
   }
 
@@ -154,9 +209,16 @@ export default function AdminAttendancePage() {
                                   <div className="text-xs text-muted-foreground">Instructor: {cl.coach.name}</div>
                                 )}
                               </div>
-                              <Badge variant="outline">Presentes: {cl._count?.attendances ?? 0}</Badge>
+                              <Badge variant="outline" className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                Presentes: {cl._count?.attendances ?? 0}
+                              </Badge>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
+                              <Button onClick={() => openQrDialog(cl)} variant="outline" size="sm">
+                                <QrCode className="h-4 w-4 mr-1" />
+                                QR
+                              </Button>
                               <Input
                                 type="email"
                                 placeholder="email del alumno"
@@ -165,7 +227,8 @@ export default function AdminAttendancePage() {
                                 className="w-64"
                               />
                               <Button onClick={() => checkIn(cl.id)} disabled={!!checkingMap[cl.id]} variant="outline">
-                                {checkingMap[cl.id] ? "Registrando…" : "Check-in"}
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                {checkingMap[cl.id] ? "Registrando…" : "Check-in Manual"}
                               </Button>
                             </div>
                           </li>
@@ -210,6 +273,52 @@ export default function AdminAttendancePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* QR Dialog */}
+      <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              QR de Asistencia
+            </DialogTitle>
+            <DialogDescription>
+              {selectedClass?.title || "Clase"} - Los alumnos pueden escanear este código para registrar su asistencia.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center space-y-4 py-4">
+            {qrLoading ? (
+              <div className="w-[300px] h-[300px] flex items-center justify-center bg-muted rounded-lg">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              </div>
+            ) : qrDataUrl ? (
+              <div className="p-4 bg-white rounded-lg">
+                <img src={qrDataUrl} alt="QR Code" className="w-[250px] h-[250px]" />
+              </div>
+            ) : (
+              <div className="w-[300px] h-[300px] flex items-center justify-center bg-muted rounded-lg text-muted-foreground">
+                Error al generar QR
+              </div>
+            )}
+            
+            <p className="text-xs text-muted-foreground text-center">
+              Este QR es válido solo para hoy y expira a medianoche.
+            </p>
+            
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={copyQrUrl} disabled={!qrUrl}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copiar URL
+              </Button>
+              <Button variant="outline" onClick={downloadQr} disabled={!qrDataUrl}>
+                <Download className="h-4 w-4 mr-2" />
+                Descargar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

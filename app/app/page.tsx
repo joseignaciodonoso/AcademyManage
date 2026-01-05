@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { BookOpen, Calendar, Clock, CreditCard, Trophy, User, Users } from "lucide-react"
+import { AlertCircle, BookOpen, Calendar, Clock, CreditCard, Trophy, User, Users } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -39,10 +39,8 @@ export default async function StudentDashboardPage() {
     where: { id: session.user.id },
     include: {
       memberships: {
-        where: { status: { in: ["ACTIVE", "TRIAL"] } },
         include: { plan: true },
         orderBy: { createdAt: "desc" },
-        take: 1,
       },
       enrollments: {
         include: {
@@ -67,7 +65,11 @@ export default async function StudentDashboardPage() {
     redirect("/auth/signin")
   }
 
-  const activeMembership = user.memberships[0]
+  // Find active/trial membership first
+  const activeMembership = user.memberships.find(m => m.status === "ACTIVE" || m.status === "TRIAL")
+  
+  // Find pending payment membership
+  const pendingMembership = user.memberships.find(m => m.status === "PENDING_PAYMENT")
 
   // Load available plans for modal if user has no membership
   const hasAcademy = Boolean((user as any).academyId)
@@ -124,6 +126,37 @@ export default async function StudentDashboardPage() {
         </h1>
         <p className="text-muted-foreground">Bienvenido a tu portal de entrenamiento</p>
       </div>
+
+      {/* Pending Payment Alert */}
+      {!activeMembership && pendingMembership && (
+        <Card className="mb-8 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-800 dark:text-amber-200">Pago Pendiente</h3>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                  Tu membresía <strong>{pendingMembership.plan.name}</strong> está pendiente de pago. 
+                  Completa el proceso para acceder a todas las funcionalidades.
+                </p>
+                <div className="flex gap-3 mt-4">
+                  <Button asChild size="sm">
+                    <Link href="/app/subscribe?step=3">
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Completar Pago
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/app/billing">Ver Estado</Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

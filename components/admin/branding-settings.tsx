@@ -38,10 +38,10 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
     brandPrimary: "#3b82f6",    // blue-500
     brandSecondary: "#64748b",  // slate-500
     brandAccent: "#8b5cf6",     // violet-500
-    brandNeutral: "#1f2937",    // slate-800
-    brandBackground: "#0b1220", // dark base
-    brandForeground: "#e5e7eb", // gray-200
-    defaultThemeMode: "dark",
+    brandNeutral: "#374151",    // slate-600
+    brandBackground: "#ffffff", // white
+    brandForeground: "#1f2937", // slate-800
+    defaultThemeMode: "light",
   })
 
   const [contrastCheck, setContrastCheck] = useState<{
@@ -303,16 +303,16 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
         // Reset only general fields
         payload = { ...base, defaultThemeMode: "system" }
       } else if (activeTab === "colors") {
-        // Reset to ORIGINAL app colors (dark theme)
+        // Reset to ORIGINAL app colors (light theme)
         payload = {
           ...base,
           brandPrimary: "#3b82f6",    // blue-500
           brandSecondary: "#64748b",  // slate-500
           brandAccent: "#8b5cf6",     // violet-500
-          brandNeutral: "#1f2937",    // slate-800
-          brandBackground: "#0b1220", // dark base
-          brandForeground: "#e5e7eb", // gray-200
-          defaultThemeMode: "dark",
+          brandNeutral: "#374151",    // slate-600
+          brandBackground: "#ffffff", // white
+          brandForeground: "#1f2937", // slate-800
+          defaultThemeMode: "light",
         }
       } else if (activeTab === "logos") {
         // Reset only logos

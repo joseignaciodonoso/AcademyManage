@@ -4,12 +4,17 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "./prisma"
 import type { UserRole } from "@/lib/types"
 
+// Ensure NEXTAUTH_URL is always defined to prevent "Invalid URL" errors
+const NEXTAUTH_URL = process.env.NEXTAUTH_URL || "http://localhost:3001"
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
     maxAge: 90 * 24 * 60 * 60, // 90 días (3 meses) - se ajustará dinámicamente
   },
   secret: process.env.NEXTAUTH_SECRET,
+  // Explicitly set the URL to prevent null URL errors
+  ...(NEXTAUTH_URL ? { url: NEXTAUTH_URL } : {}),
   providers: [
     CredentialsProvider({
       name: "credentials",

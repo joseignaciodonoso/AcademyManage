@@ -4,6 +4,97 @@ import { authOptions } from "@/lib/auth"
 import { hasPermission } from "@/lib/rbac"
 import { prisma } from "@/lib/prisma"
 
+// GET /api/admin/students/[id] - Get student profile with details
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    if (!hasPermission(session.user.role, "students:read")) {
+      return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
+    }
+
+    const studentId = params.id
+    const userAcademyId = (session.user as any).academyId
+
+    const student = await prisma.user.findFirst({
+      where: { 
+        id: studentId,
+        role: "STUDENT",
+        ...(session.user.role !== "SUPER_ADMIN" ? { academyId: userAcademyId } : {})
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        createdAt: true,
+        role: true,
+        belt: true,
+        level: true,
+        memberships: {
+          where: { status: { in: ["ACTIVE", "PENDING", "EXPIRED"] } },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: {
+            plan: {
+              select: {
+                id: true,
+                name: true,
+                type: true,
+                price: true,
+                currency: true
+              }
+            }
+          }
+        },
+        branch: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    })
+
+    if (!student) {
+      return NextResponse.json({ error: "Estudiante no encontrado" }, { status: 404 })
+    }
+
+    // Format response
+    const membership = student.memberships[0] || null
+
+    return NextResponse.json({
+      student: {
+        id: student.id,
+        name: student.name,
+        email: student.email,
+        phone: student.phone,
+        createdAt: student.createdAt.toISOString(),
+        role: student.role,
+        belt: student.belt,
+        level: student.level,
+        membership: membership ? {
+          id: membership.id,
+          status: membership.status,
+          startDate: membership.startDate.toISOString(),
+          nextBillingDate: membership.nextBillingDate?.toISOString() || null,
+          plan: membership.plan
+        } : null,
+        branch: student.branch
+      }
+    })
+  } catch (error: any) {
+    console.error("Error fetching student:", error)
+    return NextResponse.json({ error: "Error al obtener estudiante" }, { status: 500 })
+  }
+}
+
 // DELETE /api/admin/students/[id] - Delete student
 export async function DELETE(
   request: NextRequest,

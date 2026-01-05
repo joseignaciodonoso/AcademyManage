@@ -17,6 +17,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // - Public payment result pages (for Flow/payment gateway callbacks)
+  if (pathname.startsWith("/payment")) {
+    return NextResponse.next()
+  }
+
   // - Tenant auth: /:org/login and /:org/auth/(signin|signup)
   const tenantLoginMatch = /^\/[^/]+\/login(\/?$|\?.*|$)/
   const tenantAuthMatch = /^\/[^/]+\/auth\/(signin|signup)(\/?$|\?.*|$)/
@@ -36,6 +41,16 @@ export async function middleware(request: NextRequest) {
 
   // Public API routes - allow without authentication
   if (pathname.startsWith("/api/odoo/ping")) {
+    return NextResponse.next()
+  }
+
+  // Webhooks - allow without authentication (they use their own verification)
+  if (pathname.startsWith("/api/webhooks")) {
+    return NextResponse.next()
+  }
+
+  // Payment API routes (for success/failure pages)
+  if (pathname.startsWith("/api/payment")) {
     return NextResponse.next()
   }
 

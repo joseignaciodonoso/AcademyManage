@@ -24,7 +24,11 @@ interface Payment {
   odooTransactionId?: string | null
 }
 
-export function PaymentHistory() {
+type Props = {
+  prefix?: string
+}
+
+export function PaymentHistory({ prefix = "" }: Props) {
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")

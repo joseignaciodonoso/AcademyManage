@@ -24,8 +24,15 @@ import {
   TrendingDown,
   DollarSign,
   Calendar,
-  FileText
+  FileText,
+  PieChart,
+  BarChart3,
+  ArrowUpRight,
+  ArrowDownRight,
+  Wallet,
+  FileSpreadsheet
 } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -122,6 +129,8 @@ export default function AdminExpensesPage() {
   const [dateFilter, setDateFilter] = useState("")
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
+  const [incomeStats, setIncomeStats] = useState<{ total: number; count: number } | null>(null)
+  const [viewMode, setViewMode] = useState<"list" | "summary">("list")
 
   // Form state
   const [formData, setFormData] = useState({
@@ -139,8 +148,44 @@ export default function AdminExpensesPage() {
     if (academyId) {
       fetchExpenses()
       fetchStats()
+      fetchIncomeStats()
     }
   }, [academyId, categoryFilter, dateFilter])
+
+  const fetchIncomeStats = async () => {
+    try {
+      const params = new URLSearchParams({ academyId })
+      if (dateFilter) params.append("month", dateFilter)
+      const response = await fetch(`/api/admin/payments/stats?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setIncomeStats({ total: data.totalIncome || 0, count: data.count || 0 })
+      }
+    } catch (err) {
+      console.error("Error fetching income stats:", err)
+    }
+  }
+
+  const exportToCSV = () => {
+    const headers = ["Fecha", "Concepto", "Categoría", "Monto", "Creado por"]
+    const rows = filteredExpenses.map(e => [
+      format(new Date(e.date), "dd/MM/yyyy"),
+      e.concept,
+      EXPENSE_CATEGORIES[e.category as keyof typeof EXPENSE_CATEGORIES] || e.category,
+      e.amount.toString(),
+      e.creator.name
+    ])
+    
+    const csvContent = [headers, ...rows].map(row => row.join(",")).join("\n")
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `gastos_${format(new Date(), "yyyy-MM-dd")}.csv`
+    link.click()
+  }
+
+  const balance = (incomeStats?.total || 0) - (stats?.summary?.totalExpenses || 0)
 
   const fetchExpenses = async () => {
     try {
@@ -288,12 +333,35 @@ export default function AdminExpensesPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de Gastos</h1>
-          <p className="text-muted-foreground">Administra los gastos de la academia</p>
+          <h1 className="text-3xl font-bold">Gestión Financiera</h1>
+          <p className="text-muted-foreground">Gastos, ingresos y balance de la academia</p>
         </div>
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button onClick={() => {
+        <div className="flex items-center gap-2">
+          <div className="inline-flex items-center gap-0.5 rounded-lg border border-border p-0.5 bg-background/40">
+            <Button 
+              size="sm" 
+              variant={viewMode === "summary" ? "default" : "ghost"}
+              onClick={() => setViewMode("summary")}
+            >
+              <PieChart className="h-4 w-4 mr-1" />
+              Resumen
+            </Button>
+            <Button 
+              size="sm" 
+              variant={viewMode === "list" ? "default" : "ghost"}
+              onClick={() => setViewMode("list")}
+            >
+              <BarChart3 className="h-4 w-4 mr-1" />
+              Lista
+            </Button>
+          </div>
+          <Button variant="outline" onClick={exportToCSV}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Exportar CSV
+          </Button>
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button onClick={() => {
               setEditingExpense(null)
               setFormData({
                 concept: "",
@@ -404,11 +472,60 @@ export default function AdminExpensesPage() {
               </div>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Financial Summary - Balance Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="glass-effect rounded-2xl border-green-500/30 bg-gradient-to-br from-green-500/10 to-transparent">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ingresos del Período</CardTitle>
+            <ArrowUpRight className="h-5 w-5 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-500">
+              {formatCurrency(incomeStats?.total || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {incomeStats?.count || 0} pagos recibidos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-effect rounded-2xl border-red-500/30 bg-gradient-to-br from-red-500/10 to-transparent">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Gastos del Período</CardTitle>
+            <ArrowDownRight className="h-5 w-5 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-red-500">
+              {formatCurrency(stats?.summary?.totalExpenses || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats?.summary?.totalCount || 0} gastos registrados
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className={`glass-effect rounded-2xl ${balance >= 0 ? 'border-green-500/30 bg-gradient-to-br from-green-500/5 to-transparent' : 'border-red-500/30 bg-gradient-to-br from-red-500/5 to-transparent'}`}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Balance</CardTitle>
+            <Wallet className={`h-5 w-5 ${balance >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-3xl font-bold ${balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {balance >= 0 ? '+' : ''}{formatCurrency(balance)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {balance >= 0 ? 'Superávit' : 'Déficit'} del período
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Stats Cards */}
-      {stats && (
+      {stats && viewMode === "list" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="glass-effect rounded-2xl border-[hsl(var(--border))]/50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -478,7 +595,107 @@ export default function AdminExpensesPage() {
         </div>
       )}
 
+      {/* Summary View - Category Breakdown */}
+      {viewMode === "summary" && stats && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="glass-effect rounded-2xl border-[hsl(var(--border))]/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PieChart className="h-5 w-5" />
+                Gastos por Categoría
+              </CardTitle>
+              <CardDescription>Distribución del período actual</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {stats.categoryStats.slice(0, 8).map((cat, i) => (
+                <div key={cat.category} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{cat.categoryName}</span>
+                    <span className="text-muted-foreground">
+                      {formatCurrency(cat.total)} ({cat.percentage.toFixed(1)}%)
+                    </span>
+                  </div>
+                  <Progress 
+                    value={cat.percentage} 
+                    className="h-2"
+                  />
+                </div>
+              ))}
+              {stats.categoryStats.length === 0 && (
+                <p className="text-muted-foreground text-center py-4">Sin gastos en este período</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="glass-effect rounded-2xl border-[hsl(var(--border))]/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Gastos Mensuales
+              </CardTitle>
+              <CardDescription>Tendencia de los últimos meses</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {stats.monthlyExpenses.slice(-6).map((month) => {
+                const maxTotal = Math.max(...stats.monthlyExpenses.map(m => m.total))
+                const percentage = maxTotal > 0 ? (month.total / maxTotal) * 100 : 0
+                return (
+                  <div key={month.month} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium capitalize">{month.monthName}</span>
+                      <span className="text-muted-foreground">
+                        {formatCurrency(month.total)} ({month.count} gastos)
+                      </span>
+                    </div>
+                    <Progress 
+                      value={percentage} 
+                      className="h-2"
+                    />
+                  </div>
+                )
+              })}
+              {stats.monthlyExpenses.length === 0 && (
+                <p className="text-muted-foreground text-center py-4">Sin datos históricos</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="glass-effect rounded-2xl border-[hsl(var(--border))]/50 lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="h-5 w-5" />
+                Top 5 Gastos del Período
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {stats.topExpenses.slice(0, 5).map((expense, i) => (
+                  <div key={expense.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg font-bold text-muted-foreground">#{i + 1}</span>
+                      <div>
+                        <p className="font-medium">{expense.concept}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(expense.date), "dd MMM yyyy", { locale: es })}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-lg font-bold text-red-500">
+                      {formatCurrency(expense.amount)}
+                    </span>
+                  </div>
+                ))}
+                {stats.topExpenses.length === 0 && (
+                  <p className="text-muted-foreground text-center py-4">Sin gastos registrados</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Filters */}
+      {viewMode === "list" && (
       <Card className="glass-effect rounded-2xl border-[hsl(var(--border))]/50">
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
@@ -518,8 +735,10 @@ export default function AdminExpensesPage() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Expenses Table */}
+      {viewMode === "list" && (
       <Card className="glass-effect rounded-2xl border-[hsl(var(--border))]/50">
         <CardHeader>
           <CardTitle>Lista de Gastos</CardTitle>
@@ -598,6 +817,7 @@ export default function AdminExpensesPage() {
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   )
 }

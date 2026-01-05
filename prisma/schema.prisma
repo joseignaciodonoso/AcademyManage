@@ -154,6 +154,43 @@ model Academy {
   // Onboarding
   onboardingCompleted Boolean @default(false)
 
+  // Payment Gateway Configuration
+  mercadopagoEnabled   Boolean @default(false)
+  mercadopagoPublicKey String?
+  mercadopagoToken     String?
+  
+  khipuEnabled         Boolean @default(false)
+  khipuReceiverId      String?
+  khipuSecret          String?
+  
+  flowEnabled          Boolean @default(false)
+  flowApiKey           String?
+  flowSecretKey        String?
+  
+  transferEnabled      Boolean @default(true)
+  bankName             String?
+  bankAccountType      String? // "Cuenta Corriente", "Cuenta Vista", etc.
+  bankAccountNumber    String?
+  bankAccountHolder    String?
+  bankAccountRut       String?
+  bankAccountEmail     String?
+
+  // Email/SMTP Configuration
+  smtpEnabled          Boolean @default(false)
+  smtpHost             String?
+  smtpPort             Int?    @default(587)
+  smtpUser             String?
+  smtpPassword         String?
+  smtpFromEmail        String?
+  smtpFromName         String?
+  smtpSecure           Boolean @default(true) // TLS
+  
+  // Payment Reminder Settings
+  paymentReminderEnabled      Boolean @default(false)
+  paymentReminderDaysBefore   Int     @default(3) // Days before due date
+  paymentReminderDaysAfter    Int     @default(1) // Days after due date (overdue)
+  paymentReminderFrequency    Int     @default(3) // Days between reminders for overdue
+
   // Relations
   branches           Branch[]
   users              User[]
@@ -390,6 +427,7 @@ model Plan {
 
 // Memberships & Payments
 enum MembershipStatus {
+  PENDING_PAYMENT
   ACTIVE
   PAST_DUE
   CANCELED
@@ -442,6 +480,12 @@ enum PaymentType {
 enum PaymentMethod {
   CASH
   TRANSFER
+  MERCADOPAGO
+  KHIPU
+  FLOW
+  WEBPAY
+  CARD
+  OTHER
 }
 
 model Payment {
@@ -577,6 +621,7 @@ model Technique {
 
 enum ContentType {
   VIDEO
+  YOUTUBE
   DOCUMENT
   IMAGE
   AUDIO

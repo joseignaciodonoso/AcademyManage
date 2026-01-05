@@ -34,6 +34,13 @@ import {
   Info,
   Check,
   AlertTriangle,
+  Banknote,
+  Wallet,
+  ChevronsUpDown,
+  Eye,
+  Clock,
+  GraduationCap,
+  ChevronRight,
 } from "lucide-react"
 import {
   Dialog,
@@ -76,6 +83,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
 
 interface Student {
   id: string
@@ -184,6 +201,54 @@ export default function StudentsPage() {
   const [resetSaving, setResetSaving] = useState(false)
   const [resetForm, setResetForm] = useState<{ password: string; confirm: string }>({ password: "", confirm: "" })
 
+  // Register Payment dialog state
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const [paymentStudentId, setPaymentStudentId] = useState<string | null>(null)
+  const [paymentSaving, setPaymentSaving] = useState(false)
+  const [paymentForm, setPaymentForm] = useState<{
+    amount: string
+    method: "TRANSFER" | "CASH"
+    paidAt: string
+  }>({ amount: "", method: "TRANSFER", paidAt: "" })
+  const [plansOptions, setPlansOptions] = useState<{ id: string; name: string; price: number; currency: string; type?: string }[]>([])
+  const [plansLoading, setPlansLoading] = useState(false)
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("")
+  const [planPopoverOpen, setPlanPopoverOpen] = useState(false)
+
+  // Fetch plans when payment dialog opens
+  useEffect(() => {
+    const loadPlans = async () => {
+      if (!paymentDialogOpen) return
+      try {
+        setPlansLoading(true)
+        const resp = await fetch("/api/plans")
+        if (resp.ok) {
+          const data = await resp.json()
+          setPlansOptions((data.plans || []).map((p: any) => ({ 
+            id: p.id, 
+            name: p.name, 
+            price: p.price, 
+            currency: p.currency, 
+            type: p.type 
+          })))
+        }
+      } catch (e) {
+        console.error("Error loading plans", e)
+      } finally {
+        setPlansLoading(false)
+      }
+    }
+    loadPlans()
+  }, [paymentDialogOpen])
+
+  // Auto-fill amount when plan is selected
+  useEffect(() => {
+    const plan = plansOptions.find(p => p.id === selectedPlanId)
+    if (plan && plan.price > 0) {
+      setPaymentForm(prev => ({ ...prev, amount: String(plan.price) }))
+    }
+  }, [selectedPlanId, plansOptions])
+
   useEffect(() => {
     fetchStudents()
     fetchMetrics()
@@ -230,6 +295,44 @@ export default function StudentsPage() {
     const set = new Set<string>()
     students.forEach((s) => { if (s.membership?.plan?.name) set.add(s.membership.plan.name) })
     return ["ALL", ...Array.from(set).sort()]
+  }, [students])
+
+  // Calculate payment status counts for quick filters
+  const paymentStatusCounts = useMemo(() => {
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+    
+    let upToDate = 0
+    let overdue = 0
+    let noPlan = 0
+    let dueThisMonth = 0
+    
+    for (const student of students) {
+      const hasMembership = Boolean(student.membership)
+      if (!hasMembership) {
+        noPlan++
+        continue
+      }
+      
+      const nextInfo = getNextPayment(student)
+      if (nextInfo.overdue) {
+        overdue++
+      } else {
+        upToDate++
+      }
+      
+      if (
+        student.membership?.status === "ACTIVE" &&
+        nextInfo.date &&
+        nextInfo.date >= startOfMonth &&
+        nextInfo.date < startOfNextMonth
+      ) {
+        dueThisMonth++
+      }
+    }
+    
+    return { upToDate, overdue, noPlan, dueThisMonth, total: students.length }
   }, [students])
 
   const resetFilters = () => {
@@ -658,6 +761,65 @@ export default function StudentsPage() {
     }
   }
 
+  // Payment handlers
+  const handleOpenPayment = (student: Student) => {
+    setPaymentStudentId(student.id)
+    // Set default date to today
+    const today = new Date()
+    const todayStr = today.toISOString().slice(0, 16)
+    setPaymentForm({ amount: "", method: "TRANSFER", paidAt: todayStr })
+    // Pre-select plan if student has membership
+    if (student.membership?.plan) {
+      const planId = plansOptions.find(p => p.name === student.membership?.plan.name)?.id || ""
+      setSelectedPlanId(planId)
+    } else {
+      setSelectedPlanId("")
+    }
+    setPaymentDialogOpen(true)
+  }
+
+  const savePayment = async () => {
+    try {
+      if (!paymentStudentId || !selectedPlanId || !paymentForm.amount) {
+        toast({ title: "Faltan datos", description: "Selecciona un plan e ingresa el monto", variant: "destructive" })
+        return
+      }
+      const amountNum = Number(paymentForm.amount)
+      if (isNaN(amountNum) || amountNum <= 0) {
+        toast({ title: "Monto inválido", description: "Ingresa un monto numérico mayor a 0", variant: "destructive" })
+        return
+      }
+      setPaymentSaving(true)
+      const res = await fetch("/api/admin/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: paymentStudentId,
+          planId: selectedPlanId,
+          amount: amountNum,
+          method: paymentForm.method,
+          paidAt: paymentForm.paidAt || undefined,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "No se pudo registrar el pago")
+      }
+      toast({ title: "Pago registrado exitosamente", description: "El pago ha sido registrado correctamente" })
+      setPaymentDialogOpen(false)
+      setPaymentStudentId(null)
+      setSelectedPlanId("")
+      fetchStudents()
+      fetchMetrics()
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "No se pudo registrar el pago", variant: "destructive" })
+    } finally {
+      setPaymentSaving(false)
+    }
+  }
+
+  const getPaymentStudent = () => students.find(s => s.id === paymentStudentId)
+
   const kpiCardData = [
     {
       id: 'total',
@@ -763,15 +925,28 @@ export default function StudentsPage() {
 
       <div className="relative z-10 space-y-8">
         {/* Header */}
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Gestión de Estudiantes</h1>
-            <p className="text-gray-400">Administra y supervisa todos los estudiantes de tu academia</p>
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20">
+              <GraduationCap className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-[hsl(var(--foreground))] to-[hsl(var(--foreground))]/70 bg-clip-text">
+                Gestión de Estudiantes
+              </h1>
+              <p className="text-[hsl(var(--foreground))]/60 text-sm sm:text-base">
+                {filteredStudents.length === students.length 
+                  ? `${students.length} estudiantes registrados`
+                  : `${filteredStudents.length} de ${students.length} estudiantes`
+                }
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <DropdownMenu>
-              <DropdownMenuTrigger className="px-3 py-2 rounded-md bg-[hsl(var(--muted))]/60 border border-border text-[hsl(var(--foreground))] text-sm hover:bg-[hsl(var(--muted))]">
-                KPIs
+              <DropdownMenuTrigger className="px-3 py-2 rounded-md bg-[hsl(var(--muted))]/60 border border-border text-[hsl(var(--foreground))] text-sm hover:bg-[hsl(var(--muted))] flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                <span className="hidden sm:inline">KPIs</span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-[hsl(var(--background))] border border-border text-[hsl(var(--foreground))]">
                 {[
@@ -845,15 +1020,113 @@ export default function StudentsPage() {
         </div>
 
         {/* Search and Students Table */}
-        <Card className="glass-effect rounded-2xl border-border">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-[hsl(var(--foreground))]">Lista de Estudiantes</CardTitle>
-                <CardDescription className="text-gray-300">
-                  Busca y gestiona todos los estudiantes de tu academia
-                </CardDescription>
+        <Card className="glass-effect rounded-2xl border-border overflow-hidden">
+          <CardHeader className="border-b border-border/50 pb-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-[hsl(var(--primary))]/10">
+                  <Users className="h-5 w-5 text-[hsl(var(--primary))]" />
+                </div>
+                <div>
+                  <CardTitle className="text-[hsl(var(--foreground))] text-lg">Lista de Estudiantes</CardTitle>
+                  <CardDescription className="text-[hsl(var(--foreground))]/60">
+                    {searchTerm || debtFilter !== "ALL" || statusFilter !== "ALL" || planFilter !== "ALL" 
+                      ? `Mostrando ${filteredStudents.length} resultados`
+                      : "Gestiona y supervisa a tus estudiantes"
+                    }
+                  </CardDescription>
+                </div>
               </div>
+            </div>
+            
+            {/* Quick Filters - Payment Status */}
+            <div className="flex flex-wrap gap-2 mt-4">
+              <button
+                onClick={() => setDebtFilter(debtFilter === "ALL" ? "ALL" : "ALL")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  debtFilter === "ALL"
+                    ? "bg-[hsl(var(--primary))] text-white shadow-md"
+                    : "bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))]/70 hover:bg-[hsl(var(--muted))]"
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                Todos
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                  debtFilter === "ALL" ? "bg-white/20" : "bg-[hsl(var(--muted))]"
+                }`}>
+                  {paymentStatusCounts.total}
+                </span>
+              </button>
+              <button
+                onClick={() => setDebtFilter(debtFilter === "UP_TO_DATE" ? "ALL" : "UP_TO_DATE")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  debtFilter === "UP_TO_DATE"
+                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                    : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                }`}
+              >
+                <CheckCircle className="h-3.5 w-3.5" />
+                Al día
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                  debtFilter === "UP_TO_DATE" ? "bg-white/20" : "bg-emerald-500/20"
+                }`}>
+                  {paymentStatusCounts.upToDate}
+                </span>
+              </button>
+              <button
+                onClick={() => setDebtFilter(debtFilter === "OVERDUE" ? "ALL" : "OVERDUE")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  debtFilter === "OVERDUE"
+                    ? "bg-red-500 text-white shadow-md shadow-red-500/20"
+                    : "bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                }`}
+              >
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Atrasados
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                  debtFilter === "OVERDUE" ? "bg-white/20" : "bg-red-500/20"
+                }`}>
+                  {paymentStatusCounts.overdue}
+                </span>
+              </button>
+              <button
+                onClick={() => setDebtFilter(debtFilter === "DUE_THIS_MONTH" ? "ALL" : "DUE_THIS_MONTH")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  debtFilter === "DUE_THIS_MONTH"
+                    ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
+                    : "bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
+                }`}
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                Este mes
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                  debtFilter === "DUE_THIS_MONTH" ? "bg-white/20" : "bg-blue-500/20"
+                }`}>
+                  {paymentStatusCounts.dueThisMonth}
+                </span>
+              </button>
+              <button
+                onClick={() => setDebtFilter(debtFilter === "NO_PLAN" ? "ALL" : "NO_PLAN")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  debtFilter === "NO_PLAN"
+                    ? "bg-gray-500 text-white shadow-md"
+                    : "bg-gray-500/10 text-gray-400 hover:bg-gray-500/20"
+                }`}
+              >
+                <Ban className="h-3.5 w-3.5" />
+                Sin plan
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                  debtFilter === "NO_PLAN" ? "bg-white/20" : "bg-gray-500/20"
+                }`}>
+                  {paymentStatusCounts.noPlan}
+                </span>
+              </button>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="p-4 pt-0">
+            {/* Search and Filters Row */}
+            <div className="flex flex-col gap-4 mb-6">
               {/* Mobile Filters */}
               <div className="flex flex-col space-y-3 md:hidden">
                 <div className="flex items-center space-x-2">
@@ -964,8 +1237,7 @@ export default function StudentsPage() {
                 </Button>
               </div>
             </div>
-          </CardHeader>
-          <CardContent>
+            
             {/* Mobile Card View */}
             <div className="block md:hidden space-y-4">
               {filteredStudents.length === 0 ? (
@@ -1024,11 +1296,21 @@ export default function StudentsPage() {
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleEdit(student)}>
+                            <DropdownMenuItem onClick={() => handleOpenEdit(student)}>
                               <Pencil className="mr-2 h-4 w-4" />
                               Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSuspend(student)}>
+                            <DropdownMenuItem onClick={() => handleOpenResetPassword(student)}>
+                              <Key className="mr-2 h-4 w-4" />
+                              Resetear contraseña
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleOpenPayment(student)}>
+                              <Banknote className="mr-2 h-4 w-4 text-emerald-500" />
+                              Registrar Pago
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleSuspendStudent(student)}>
                               {student.status === "SUSPENDED" ? (
                                 <>
                                   <CheckCircle className="mr-2 h-4 w-4" />
@@ -1043,7 +1325,10 @@ export default function StudentsPage() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
-                              onClick={() => handleDelete(student)}
+                              onClick={() => {
+                                setSelectedStudent(student)
+                                setDeleteDialogOpen(true)
+                              }}
                               className="text-red-600 focus:text-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
@@ -1253,6 +1538,16 @@ export default function StudentsPage() {
                                 <Key className="mr-2 h-4 w-4 text-[hsl(var(--primary))]" />
                                 <span>Resetear contraseña</span>
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-[hsl(var(--muted))]" />
+                              <DropdownMenuItem 
+                                onClick={() => handleOpenPayment(student)}
+                                disabled={actionLoading}
+                                className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))] cursor-pointer"
+                              >
+                                <Banknote className="mr-2 h-4 w-4 text-emerald-500" />
+                                <span>Registrar Pago</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-[hsl(var(--muted))]" />
                               <DropdownMenuItem 
                                 onClick={() => handleSuspendStudent(student)}
                                 disabled={actionLoading}
@@ -1476,6 +1771,182 @@ export default function StudentsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Register Payment Dialog */}
+        <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+          <DialogContent className="bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))] sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Banknote className="h-5 w-5 text-emerald-500" />
+                Registrar Pago
+              </DialogTitle>
+              <DialogDescription className="text-[hsl(var(--foreground))]/70">
+                Registra un pago manual para el estudiante seleccionado.
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Student Info Card */}
+            {getPaymentStudent() && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-[hsl(var(--muted))]/30 border border-border">
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback className={`${avatarBgFor(getPaymentStudent()!.id)} text-white font-semibold`}>
+                    {getPaymentStudent()!.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-[hsl(var(--foreground))] truncate">{getPaymentStudent()!.name}</div>
+                  <div className="text-sm text-[hsl(var(--foreground))]/60 truncate">{getPaymentStudent()!.email}</div>
+                </div>
+                {getPaymentStudent()!.membership && (
+                  <Badge className="bg-[hsl(var(--primary))]/20 text-[hsl(var(--primary))] border-[hsl(var(--primary))]/30">
+                    {getPaymentStudent()!.membership!.plan.name}
+                  </Badge>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-4 mt-2">
+              {/* Plan Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm text-[hsl(var(--foreground))]/80">Plan</Label>
+                <Popover open={planPopoverOpen} onOpenChange={setPlanPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={planPopoverOpen}
+                      className="w-full justify-between bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]"
+                    >
+                      {selectedPlanId ? (
+                        <span className="truncate text-left">
+                          {plansOptions.find(p => p.id === selectedPlanId)?.name}{" "}
+                          <span className="text-[hsl(var(--foreground))]/60">
+                            ({formatCurrency(plansOptions.find(p => p.id === selectedPlanId)?.price || 0)})
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-[hsl(var(--foreground))]/60">Selecciona un plan...</span>
+                      )}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0 w-[360px] bg-[hsl(var(--background))] border-border text-[hsl(var(--foreground))]">
+                    <Command className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+                      <CommandInput placeholder="Buscar plan..." className="text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground))]/60" />
+                      <CommandList>
+                        <CommandEmpty>
+                          {plansLoading ? "Cargando..." : "No se encontraron planes"}
+                        </CommandEmpty>
+                        <CommandGroup heading="Planes disponibles">
+                          {plansOptions.map((p) => (
+                            <CommandItem
+                              key={p.id}
+                              className="data-[selected=true]:bg-[hsl(var(--muted))] data-[selected=true]:text-[hsl(var(--foreground))] cursor-pointer"
+                              onSelect={() => {
+                                setSelectedPlanId(p.id)
+                                setPlanPopoverOpen(false)
+                              }}
+                            >
+                              <div className="flex flex-col flex-1">
+                                <span className="text-sm font-medium">{p.name}</span>
+                                <span className="text-xs text-[hsl(var(--foreground))]/60">
+                                  {formatCurrency(p.price)} / {p.type === "MONTHLY" ? "mes" : p.type === "QUARTERLY" ? "trimestre" : "año"}
+                                </span>
+                              </div>
+                              {selectedPlanId === p.id && <Check className="h-4 w-4 text-emerald-500" />}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Amount */}
+              <div className="space-y-2">
+                <Label className="text-sm text-[hsl(var(--foreground))]/80">Monto (CLP)</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[hsl(var(--foreground))]/60" />
+                  <Input
+                    type="number"
+                    value={paymentForm.amount}
+                    onChange={(e) => setPaymentForm((p) => ({ ...p, amount: e.target.value }))}
+                    className="bg-[hsl(var(--muted))]/50 border-border pl-9"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              {/* Payment Method */}
+              <div className="space-y-2">
+                <Label className="text-sm text-[hsl(var(--foreground))]/80">Método de pago</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentForm(p => ({ ...p, method: "TRANSFER" }))}
+                    className={`flex items-center gap-2 p-3 rounded-lg border transition-all ${
+                      paymentForm.method === "TRANSFER"
+                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
+                        : "border-border bg-[hsl(var(--muted))]/30 text-[hsl(var(--foreground))]/70 hover:border-[hsl(var(--foreground))]/30"
+                    }`}
+                  >
+                    <CreditCard className="h-5 w-5" />
+                    <span className="font-medium">Transferencia</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentForm(p => ({ ...p, method: "CASH" }))}
+                    className={`flex items-center gap-2 p-3 rounded-lg border transition-all ${
+                      paymentForm.method === "CASH"
+                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
+                        : "border-border bg-[hsl(var(--muted))]/30 text-[hsl(var(--foreground))]/70 hover:border-[hsl(var(--foreground))]/30"
+                    }`}
+                  >
+                    <Wallet className="h-5 w-5" />
+                    <span className="font-medium">Efectivo</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Payment Date */}
+              <div className="space-y-2">
+                <Label className="text-sm text-[hsl(var(--foreground))]/80">Fecha del pago</Label>
+                <Input
+                  type="datetime-local"
+                  value={paymentForm.paidAt}
+                  onChange={(e) => setPaymentForm((p) => ({ ...p, paidAt: e.target.value }))}
+                  className="bg-[hsl(var(--muted))]/50 border-border"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="mt-4">
+              <div className="flex items-center justify-end gap-3 w-full">
+                <Button variant="outline" onClick={() => setPaymentDialogOpen(false)} className="border-border">
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={savePayment} 
+                  disabled={paymentSaving || !selectedPlanId || !paymentForm.amount}
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  {paymentSaving ? (
+                    <>
+                      <Clock className="mr-2 h-4 w-4 animate-spin" />
+                      Registrando...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Registrar Pago
+                    </>
+                  )}
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

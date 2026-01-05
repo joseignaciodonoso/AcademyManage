@@ -60,6 +60,9 @@ export default function AdminCalendarPage() {
     capacity: "20",
     level: "Intermedio",
     discipline: "General",
+    isRecurring: false,
+    recurrenceDays: [] as number[], // 0=Lun, 1=Mar, etc.
+    recurrenceEndDate: "",
   })
 
   // Events (local MVP)
@@ -130,6 +133,11 @@ export default function AdminCalendarPage() {
   // View mode (month | week) and Weekly programming
   const [viewMode, setViewMode] = useState<"month" | "week">("month")
   const [openWeekProgram, setOpenWeekProgram] = useState(false)
+  
+  // Drag-to-create state
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState<{ day: number; hour: number } | null>(null)
+  const [dragEnd, setDragEnd] = useState<{ day: number; hour: number } | null>(null)
   type WeekAttachment = { type: "youtube" | "link"; url: string; title: string }
   const [weeklyPrograms, setWeeklyPrograms] = useState<Record<string, { title: string; objectives: string; attachments: WeekAttachment[] }>>({})
   const [weekForm, setWeekForm] = useState<{ title: string; objectives: string; attachments: WeekAttachment[] }>({ title: "", objectives: "", attachments: [] })
@@ -349,6 +357,62 @@ export default function AdminCalendarPage() {
     return `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, "0")}-${String(s.getDate()).padStart(2, "0")}`
   }
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(selectedDate), i)), [selectedDate])
+  
+  // Hours for the weekly grid (6:00 - 22:00)
+  const hours = useMemo(() => Array.from({ length: 17 }, (_, i) => i + 6), [])
+  
+  // Drag-to-create handlers
+  const handleDragStart = (dayIndex: number, hour: number) => {
+    setIsDragging(true)
+    setDragStart({ day: dayIndex, hour })
+    setDragEnd({ day: dayIndex, hour })
+  }
+  
+  const handleDragMove = (dayIndex: number, hour: number) => {
+    if (isDragging && dragStart?.day === dayIndex) {
+      setDragEnd({ day: dayIndex, hour })
+    }
+  }
+  
+  const handleDragEnd = () => {
+    if (isDragging && dragStart && dragEnd) {
+      const startHour = Math.min(dragStart.hour, dragEnd.hour)
+      const endHour = Math.max(dragStart.hour, dragEnd.hour) + 1
+      const day = weekDays[dragStart.day]
+      const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`
+      
+      setForm(f => ({
+        ...f,
+        date: dateStr,
+        startTime: `${String(startHour).padStart(2, "0")}:00`,
+        endTime: `${String(endHour).padStart(2, "0")}:00`,
+        title: f.title || ""
+      }))
+      setOpenNewClass(true)
+    }
+    setIsDragging(false)
+    setDragStart(null)
+    setDragEnd(null)
+  }
+  
+  // Check if a cell is in the drag selection
+  const isInDragSelection = (dayIndex: number, hour: number) => {
+    if (!isDragging || !dragStart || !dragEnd || dragStart.day !== dayIndex) return false
+    const minHour = Math.min(dragStart.hour, dragEnd.hour)
+    const maxHour = Math.max(dragStart.hour, dragEnd.hour)
+    return hour >= minHour && hour <= maxHour
+  }
+  
+  // Get classes for a specific day and hour
+  const getClassesForHour = (dayIndex: number, hour: number) => {
+    const day = weekDays[dayIndex]
+    return filteredClasses.filter(c => {
+      const classDate = new Date(c.startTime)
+      if (!sameDay(classDate, day)) return false
+      const classHour = classDate.getHours()
+      return classHour === hour
+    })
+  }
   const weekRangeLabel = useMemo(() => {
     const s = weekDays[0]
     const e = weekDays[6]
@@ -595,53 +659,112 @@ export default function AdminCalendarPage() {
           </CardContent>
         </Card>
 
-          {/* Calendar: Week overview */}
+          {/* Calendar: Week overview with hourly grid */}
           <Card className={`glass-effect rounded-2xl border-border lg:col-span-5 ${viewMode === "week" ? "" : "hidden"}`}>
-            <CardHeader className="flex-row items-center justify-between">
+            <CardHeader className="flex-row items-center justify-between pb-2">
               <div>
-                <CardTitle>Semana</CardTitle>
-                <CardDescription className="text-[hsl(var(--foreground))]/70">{weekRangeLabel}</CardDescription>
+                <CardTitle>Vista Semanal</CardTitle>
+                <CardDescription className="text-[hsl(var(--foreground))]/70">{weekRangeLabel} · Arrastra para crear una clase</CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => setSelectedDate(addDays(selectedDate, -7))}>Semana anterior</Button>
-                <Button variant="outline" onClick={() => setSelectedDate(addDays(selectedDate, 7))}>Siguiente semana</Button>
-                <Button variant="default" onClick={() => { setWeekForm({ title: "", objectives: "", attachments: [] }); setOpenWeekProgram(true) }}>Programar semana</Button>
+                <Button variant="outline" size="sm" onClick={() => setSelectedDate(addDays(selectedDate, -7))}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setSelectedDate(new Date())}>Hoy</Button>
+                <Button variant="outline" size="sm" onClick={() => setSelectedDate(addDays(selectedDate, 7))}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button variant="default" size="sm" onClick={() => setOpenNewClass(true)}>Nueva clase</Button>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-                {weekDays.map((d) => {
-                  const dClasses = filteredClasses
-                    .filter((c) => sameDay(new Date(c.startTime), d))
-                    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-                  return (
-                    <div key={d.toISOString()} className="rounded-xl border border-border bg-[hsl(var(--muted))]/30 p-3">
-                      <div className="text-sm font-medium text-[hsl(var(--foreground))] capitalize mb-2">{d.toLocaleDateString("es-CL", { weekday: "short", day: "2-digit" })}</div>
-                      <div className="space-y-2">
-                        {dClasses.length === 0 ? (
-                          <div className="text-xs text-[hsl(var(--foreground))]/60">Sin clases</div>
-                        ) : (
-                          dClasses.map((cls) => {
-                            const start = formatTime(cls.startTime)
-                            const end = formatTime(cls.endTime)
-                            const capacity = cls.capacity ?? 0
-                            const occupancy = capacity > 0 ? Math.round((cls.enrolled / capacity) * 100) : 0
-                            return (
-                              <div key={cls.id} className="rounded-lg border border-border bg-[hsl(var(--background))]/40 p-2">
-                                <div className="text-xs text-[hsl(var(--foreground))] font-medium truncate">{cls.title}</div>
-                                <div className="text-[11px] text-[hsl(var(--foreground))]/70 flex items-center justify-between">
-                                  <span>{start} - {end}</span>
-                                  {capacity > 0 && <span>{cls.enrolled}/{capacity}</span>}
-                                </div>
-                                {capacity > 0 && <Progress value={Math.min(100, occupancy)} className="h-1.5 bg-[hsl(var(--muted))]/50 mt-1" />}
-                              </div>
-                            )
-                          })
-                        )}
+            <CardContent className="p-0">
+              <div 
+                className="overflow-auto max-h-[600px]"
+                onMouseUp={handleDragEnd}
+                onMouseLeave={() => { if (isDragging) handleDragEnd() }}
+              >
+                {/* Header with days */}
+                <div className="grid grid-cols-[60px_repeat(7,1fr)] sticky top-0 z-10 bg-[hsl(var(--background))] border-b border-border">
+                  <div className="p-2 text-xs text-muted-foreground text-center border-r border-border">Hora</div>
+                  {weekDays.map((d, i) => {
+                    const isToday = sameDay(d, new Date())
+                    return (
+                      <div 
+                        key={i} 
+                        className={`p-2 text-center border-r border-border last:border-r-0 ${isToday ? "bg-primary/10" : ""}`}
+                      >
+                        <div className="text-xs text-muted-foreground capitalize">
+                          {d.toLocaleDateString("es-CL", { weekday: "short" })}
+                        </div>
+                        <div className={`text-sm font-medium ${isToday ? "text-primary" : ""}`}>
+                          {d.getDate()}
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
+                
+                {/* Hourly grid */}
+                <div className="grid grid-cols-[60px_repeat(7,1fr)]">
+                  {hours.map((hour) => (
+                    <>
+                      {/* Hour label */}
+                      <div 
+                        key={`hour-${hour}`} 
+                        className="h-12 p-1 text-xs text-muted-foreground text-right pr-2 border-r border-b border-border flex items-start justify-end"
+                      >
+                        {String(hour).padStart(2, "0")}:00
+                      </div>
+                      
+                      {/* Day cells */}
+                      {weekDays.map((d, dayIndex) => {
+                        const cellClasses = getClassesForHour(dayIndex, hour)
+                        const isSelected = isInDragSelection(dayIndex, hour)
+                        const isToday = sameDay(d, new Date())
+                        
+                        return (
+                          <div
+                            key={`${dayIndex}-${hour}`}
+                            className={`
+                              h-12 border-r border-b border-border last:border-r-0 relative cursor-pointer
+                              transition-colors duration-75
+                              ${isToday ? "bg-primary/5" : "hover:bg-muted/30"}
+                              ${isSelected ? "bg-primary/20 ring-1 ring-primary/50" : ""}
+                            `}
+                            onMouseDown={() => handleDragStart(dayIndex, hour)}
+                            onMouseEnter={() => handleDragMove(dayIndex, hour)}
+                          >
+                            {cellClasses.map((cls) => {
+                              const startTime = new Date(cls.startTime)
+                              const endTime = new Date(cls.endTime)
+                              const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
+                              const heightPx = Math.max(durationHours * 48, 20)
+                              
+                              return (
+                                <div
+                                  key={cls.id}
+                                  className="absolute left-0.5 right-0.5 top-0.5 rounded px-1 py-0.5 text-[10px] bg-gradient-to-r from-primary/80 to-accent/80 text-white overflow-hidden z-10"
+                                  style={{ height: `${heightPx - 4}px` }}
+                                  onClick={(e) => { e.stopPropagation() }}
+                                >
+                                  <div className="font-medium truncate">{cls.title}</div>
+                                  <div className="opacity-80 truncate">{formatTime(cls.startTime)}</div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )
+                      })}
+                    </>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Instructions */}
+              <div className="p-3 border-t border-border bg-muted/20">
+                <p className="text-xs text-muted-foreground text-center">
+                  💡 Arrastra sobre las horas para crear una clase rápidamente · Click en una clase para ver detalles
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -840,12 +963,13 @@ export default function AdminCalendarPage() {
                     </Select>
                   </div>
                   <div className="grid gap-1">
-                    <Label>Instructor</Label>
-                    <Select value={form.instructorId} onValueChange={(v) => setForm(f => ({ ...f, instructorId: v }))}>
+                    <Label>Instructor <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                    <Select value={form.instructorId} onValueChange={(v) => setForm(f => ({ ...f, instructorId: v === "none" ? "" : v }))}>
                       <SelectTrigger className="bg-[hsl(var(--muted))]/50 border-border text-[hsl(var(--foreground))]">
-                        <SelectValue placeholder="Selecciona instructor" />
+                        <SelectValue placeholder="Sin asignar" />
                       </SelectTrigger>
                       <SelectContent className="bg-[hsl(var(--background))] border-border">
+                        <SelectItem value="none">Sin asignar</SelectItem>
                         {coaches.map((c) => (
                           <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                         ))}
@@ -869,7 +993,60 @@ export default function AdminCalendarPage() {
                 </div>
                 <div className="grid gap-1">
                   <Label>Descripción</Label>
-                  <Textarea rows={3} value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
+                  <Textarea rows={2} value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} className="bg-[hsl(var(--muted))]/50 border-border" />
+                </div>
+                
+                {/* Recurrence options */}
+                <div className="space-y-3 p-3 rounded-lg border border-border bg-muted/20">
+                  <Label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={form.isRecurring} 
+                      onChange={(e) => setForm(f => ({ ...f, isRecurring: e.target.checked }))}
+                      className="rounded"
+                    />
+                    <span>Clase recurrente (se repite semanalmente)</span>
+                  </Label>
+                  
+                  {form.isRecurring && (
+                    <div className="space-y-3 pl-6">
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-2 block">Días de la semana</Label>
+                        <div className="flex flex-wrap gap-1">
+                          {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((day, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => {
+                                setForm(f => ({
+                                  ...f,
+                                  recurrenceDays: f.recurrenceDays.includes(i)
+                                    ? f.recurrenceDays.filter(d => d !== i)
+                                    : [...f.recurrenceDays, i].sort()
+                                }))
+                              }}
+                              className={`px-2 py-1 text-xs rounded border transition-colors ${
+                                form.recurrenceDays.includes(i)
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-background border-border hover:bg-muted"
+                              }`}
+                            >
+                              {day}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="grid gap-1">
+                        <Label className="text-xs">Repetir hasta</Label>
+                        <Input 
+                          type="date" 
+                          value={form.recurrenceEndDate} 
+                          onChange={(e) => setForm(f => ({ ...f, recurrenceEndDate: e.target.value }))}
+                          className="bg-[hsl(var(--muted))]/50 border-border w-44"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <DialogFooter>
@@ -886,11 +1063,14 @@ export default function AdminCalendarPage() {
                           date: form.date,
                           startTime: form.startTime,
                           endTime: form.endTime,
-                          instructorId: form.instructorId,
-                          locationId: form.locationId,
+                          instructorId: form.instructorId || undefined,
+                          locationId: form.locationId || undefined,
                           capacity: form.capacity,
                           level: form.level,
                           discipline: form.discipline,
+                          isRecurring: form.isRecurring,
+                          recurrenceDays: form.isRecurring ? form.recurrenceDays : undefined,
+                          recurrenceEndDate: form.isRecurring ? form.recurrenceEndDate : undefined,
                         }),
                       })
                       if (res.ok) {
@@ -905,7 +1085,7 @@ export default function AdminCalendarPage() {
                       setSavingClass(false)
                     }
                   }}
-                  disabled={savingClass || !form.title || !form.date || !form.startTime || !form.endTime || !form.locationId || !form.instructorId}
+                  disabled={savingClass || !form.title || !form.date || !form.startTime || !form.endTime}
                   className="bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white"
                 >
                   {savingClass ? "Guardando..." : "Crear clase"}

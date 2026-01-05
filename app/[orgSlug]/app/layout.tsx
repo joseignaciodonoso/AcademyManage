@@ -123,7 +123,7 @@ export default async function TenantStudentLayout({
         {/* Page Content wrapper */}
         <div className="relative z-10 flex-1">
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 max-w-7xl w-full mx-auto bg-transparent text-[hsl(var(--foreground))]">
-            <StudentGuard hasActivePlan={hasActivePlan}>
+            <StudentGuard hasActivePlan={hasActivePlan} prefix={prefix}>
               {children}
             </StudentGuard>
           </main>

@@ -123,7 +123,8 @@ export default function PaymentsPage() {
     method: "TRANSFER" | "CASH"
     paidAt: string
     bankAccountId: string
-  }>({ amount: "", method: "TRANSFER", paidAt: "", bankAccountId: "" })
+    membershipEndDate: string
+  }>({ amount: "", method: "TRANSFER", paidAt: "", bankAccountId: "", membershipEndDate: "" })
   const [bankAccounts, setBankAccounts] = useState<{ id: string; name: string; bank: string }[]>([])
   const [bankAccountsLoading, setBankAccountsLoading] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<{ id: string; name: string; email: string } | null>(null)
@@ -200,7 +201,7 @@ export default function PaymentsPage() {
     // Set today's date by default
     const today = new Date()
     const todayStr = today.toISOString().slice(0, 16) // Format: YYYY-MM-DDTHH:MM
-    setManualPayment({ amount: "", method: "TRANSFER", paidAt: todayStr })
+    setManualPayment({ amount: "", method: "TRANSFER", paidAt: todayStr, bankAccountId: "", membershipEndDate: "" })
     setSelectedStudent(null)
     setSelectedPlan(null)
   }
@@ -237,6 +238,7 @@ export default function PaymentsPage() {
           method: manualPayment.method,
           paidAt: manualPayment.paidAt || undefined,
           bankAccountId: (manualPayment.bankAccountId && manualPayment.bankAccountId !== "none") ? manualPayment.bankAccountId : undefined,
+          membershipEndDate: manualPayment.membershipEndDate || undefined,
         }),
       })
       if (!res.ok) {
@@ -1195,13 +1197,24 @@ export default function PaymentsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm text-gray-300">Fecha y hora (opcional)</Label>
+              <Label className="text-sm text-gray-300">Fecha y hora del pago</Label>
               <Input
                 type="datetime-local"
                 value={manualPayment.paidAt}
                 onChange={(e) => setManualPayment((p) => ({ ...p, paidAt: e.target.value }))}
                 className="bg-gray-800/50 border-gray-700 text-white"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-300">Fecha de vigencia de la suscripción (opcional)</Label>
+              <Input
+                type="date"
+                value={manualPayment.membershipEndDate}
+                onChange={(e) => setManualPayment((p) => ({ ...p, membershipEndDate: e.target.value }))}
+                className="bg-gray-800/50 border-gray-700 text-white"
+              />
+              <p className="text-xs text-gray-500">Si el alumno tiene pagos atrasados, usa esta fecha para indicar hasta cuándo cubre este pago.</p>
             </div>
           </div>
 

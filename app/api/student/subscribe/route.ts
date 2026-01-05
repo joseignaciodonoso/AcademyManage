@@ -47,11 +47,14 @@ export async function POST(request: Request) {
       }, { status: 400 })
     }
 
-    // Create new membership (TRIAL if plan has trialDays, else PENDING until payment)
+    // Create new membership as PENDING_PAYMENT - will be activated after payment confirmation
+    // Exception: TRIAL if plan has trialDays (free trial doesn't require immediate payment)
     const now = new Date()
     const startDate = now
     const trialEndDate = plan.trialDays && plan.trialDays > 0 ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000) : null
-    const status = trialEndDate ? "TRIAL" : "PENDING"
+    
+    // Only grant TRIAL status if plan has trial days, otherwise PENDING_PAYMENT
+    const status = trialEndDate ? "TRIAL" : "PENDING_PAYMENT"
 
     const membership = await prisma.membership.create({
       data: {
@@ -65,7 +68,12 @@ export async function POST(request: Request) {
       include: { plan: true },
     })
 
-    return NextResponse.json({ ok: true, membershipId: membership.id, status: membership.status })
+    return NextResponse.json({ 
+      ok: true, 
+      membershipId: membership.id, 
+      status: membership.status,
+      requiresPayment: status === "PENDING_PAYMENT"
+    })
   } catch (e: any) {
     return NextResponse.json({ error: e.message || "Error al suscribirse" }, { status: 500 })
   }

@@ -18,8 +18,12 @@ import {
   Trash2, 
   Building2,
   CheckCircle2,
-  XCircle
+  XCircle,
+  CreditCard,
+  ChevronRight,
+  Palette
 } from "lucide-react"
+import Link from "next/link"
 
 interface BankAccount {
   id: string
@@ -209,6 +213,47 @@ export default function SettingsPage() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+
+      {/* Quick Navigation Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Link href="/admin/settings/payments">
+          <Card className="glass-effect rounded-2xl border-[hsl(var(--border))]/50 hover:border-primary/50 transition-all cursor-pointer group">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
+                    <CreditCard className="h-6 w-6 text-green-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Pasarelas de Pago</h3>
+                    <p className="text-sm text-muted-foreground">MercadoPago, Khipu, Flow, Transferencia</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/settings/branding">
+          <Card className="glass-effect rounded-2xl border-[hsl(var(--border))]/50 hover:border-primary/50 transition-all cursor-pointer group">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
+                    <Palette className="h-6 w-6 text-purple-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Marca y Apariencia</h3>
+                    <p className="text-sm text-muted-foreground">Logo, colores y personalización</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
 
       {/* Bank Accounts Section */}
       <Card className="glass-effect rounded-2xl border-[hsl(var(--border))]/50">

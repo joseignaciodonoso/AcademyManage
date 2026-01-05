@@ -78,13 +78,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => null)
-    const { studentId, email, amount, method, paidAt, planId, bankAccountId } = body || {}
+    const { studentId, email, amount, method, paidAt, planId, bankAccountId, membershipEndDate } = body || {}
 
     if ((!studentId && !email) || !amount || !method) {
       return NextResponse.json({ error: "Alumno (o email), monto y método son obligatorios" }, { status: 400 })
     }
 
-    const methodUpper = String(method).toUpperCase()
+    const methodUpper = String(method).toUpperCase() as "CASH" | "TRANSFER"
     if (!['CASH', 'TRANSFER'].includes(methodUpper)) {
       return NextResponse.json({ error: "Método inválido (CASH o TRANSFER)" }, { status: 400 })
     }
@@ -128,27 +128,36 @@ export async function POST(request: NextRequest) {
     }
 
     const payment = await prisma.payment.create({
-      data: ({
+      data: {
         academyId,
         membershipId: membership?.id || null,
         amount: Number(amount),
         currency: membership?.plan?.currency || plan?.currency || "CLP",
         status: "PAID",
         type: membership ? "SUBSCRIPTION" : "INVOICE",
-        method: methodUpper as any,
+        method: methodUpper,
         paidAt: paidAt ? new Date(paidAt) : new Date(),
         bankAccountId: bankAccountId || null,
-      } as any),
+      },
       include: { membership: { include: { plan: true, user: true } } },
     })
 
     if (payment.membership?.plan) {
-      const months = payment.membership.plan.type === 'MONTHLY' ? 1 : payment.membership.plan.type === 'QUARTERLY' ? 3 : payment.membership.plan.type === 'YEARLY' ? 12 : 1
-      const base = payment.paidAt || new Date()
-      const next = new Date(base)
-      const day = next.getDate()
-      next.setMonth(next.getMonth() + months)
-      if (next.getDate() < day) next.setDate(0)
+      let next: Date
+      
+      // Si se proporciona una fecha de vigencia personalizada, usarla
+      if (membershipEndDate) {
+        next = new Date(membershipEndDate)
+      } else {
+        // Calcular automáticamente basado en el tipo de plan
+        const months = payment.membership.plan.type === 'MONTHLY' ? 1 : payment.membership.plan.type === 'QUARTERLY' ? 3 : payment.membership.plan.type === 'YEARLY' ? 12 : 1
+        const base = payment.paidAt || new Date()
+        next = new Date(base)
+        const day = next.getDate()
+        next.setMonth(next.getMonth() + months)
+        if (next.getDate() < day) next.setDate(0)
+      }
+      
       await prisma.membership.update({
         where: { id: payment.membership.id },
         data: { nextBillingDate: next, status: 'ACTIVE' },

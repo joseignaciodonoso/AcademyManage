@@ -44,16 +44,16 @@ export function BrandingApplier() {
       primary: "#3b82f6",
       secondary: "#64748b",
       accent: "#8b5cf6",
-      neutral: "#1f2937",
-      background: "#0b1220",
-      foreground: "#e5e7eb",
+      neutral: "#374151",
+      background: "#ffffff",
+      foreground: "#1f2937",
       logoUrl: undefined,
       logoDarkUrl: undefined,
       faviconUrl: undefined,
       ogImageUrl: undefined,
-      defaultThemeMode: "dark",
+      defaultThemeMode: "light",
     })
-    root.classList.add("dark")
+    root.classList.remove("dark")
   }, [status, academyId])
 
   useEffect(() => {
@@ -96,16 +96,16 @@ export function BrandingApplier() {
               logoDarkUrl: undefined,
               faviconUrl: undefined,
               ogImageUrl: undefined,
-              defaultThemeMode: "dark",
+              defaultThemeMode: "light",
             })
-            root.classList.add("dark")
+            root.classList.remove("dark")
           } else {
-            // No branding info at all: clean tokens and force original dark baseline
+            // No branding info at all: clean tokens and force original light baseline
             root.removeAttribute("data-academy-id")
             const styleId = `branding-${academyId}`
             const styleEl = document.getElementById(styleId)
             if (styleEl) styleEl.remove()
-            root.classList.add("dark")
+            root.classList.remove("dark")
           }
         }
 

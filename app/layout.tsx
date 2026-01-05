@@ -22,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className="dark">
+    <html lang="es" suppressHydrationWarning>
       <body className="font-sans">
         <Suspense fallback={<div>Loading...</div>}>
           <Providers>{children}</Providers>
