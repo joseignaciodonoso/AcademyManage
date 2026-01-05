@@ -1,7 +1,7 @@
 'use client'
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -20,30 +20,47 @@ export default function SignInPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
+  // Cargar email guardado al montar el componente
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberEmail')
+    const savedRememberMe = localStorage.getItem('rememberMe')
+    
+    if (savedEmail && savedRememberMe === 'true') {
+      setEmail(savedEmail)
+      setRememberMe(true)
+    }
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError("")
 
     try {
-      // Guardar preferencia de "recordarme" en localStorage
-      if (rememberMe) {
-        localStorage.setItem('rememberMe', 'true')
-      } else {
-        localStorage.removeItem('rememberMe')
-      }
-
       const result = await signIn("credentials", {
         email,
         password,
-        redirect: true,
+        redirect: false, // No redirigir automáticamente para capturar errores
         callbackUrl: "/auth/post-signin",
       })
 
-      if ((result as any)?.error) {
-        setError("Credenciales inválidas")
+      if (result?.error) {
+        // Mostrar el error específico del backend
+        setError(result.error)
+      } else if (result?.ok) {
+        // Login exitoso - guardar preferencia "recordarme"
+        if (rememberMe) {
+          localStorage.setItem('rememberEmail', email)
+          localStorage.setItem('rememberMe', 'true')
+        } else {
+          localStorage.removeItem('rememberEmail')
+          localStorage.removeItem('rememberMe')
+        }
+        // Redirigir manualmente
+        window.location.href = result.url || "/auth/post-signin"
       }
-    } catch (error) {
-      setError("Error al iniciar sesión")
+    } catch (error: any) {
+      setError(error?.message || "Error al iniciar sesión. Por favor intenta nuevamente.")
     } finally {
       setLoading(false)
     }

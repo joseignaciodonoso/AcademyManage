@@ -10,11 +10,23 @@ const NEXTAUTH_URL = process.env.NEXTAUTH_URL || "http://localhost:3001"
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
-    maxAge: 90 * 24 * 60 * 60, // 90 días (3 meses) - se ajustará dinámicamente
+    maxAge: 90 * 24 * 60 * 60, // 90 días (3 meses)
   },
   secret: process.env.NEXTAUTH_SECRET,
   // Explicitly set the URL to prevent null URL errors
   ...(NEXTAUTH_URL ? { url: NEXTAUTH_URL } : {}),
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 90 * 24 * 60 * 60, // 90 días
+      },
+    },
+  },
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -25,7 +37,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null
+          throw new Error("Por favor ingresa tu correo y contraseña")
         }
 
         const user = await prisma.user.findUnique({
@@ -35,7 +47,7 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user) {
-          return null
+          throw new Error("No existe una cuenta con este correo electrónico")
         }
 
         // Fetch academy if user has academyId
@@ -48,14 +60,14 @@ export const authOptions: NextAuthOptions = {
 
         // Verify password
         if (!user.password) {
-          return null
+          throw new Error("Esta cuenta no tiene contraseña configurada")
         }
         
         const bcrypt = require("bcryptjs")
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
         
         if (!isPasswordValid) {
-          return null
+          throw new Error("La contraseña es incorrecta")
         }
 
         let org: { id: string; slug: string; type: string } | null = null

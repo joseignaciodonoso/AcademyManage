@@ -1,7 +1,7 @@
 'use client'
 
 import type React from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
@@ -20,8 +20,20 @@ export default function TenantLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Cargar email guardado al montar el componente
+  useEffect(() => {
+    const savedEmail = localStorage.getItem(`rememberEmail_${orgSlug}`)
+    const savedRememberMe = localStorage.getItem(`rememberMe_${orgSlug}`)
+    
+    if (savedEmail && savedRememberMe === 'true') {
+      setEmail(savedEmail)
+      setRememberMe(true)
+    }
+  }, [orgSlug])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,15 +45,27 @@ export default function TenantLoginPage() {
         email,
         password,
         orgSlug,
-        redirect: true,
+        redirect: false, // No redirigir automáticamente para capturar errores
         callbackUrl: `/auth/post-signin?org=${orgSlug}`,
       })
 
-      if ((result as any)?.error) {
-        setError('Credenciales inválidas')
+      if (result?.error) {
+        // Mostrar el error específico del backend
+        setError(result.error)
+      } else if (result?.ok) {
+        // Login exitoso - guardar preferencia "recordarme"
+        if (rememberMe) {
+          localStorage.setItem(`rememberEmail_${orgSlug}`, email)
+          localStorage.setItem(`rememberMe_${orgSlug}`, 'true')
+        } else {
+          localStorage.removeItem(`rememberEmail_${orgSlug}`)
+          localStorage.removeItem(`rememberMe_${orgSlug}`)
+        }
+        // Redirigir manualmente
+        window.location.href = result.url || `/auth/post-signin?org=${orgSlug}`
       }
-    } catch (err) {
-      setError('Error al iniciar sesión')
+    } catch (error: any) {
+      setError(error?.message || 'Error al iniciar sesión. Por favor intenta nuevamente.')
     } finally {
       setLoading(false)
     }
@@ -109,6 +133,8 @@ export default function TenantLoginPage() {
             <input
               id="remember"
               type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
               className="rounded border-border bg-[hsl(var(--muted))]/50 text-[hsl(var(--primary))] focus:ring-[hsl(var(--ring))]"
             />
             <Label htmlFor="remember" className="text-sm text-[hsl(var(--foreground))]/70">
