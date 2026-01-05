@@ -8,16 +8,29 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
+    console.log("🔍 DEBUG - Session:", {
+      user: session?.user ? {
+        id: session.user.id,
+        email: session.user.email,
+        role: session.user.role,
+        academyId: session.user.academyId
+      } : null,
+      hasUser: !!session?.user
+    })
+    
     if (!session?.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
     // Check permissions
     if (!hasPermission(session.user.role, "students:read")) {
+      console.log("❌ DEBUG - Permission denied for role:", session.user.role)
       return NextResponse.json({ error: "Sin permisos" }, { status: 403 })
     }
 
     // Multi-tenant support disabled
     const academyId = session.user.academyId
+    console.log("🔍 DEBUG - AcademyId from session:", academyId)
+    
     if (!academyId) {
       return NextResponse.json({ error: "Academia no encontrada" }, { status: 400 })
     }
@@ -184,6 +197,9 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    console.log("🔍 DEBUG - Students found:", students.length)
+    console.log("🔍 DEBUG - Transformed students:", transformedStudents.length)
+    
     return NextResponse.json({
       students: transformedStudents,
       total: students.length
