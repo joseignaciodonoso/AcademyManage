@@ -256,15 +256,22 @@ export default function StudentsPage() {
 
   const fetchStudents = async () => {
     try {
+      console.log("🔍 FRONTEND DEBUG - Fetching students...")
       const response = await fetch("/api/admin/students", { cache: "no-store" })
+      console.log("🔍 FRONTEND DEBUG - Response status:", response.status)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log("🔍 FRONTEND DEBUG - Response data:", data)
         setStudents(data.students || [])
         if (typeof data.total === 'number') {
           setMetrics((m) => ({ ...m, totalStudents: data.total }))
         } else if (Array.isArray(data.students)) {
           setMetrics((m) => ({ ...m, totalStudents: data.students.length }))
         }
+      } else {
+        const errorText = await response.text()
+        console.log("🔍 FRONTEND DEBUG - Error response:", errorText)
       }
     } catch (error) {
       console.error("Error fetching students:", error)
