@@ -83,24 +83,21 @@ export function StudentDashboard({
   const classesThisMonth = attendances.filter((a) => a.status === "PRESENT").length
 
   return (
-    <div className="space-y-8 p-4 sm:p-6">
+    <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--primary))]/10 via-[hsl(var(--accent))]/5 to-transparent rounded-2xl blur-xl -z-10" />
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              ¡Hola, {user.name}!
-            </h1>
-            <p className="text-[hsl(var(--foreground))]/60">
-              Bienvenido a tu portal de {academy.name}
-            </p>
-          </div>
-          <Badge className="w-fit bg-green-500/10 text-green-500 border-green-500/20">
-            <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse" />
-            Plan Activo
-          </Badge>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            ¡Hola, {user.name}!
+          </h1>
+          <p className="text-muted-foreground">
+            Bienvenido a tu portal de {academy.name}
+          </p>
         </div>
+        <Badge variant="outline" className="w-fit text-success border-success/30">
+          <span className="w-2 h-2 rounded-full bg-success mr-2 animate-pulse" />
+          Plan Activo
+        </Badge>
       </div>
 
       {/* Stats Grid */}
