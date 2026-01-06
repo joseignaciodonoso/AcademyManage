@@ -132,10 +132,10 @@ export default function SignUpAcademyPage() {
       subtitle="Registra tu academia y empieza a gestionar tus estudiantes"
       Icon={Building2}
     >
-      <Card className="glass-effect border-border shadow-2xl">
+      <Card>
         <CardHeader className="text-center pb-4">
-          <CardTitle className="text-2xl font-bold">Registro de Academia</CardTitle>
-          <CardDescription className="text-[hsl(var(--foreground))]/70">
+          <CardTitle className="text-xl font-bold">Registro de Academia</CardTitle>
+          <CardDescription>
             Completa la información para crear tu academia deportiva
           </CardDescription>
         </CardHeader>
@@ -237,7 +237,6 @@ export default function SignUpAcademyPage() {
                   onChange={(e) => handleAcademyNameChange(e.target.value)}
                   required
                   placeholder="Academia de Jiu-Jitsu"
-                  className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
                 />
               </div>
 
@@ -255,8 +254,7 @@ export default function SignUpAcademyPage() {
                   required
                   placeholder="academia-jiujitsu"
                   pattern="[a-z0-9-]+"
-                  className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
-                />
+                                  />
                 <p className="text-xs text-muted-foreground">Solo letras minúsculas, números y guiones</p>
               </div>
 
@@ -267,8 +265,7 @@ export default function SignUpAcademyPage() {
                   value={formData.discipline}
                   onChange={(e) => setFormData({ ...formData, discipline: e.target.value })}
                   placeholder="Jiu-Jitsu Brasileño"
-                  className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
-                />
+                                  />
               </div>
             </div>
 
@@ -284,8 +281,7 @@ export default function SignUpAcademyPage() {
                   onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
                   required
                   placeholder="Juan Pérez"
-                  className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
-                />
+                                  />
               </div>
 
               <div className="space-y-2">
@@ -297,8 +293,7 @@ export default function SignUpAcademyPage() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
                   placeholder="admin@tuacademia.cl"
-                  className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
-                />
+                                  />
               </div>
 
               <div className="space-y-2">
@@ -308,8 +303,7 @@ export default function SignUpAcademyPage() {
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+56 9 1234 5678"
-                  className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
-                />
+                                  />
               </div>
             </div>
 
@@ -328,12 +322,12 @@ export default function SignUpAcademyPage() {
                     required
                     minLength={8}
                     placeholder="Mínimo 8 caracteres"
-                    className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))] pr-10"
+                    className="pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[hsl(var(--foreground))]/60 hover:text-[hsl(var(--foreground))] transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -350,12 +344,12 @@ export default function SignUpAcademyPage() {
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     required
                     placeholder="Repite la contraseña"
-                    className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))] pr-10"
+                    className="pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[hsl(var(--foreground))]/60 hover:text-[hsl(var(--foreground))] transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -365,7 +359,7 @@ export default function SignUpAcademyPage() {
 
             <Button
               type="submit"
-              className="w-full font-medium py-3 transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-primary to-purple-600"
+              className="w-full"
               disabled={loading}
             >
               {loading ? "Creando Academia..." : "🚀 Crear Mi Academia"}
@@ -375,10 +369,10 @@ export default function SignUpAcademyPage() {
           <div className="mt-6 mb-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/20"></div>
+                <div className="w-full border-t border-border"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-transparent text-slate-400">¿Ya tienes una academia registrada?</span>
+                <span className="px-2 bg-card text-muted-foreground">¿Ya tienes una academia registrada?</span>
               </div>
             </div>
           </div>
@@ -396,8 +390,8 @@ export default function SignUpAcademyPage() {
       </Card>
 
       <div className="text-center mt-8">
-        <p className="text-[hsl(var(--foreground))]/70 text-sm">
-          Al registrarte, aceptas nuestros <Link href="/terms" className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80 transition-colors">Términos de Servicio</Link> y <Link href="/privacy" className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80 transition-colors">Política de Privacidad</Link>
+        <p className="text-muted-foreground text-xs">
+          Al registrarte, aceptas nuestros <Link href="/terms" className="text-primary hover:underline">Términos de Servicio</Link> y <Link href="/privacy" className="text-primary hover:underline">Política de Privacidad</Link>
         </p>
       </div>
     </AuthLayout>
