@@ -360,11 +360,12 @@ export default function MatchesPage() {
   const confirmingMatch = confirmingMatchId ? (matches.find(m => m.id === confirmingMatchId) || null) : null
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Partidos</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Partidos</h1>
           <p className="text-muted-foreground">Gestiona los partidos del club</p>
         </div>
         <Button onClick={() => router.push(`/${params.orgSlug}/club/matches/new`)}>
@@ -671,6 +672,7 @@ export default function MatchesPage() {
         match={confirmingMatch}
         onConfirm={handleConfirmResult}
       />
+      </div>
     </div>
   )
 }
