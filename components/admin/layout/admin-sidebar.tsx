@@ -187,24 +187,20 @@ function SidebarContent({ prefix, role, organizationType }: { prefix?: string; r
   const mainNav = filtered
 
   return (
-    <div className="relative flex h-full flex-col bg-gradient-to-b from-[hsl(var(--background))] via-[hsl(var(--background))]/85 to-[hsl(var(--muted))]/35 backdrop-blur-md border-r border-[hsl(var(--muted))]/40">
-      <div className="pointer-events-none absolute inset-0 opacity-30">
-        <div className="absolute -top-16 -left-20 h-44 w-44 rounded-full bg-[hsl(var(--primary))] blur-2xl" />
-        <div className="absolute bottom-10 -right-16 h-56 w-56 rounded-full bg-[hsl(var(--accent))] blur-3xl" />
-      </div>
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       {/* Header */}
-      <div className="flex h-16 items-center border-b border-border px-6 bg-[hsl(var(--background))]">
-        <Link href={`${pref}${isClub ? '/club/dashboard' : '/admin/dashboard'}`} className="flex items-center gap-3 font-bold text-white group transition-all duration-200 hover:scale-105">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] shadow-lg transition-all duration-200">
-            {isClub ? <Trophy className="h-5 w-5 text-white" /> : <GraduationCap className="h-5 w-5 text-white" />}
+      <div className="flex h-16 items-center border-b border-white/10 px-5">
+        <Link href={`${pref}${isClub ? '/club/dashboard' : '/admin/dashboard'}`} className="flex items-center gap-3 font-semibold group">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-md">
+            {isClub ? <Trophy className="h-5 w-5 text-primary-foreground" /> : <GraduationCap className="h-5 w-5 text-primary-foreground" />}
           </div>
-          <span className="text-lg text-[hsl(var(--foreground))]">{isClub ? 'Club Admin' : 'Academia Admin'}</span>
+          <span className="text-base font-semibold">{isClub ? 'Club Admin' : 'Academia Admin'}</span>
         </Link>
       </div>
       <ScrollArea className="flex-1">
-        <div className="space-y-6 py-6 px-4">
+        <div className="space-y-1 py-4 px-3">
           {/* Main Navigation */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             {mainNav.map((item) => {
               const href = `${pref}${item.href}`
               const isActive = pathname === href
@@ -212,26 +208,19 @@ function SidebarContent({ prefix, role, organizationType }: { prefix?: string; r
                 <Link key={item.name} href={href} className="block">
                   <div
                     className={cn(
-                      "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 overflow-hidden isolate",
+                      "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-gradient-to-r from-[hsl(var(--primary))]/20 to-[hsl(var(--accent))]/20 text-[hsl(var(--foreground))] shadow-lg border border-[hsl(var(--primary))]/30"
-                        : "text-[hsl(var(--foreground))]/70 hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/50 hover:shadow-md"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-white/10"
                     )}
                   >
-                    <div className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200",
-                      isActive 
-                        ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white shadow-lg" 
-                        : "bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))]/60 group-hover:bg-[hsl(var(--muted))] group-hover:text-[hsl(var(--foreground))]"
-                    )}>
-                      <item.icon className="h-4 w-4 text-[hsl(var(--foreground))]/60 group-hover:text-[hsl(var(--foreground))]" />
-                    </div>
-                    <span className="flex-1">{item.name}</span>
+                    <item.icon className={cn(
+                      "h-5 w-5 shrink-0",
+                      isActive ? "text-primary-foreground" : "text-sidebar-foreground/60"
+                    )} />
+                    <span>{item.name}</span>
                     {isActive && (
-                      <ChevronRight className="h-4 w-4 text-[hsl(var(--accent))]" />
-                    )}
-                    {isActive && (
-                      <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[hsl(var(--primary))] to-[hsl(var(--accent))] rounded-r-full" />
+                      <ChevronRight className="h-4 w-4 ml-auto" />
                     )}
                   </div>
                 </Link>
@@ -240,15 +229,9 @@ function SidebarContent({ prefix, role, organizationType }: { prefix?: string; r
           </div>
 
           {/* Settings Section */}
-          <div className="space-y-3">
-            <div className="px-4">
-              <div className="flex items-center gap-2">
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[hsl(var(--muted))] to-transparent" />
-                <h3 className="text-xs font-semibold text-[hsl(var(--foreground))]/60 uppercase tracking-wider">Configuración</h3>
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[hsl(var(--muted))] to-transparent" />
-              </div>
-            </div>
-            <div className="space-y-2">
+          <div className="mt-6 pt-6 border-t border-white/10">
+            <p className="px-3 mb-2 text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider">Configuración</p>
+            <div className="space-y-1">
               {getSettingsNavigation(isClub).map((item) => {
                 const href = `${pref}${item.href}`
                 const isActive = pathname === href
@@ -256,26 +239,19 @@ function SidebarContent({ prefix, role, organizationType }: { prefix?: string; r
                   <Link key={item.name} href={href} className="block">
                     <div
                       className={cn(
-                        "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 overflow-hidden isolate",
+                        "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                         isActive
-                          ? "bg-gradient-to-r from-[hsl(var(--primary))]/20 to-[hsl(var(--accent))]/20 text-[hsl(var(--foreground))] border border-[hsl(var(--primary))]/30"
-                          : "text-[hsl(var(--foreground))]/70 hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/50 hover:shadow-md"
+                          ? "bg-primary text-primary-foreground"
+                          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-white/10"
                       )}
                     >
-                      <div className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200",
-                        isActive 
-                          ? "bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] text-white shadow-lg" 
-                          : "bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))]/60 group-hover:bg-[hsl(var(--muted))] group-hover:text-[hsl(var(--foreground))]"
-                      )}>
-                        <item.icon className="h-4 w-4 text-[hsl(var(--foreground))]/60 group-hover:text-[hsl(var(--foreground))]" />
-                      </div>
-                      <span className="flex-1">{item.name}</span>
+                      <item.icon className={cn(
+                        "h-5 w-5 shrink-0",
+                        isActive ? "text-primary-foreground" : "text-sidebar-foreground/60"
+                      )} />
+                      <span>{item.name}</span>
                       {isActive && (
-                        <ChevronRight className="h-4 w-4 text-[hsl(var(--accent))]" />
-                      )}
-                      {isActive && (
-                        <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[hsl(var(--primary))] to-[hsl(var(--accent))] rounded-r-full" />
+                        <ChevronRight className="h-4 w-4 ml-auto" />
                       )}
                     </div>
                   </Link>

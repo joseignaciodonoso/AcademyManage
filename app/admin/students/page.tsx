@@ -914,48 +914,38 @@ export default function StudentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-gray-900 text-white flex items-center justify-center">
+      <div className="min-h-screen w-full flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
-          <p className="text-gray-400">Cargando estudiantes...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent"></div>
+          <p className="text-muted-foreground">Cargando estudiantes...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))] p-4 sm:p-6 lg:p-8 relative overflow-hidden">
-      {/* Elementos decorativos de fondo */}
-      <div className="absolute inset-0 gradient-bg opacity-20"></div>
-      <div className="absolute top-10 -left-24 w-72 h-72 bg-[hsl(var(--primary))] rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
-      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-[hsl(var(--accent))] rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
-
-      <div className="relative z-10 space-y-8">
+    <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20">
-              <GraduationCap className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-gradient-to-r from-[hsl(var(--foreground))] to-[hsl(var(--foreground))]/70 bg-clip-text">
-                Gestión de Estudiantes
-              </h1>
-              <p className="text-[hsl(var(--foreground))]/60 text-sm sm:text-base">
-                {filteredStudents.length === students.length 
-                  ? `${students.length} estudiantes registrados`
-                  : `${filteredStudents.length} de ${students.length} estudiantes`
-                }
-              </p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Estudiantes</h1>
+            <p className="text-muted-foreground">
+              {filteredStudents.length === students.length 
+                ? `${students.length} estudiantes registrados`
+                : `${filteredStudents.length} de ${students.length} estudiantes`
+              }
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <DropdownMenu>
-              <DropdownMenuTrigger className="px-3 py-2 rounded-md bg-[hsl(var(--muted))]/60 border border-border text-[hsl(var(--foreground))] text-sm hover:bg-[hsl(var(--muted))] flex items-center gap-2">
-                <Eye className="h-4 w-4" />
-                <span className="hidden sm:inline">KPIs</span>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Eye className="h-4 w-4 mr-2" />
+                  KPIs
+                </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-[hsl(var(--background))] border border-border text-[hsl(var(--foreground))]">
+              <DropdownMenuContent align="end">
                 {[
                   { id: 'total', label: 'Total Estudiantes' },
                   { id: 'active', label: 'Suscripciones Activas' },
@@ -969,16 +959,16 @@ export default function StudentsPage() {
                     <DropdownMenuItem
                       key={opt.id}
                       onClick={() => setKpiVisibility((v) => ({ ...v, [opt.id]: !visible }))}
-                      className="hover:bg-[hsl(var(--muted))] focus:bg-[hsl(var(--muted))] cursor-pointer text-[hsl(var(--foreground))] flex items-center justify-between"
+                      className="cursor-pointer flex items-center justify-between"
                     >
                       <span>{opt.label}</span>
-                      {visible && <Check className="h-4 w-4 text-green-400" />}
+                      {visible && <Check className="h-4 w-4 text-success" />}
                     </DropdownMenuItem>
                   )
                 })}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button onClick={handleOpenCreate} className="font-semibold transition-all duration-300 transform hover:scale-105">
+            <Button onClick={handleOpenCreate}>
               <UserPlus className="mr-2 h-4 w-4" />
               Agregar Estudiante
             </Button>
@@ -986,40 +976,21 @@ export default function StudentsPage() {
         </header>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {kpiCardData.filter(k => (kpiVisibility as any)[k.id]).map((kpi, index) => (
-            <Card key={index} className="glass-effect rounded-2xl border-border overflow-hidden transition-all duration-300 hover:border-[hsl(var(--primary))]/50 hover:shadow-2xl hover:shadow-[hsl(var(--primary))]/10">
-              <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-br ${kpi.color} p-4`}>
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-sm font-medium text-white/90">{kpi.title}</CardTitle>
-                  {kpi.tooltipContent && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button aria-label="Detalle proyección" className="text-white/80 hover:text-white focus:outline-none">
-                            <Info className="h-4 w-4" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent className="bg-[hsl(var(--background))] border border-border text-[hsl(var(--foreground))]">
-                          {kpi.tooltipContent}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
+            <Card key={index} className="overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
+                <div className={`p-2 rounded-lg bg-gradient-to-br ${kpi.color}`}>
+                  <kpi.icon className="h-4 w-4 text-white" />
                 </div>
-                <kpi.icon className="h-5 w-5 text-white/80" />
               </CardHeader>
-              <CardContent className="p-4">
-                <div className="text-3xl font-bold text-white">{kpi.value}</div>
-                <p className="text-xs text-gray-300 mt-1">{kpi.change}</p>
-                <Progress
-                  value={kpi.progress}
-                  className="mt-4 h-2 bg-[hsl(var(--muted))]/50"
-                  indicatorClassName={(() => {
-                    const fromClass = (kpi.color || "").split(" ").find((c: string) => c.startsWith("from-"))
-                    return fromClass ? fromClass.replace("from-", "bg-") : "bg-[hsl(var(--primary,210_90%_56%))]"
-                  })()}
-                />
+              <CardContent>
+                <div className="text-2xl font-bold">{kpi.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{kpi.change}</p>
+                {kpi.progress > 0 && (
+                  <Progress value={kpi.progress} className="mt-3 h-1.5" />
+                )}
                 {kpi.extraAction}
               </CardContent>
             </Card>
@@ -1027,107 +998,72 @@ export default function StudentsPage() {
         </div>
 
         {/* Search and Students Table */}
-        <Card className="glass-effect rounded-2xl border-border overflow-hidden">
-          <CardHeader className="border-b border-border/50 pb-6">
+        <Card>
+          <CardHeader className="pb-4">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-[hsl(var(--primary))]/10">
-                  <Users className="h-5 w-5 text-[hsl(var(--primary))]" />
-                </div>
-                <div>
-                  <CardTitle className="text-[hsl(var(--foreground))] text-lg">Lista de Estudiantes</CardTitle>
-                  <CardDescription className="text-[hsl(var(--foreground))]/60">
-                    {searchTerm || debtFilter !== "ALL" || statusFilter !== "ALL" || planFilter !== "ALL" 
-                      ? `Mostrando ${filteredStudents.length} resultados`
-                      : "Gestiona y supervisa a tus estudiantes"
-                    }
-                  </CardDescription>
-                </div>
+              <div>
+                <CardTitle>Lista de Estudiantes</CardTitle>
+                <CardDescription>
+                  {searchTerm || debtFilter !== "ALL" || statusFilter !== "ALL" || planFilter !== "ALL" 
+                    ? `Mostrando ${filteredStudents.length} resultados`
+                    : "Gestiona y supervisa a tus estudiantes"
+                  }
+                </CardDescription>
               </div>
             </div>
             
             {/* Quick Filters - Payment Status */}
             <div className="flex flex-wrap gap-2 mt-4">
-              <button
-                onClick={() => setDebtFilter(debtFilter === "ALL" ? "ALL" : "ALL")}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  debtFilter === "ALL"
-                    ? "bg-[hsl(var(--primary))] text-white shadow-md"
-                    : "bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))]/70 hover:bg-[hsl(var(--muted))]"
-                }`}
+              <Button
+                variant={debtFilter === "ALL" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setDebtFilter("ALL")}
+                className="rounded-full"
               >
-                <Users className="h-3.5 w-3.5" />
+                <Users className="h-3.5 w-3.5 mr-1.5" />
                 Todos
-                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                  debtFilter === "ALL" ? "bg-white/20" : "bg-[hsl(var(--muted))]"
-                }`}>
-                  {paymentStatusCounts.total}
-                </span>
-              </button>
-              <button
+                <Badge variant="secondary" className="ml-1.5">{paymentStatusCounts.total}</Badge>
+              </Button>
+              <Button
+                variant={debtFilter === "UP_TO_DATE" ? "default" : "outline"}
+                size="sm"
                 onClick={() => setDebtFilter(debtFilter === "UP_TO_DATE" ? "ALL" : "UP_TO_DATE")}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  debtFilter === "UP_TO_DATE"
-                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                    : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                }`}
+                className={`rounded-full ${debtFilter === "UP_TO_DATE" ? "bg-success hover:bg-success/90" : "text-success border-success/30 hover:bg-success/10"}`}
               >
-                <CheckCircle className="h-3.5 w-3.5" />
+                <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
                 Al día
-                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                  debtFilter === "UP_TO_DATE" ? "bg-white/20" : "bg-emerald-500/20"
-                }`}>
-                  {paymentStatusCounts.upToDate}
-                </span>
-              </button>
-              <button
+                <Badge variant="secondary" className="ml-1.5">{paymentStatusCounts.upToDate}</Badge>
+              </Button>
+              <Button
+                variant={debtFilter === "OVERDUE" ? "default" : "outline"}
+                size="sm"
                 onClick={() => setDebtFilter(debtFilter === "OVERDUE" ? "ALL" : "OVERDUE")}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  debtFilter === "OVERDUE"
-                    ? "bg-red-500 text-white shadow-md shadow-red-500/20"
-                    : "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                }`}
+                className={`rounded-full ${debtFilter === "OVERDUE" ? "bg-destructive hover:bg-destructive/90" : "text-destructive border-destructive/30 hover:bg-destructive/10"}`}
               >
-                <AlertTriangle className="h-3.5 w-3.5" />
+                <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
                 Atrasados
-                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                  debtFilter === "OVERDUE" ? "bg-white/20" : "bg-red-500/20"
-                }`}>
-                  {paymentStatusCounts.overdue}
-                </span>
-              </button>
-              <button
+                <Badge variant="secondary" className="ml-1.5">{paymentStatusCounts.overdue}</Badge>
+              </Button>
+              <Button
+                variant={debtFilter === "DUE_THIS_MONTH" ? "default" : "outline"}
+                size="sm"
                 onClick={() => setDebtFilter(debtFilter === "DUE_THIS_MONTH" ? "ALL" : "DUE_THIS_MONTH")}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  debtFilter === "DUE_THIS_MONTH"
-                    ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
-                    : "bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
-                }`}
+                className={`rounded-full ${debtFilter === "DUE_THIS_MONTH" ? "bg-info hover:bg-info/90" : "text-info border-info/30 hover:bg-info/10"}`}
               >
-                <Calendar className="h-3.5 w-3.5" />
+                <Calendar className="h-3.5 w-3.5 mr-1.5" />
                 Este mes
-                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                  debtFilter === "DUE_THIS_MONTH" ? "bg-white/20" : "bg-blue-500/20"
-                }`}>
-                  {paymentStatusCounts.dueThisMonth}
-                </span>
-              </button>
-              <button
+                <Badge variant="secondary" className="ml-1.5">{paymentStatusCounts.dueThisMonth}</Badge>
+              </Button>
+              <Button
+                variant={debtFilter === "NO_PLAN" ? "default" : "outline"}
+                size="sm"
                 onClick={() => setDebtFilter(debtFilter === "NO_PLAN" ? "ALL" : "NO_PLAN")}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  debtFilter === "NO_PLAN"
-                    ? "bg-gray-500 text-white shadow-md"
-                    : "bg-gray-500/10 text-gray-400 hover:bg-gray-500/20"
-                }`}
+                className="rounded-full"
               >
-                <Ban className="h-3.5 w-3.5" />
+                <Ban className="h-3.5 w-3.5 mr-1.5" />
                 Sin plan
-                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                  debtFilter === "NO_PLAN" ? "bg-white/20" : "bg-gray-500/20"
-                }`}>
-                  {paymentStatusCounts.noPlan}
-                </span>
-              </button>
+                <Badge variant="secondary" className="ml-1.5">{paymentStatusCounts.noPlan}</Badge>
+              </Button>
             </div>
           </CardHeader>
           

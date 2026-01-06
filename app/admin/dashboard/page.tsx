@@ -181,65 +181,66 @@ export default function DashboardPage() {
   ] : []
 
   return (
-    <div className="min-h-screen w-full bg-[hsl(var(--background))] text-[hsl(var(--foreground))] p-4 sm:p-6 lg:p-8 relative overflow-hidden">
-      <div className="absolute inset-0 gradient-bg opacity-20"></div>
-      <div className="absolute top-10 -left-24 w-72 h-72 bg-[hsl(var(--primary,210_90%_56%))] rounded-full mix-blend-lighten filter blur-xl opacity-30 animate-float"></div>
-      <div className="absolute bottom-5 -right-20 w-80 h-80 bg-[hsl(var(--accent,262_83%_58%))] rounded-full mix-blend-lighten filter blur-2xl opacity-40 animate-float animation-delay-3000"></div>
-
-      <div className="relative z-10">
-        <header className="flex items-center justify-between mb-8">
+    <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard de la Academia</h1>
-            <p className="text-gray-400">Resumen del rendimiento y actividad reciente.</p>
+            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-muted-foreground">Resumen del rendimiento y actividad reciente.</p>
           </div>
-          <Button className="font-semibold transition-all duration-300 transform hover:scale-105">
+          <Button>
+            <BarChart3 className="mr-2 h-4 w-4" />
             Generar Reporte
           </Button>
         </header>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {loading && (
-            <div className="text-gray-400">Cargando métricas...</div>
+            <div className="col-span-full text-center py-8 text-muted-foreground">Cargando métricas...</div>
           )}
           {error && (
-            <div className="text-red-400">{error}</div>
+            <div className="col-span-full text-center py-8 text-destructive">{error}</div>
           )}
           {!loading && !error && kpiCardData.map((kpi, index) => (
-            <Card key={index} className="glass-effect rounded-2xl border-gray-700/50 overflow-hidden transition-all duration-300 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10">
-              <CardHeader className={`flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-br ${kpi.color} p-4`}>
-                <CardTitle className="text-sm font-medium text-white/90">{kpi.title}</CardTitle>
-                <kpi.icon className="h-5 w-5 text-white/80" />
+            <Card key={index} className="overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
+                <div className={`p-2 rounded-lg bg-gradient-to-br ${kpi.color}`}>
+                  <kpi.icon className="h-4 w-4 text-white" />
+                </div>
               </CardHeader>
-              <CardContent className="p-4">
-                <div className="text-3xl font-bold text-white">{kpi.value}</div>
-                <p className="text-xs text-gray-400 mt-1">{kpi.change}</p>
-                <Progress value={kpi.progress} className="mt-4 h-2 bg-gray-700/50" indicatorClassName={`bg-gradient-to-r ${kpi.color}`} />
+              <CardContent>
+                <div className="text-2xl font-bold">{kpi.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{kpi.change}</p>
+                {kpi.progress > 0 && (
+                  <Progress value={kpi.progress} className="mt-3 h-1.5" />
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Area */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-6">
             {/* Revenue Evolution Chart */}
-            <Card className="glass-effect rounded-2xl border-gray-700/50">
+            <Card>
               <CardHeader>
                 <CardTitle>Evolución de Ingresos</CardTitle>
                 <CardDescription>Ingresos (Últimos 6 meses)</CardDescription>
               </CardHeader>
-              <CardContent className="h-64 sm:h-72 lg:h-80">
+              <CardContent className="h-72">
                 {!metrics || metrics.revenueTrend.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-gray-500">Sin datos para mostrar</div>
+                  <div className="h-full flex items-center justify-center text-muted-foreground">Sin datos para mostrar</div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={metrics.revenueTrend} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                      <XAxis dataKey="month" stroke="#9ca3af" />
-                      <YAxis stroke="#9ca3af" />
-                      <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ backgroundColor: '#111827', borderColor: '#374151' }} />
-                      <Line type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, stroke: '#a78bfa', strokeWidth: 1 }} />
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }} />
+                      <Line type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: 'hsl(var(--primary))' }} />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
@@ -247,74 +248,74 @@ export default function DashboardPage() {
             </Card>
 
             {/* Profit Evolution Chart */}
-            <Card className="glass-effect rounded-2xl border-gray-700/50">
+            <Card>
               <CardHeader>
                 <CardTitle>Evolución de Ganancias</CardTitle>
                 <CardDescription>Ingresos vs Gastos vs Ganancia (Últimos 6 meses)</CardDescription>
               </CardHeader>
-              <CardContent className="h-64 sm:h-72 lg:h-80">
+              <CardContent className="h-72">
                 {!metrics || metrics.profitTrend.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-gray-500">Sin datos para mostrar</div>
+                  <div className="h-full flex items-center justify-center text-muted-foreground">Sin datos para mostrar</div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={metrics.profitTrend} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                      <XAxis dataKey="month" stroke="#9ca3af" />
-                      <YAxis stroke="#9ca3af" />
-                      <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ backgroundColor: '#111827', borderColor: '#374151' }} />
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <Tooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }} />
                       <Legend />
-                      <Line type="monotone" dataKey="revenue" name="Ingresos" stroke="#10b981" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="expenses" name="Gastos" stroke="#ef4444" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="profit" name="Ganancia" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, stroke: '#a78bfa', strokeWidth: 1 }} />
+                      <Line type="monotone" dataKey="revenue" name="Ingresos" stroke="hsl(var(--success))" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="expenses" name="Gastos" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="profit" name="Ganancia" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: 'hsl(var(--primary))' }} />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
               </CardContent>
             </Card>
 
-            <Card className="glass-effect rounded-2xl border-gray-700/50">
+            <Card>
               <CardHeader>
                 <CardTitle>Evolución de Inscritos</CardTitle>
                 <CardDescription>Altas, activaciones y bajas (últimos 6 meses)</CardDescription>
               </CardHeader>
-              <CardContent className="h-64 sm:h-72 lg:h-80">
+              <CardContent className="h-72">
                 {!metrics || metrics.studentsTrend.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-gray-500">Sin datos para mostrar</div>
+                  <div className="h-full flex items-center justify-center text-muted-foreground">Sin datos para mostrar</div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={(metrics.studentsTrend || []).map(t => ({ ...t, net: (t.starts || 0) - (t.ends || 0) }))} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                      <XAxis dataKey="month" stroke="#9ca3af" />
-                      <YAxis stroke="#9ca3af" />
-                      <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151' }} />
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }} />
                       <Legend />
-                      <Line type="monotone" dataKey="signups" name="Altas (usuarios)" stroke="#60a5fa" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="starts" name="Activaciones (membresías)" stroke="#10b981" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="ends" name="Bajas (membresías)" stroke="#ef4444" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="net" name="Neto (starts - ends)" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="signups" name="Altas" stroke="hsl(var(--info))" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="starts" name="Activaciones" stroke="hsl(var(--success))" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="ends" name="Bajas" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="net" name="Neto" stroke="hsl(var(--accent))" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 )}
               </CardContent>
             </Card>
 
-            <Card className="glass-effect rounded-2xl border-gray-700/50">
+            <Card>
               <CardHeader>
                 <CardTitle>Distribución por Plan</CardTitle>
                 <CardDescription>Membresías activas por plan</CardDescription>
               </CardHeader>
-              <CardContent className="h-64 sm:h-72 lg:h-80">
+              <CardContent className="h-72">
                 {!metrics || metrics.planDistribution.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-gray-500">Sin datos para mostrar</div>
+                  <div className="h-full flex items-center justify-center text-muted-foreground">Sin datos para mostrar</div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie dataKey="count" nameKey="name" data={metrics.planDistribution} cx="50%" cy="50%" outerRadius={90} fill="#8884d8" label>
+                      <Pie dataKey="count" nameKey="name" data={metrics.planDistribution} cx="50%" cy="50%" outerRadius={90} fill="hsl(var(--primary))" label>
                         {metrics.planDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"][index % 6]} />
+                          <Cell key={`cell-${index}`} fill={["hsl(217 91% 60%)", "hsl(142 71% 45%)", "hsl(38 92% 50%)", "hsl(0 84% 60%)", "hsl(263 70% 50%)", "hsl(199 89% 48%)"][index % 6]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(v: number) => `${v} membresías`} contentStyle={{ backgroundColor: '#111827', borderColor: '#374151' }} />
+                      <Tooltip formatter={(v: number) => `${v} membresías`} contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
@@ -323,44 +324,44 @@ export default function DashboardPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-8">
+          <div className="space-y-6">
             {/* Quick Actions */}
-            <Card className="glass-effect rounded-2xl border-gray-700/50">
+            <Card>
               <CardHeader>
                 <CardTitle>Acciones Rápidas</CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-4">
+              <CardContent className="grid grid-cols-2 gap-3">
                 {quickActions.map(action => (
-                  <Button key={action.label} variant="outline" className="flex flex-col h-24 items-center justify-center gap-2 bg-gray-800/50 border-gray-700 hover:bg-gray-700/70 hover:border-indigo-500/50 transition-colors">
-                    <action.icon className={`h-6 w-6 ${action.color}`} />
-                    <span className="text-xs font-medium text-gray-300">{action.label}</span>
+                  <Button key={action.label} variant="outline" className="flex flex-col h-20 items-center justify-center gap-2">
+                    <action.icon className={`h-5 w-5 ${action.color}`} />
+                    <span className="text-xs font-medium">{action.label}</span>
                   </Button>
                 ))}
               </CardContent>
             </Card>
 
             {/* Recent Payments */}
-            <Card className="glass-effect rounded-2xl border-gray-700/50">
+            <Card>
               <CardHeader>
                 <CardTitle>Pagos Recientes</CardTitle>
               </CardHeader>
               <CardContent>
                 {!metrics || metrics.recentPayments.length === 0 ? (
-                  <div className="text-gray-500">Aún no hay pagos</div>
+                  <div className="text-muted-foreground text-sm">Aún no hay pagos</div>
                 ) : (
                   <div className="space-y-4">
                     {metrics.recentPayments.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between border-b border-gray-800 pb-3">
+                      <div key={p.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="bg-gray-800/60 rounded-full p-2">
-                            <DollarSign className="h-5 w-5 text-emerald-400" />
+                          <div className="bg-success/10 rounded-full p-2">
+                            <DollarSign className="h-4 w-4 text-success" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-200">{p.userName || 'Alumno'}</p>
-                            <p className="text-xs text-gray-400">{p.planName || '—'} • {p.paidAt ? new Date(p.paidAt).toLocaleString('es-CL') : '—'}</p>
+                            <p className="text-sm font-medium">{p.userName || 'Alumno'}</p>
+                            <p className="text-xs text-muted-foreground">{p.planName || '—'} • {p.paidAt ? new Date(p.paidAt).toLocaleDateString('es-CL') : '—'}</p>
                           </div>
                         </div>
-                        <div className="text-sm font-semibold text-white">{formatCurrency(p.amount, p.currency)}</div>
+                        <div className="text-sm font-semibold">{formatCurrency(p.amount, p.currency)}</div>
                       </div>
                     ))}
                   </div>
