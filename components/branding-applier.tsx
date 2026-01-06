@@ -6,12 +6,26 @@ import { applyBrandingToDocument } from "@/lib/branding"
 
 interface BrandingResponse {
   name?: string
+  // Core colors
   brandPrimary: string
   brandSecondary: string
   brandAccent: string
   brandNeutral: string
   brandBackground: string
   brandForeground: string
+  // Button/element text colors
+  brandPrimaryForeground?: string
+  brandSecondaryForeground?: string
+  brandAccentForeground?: string
+  // UI element colors
+  brandCard?: string
+  brandCardForeground?: string
+  brandPopover?: string
+  brandPopoverForeground?: string
+  brandMuted?: string
+  brandMutedForeground?: string
+  brandBorder?: string
+  // Theme & Assets
   defaultThemeMode: "light" | "dark" | "system"
   logoUrl?: string
   logoDarkUrl?: string
@@ -47,6 +61,16 @@ export function BrandingApplier() {
       neutral: "#374151",
       background: "#ffffff",
       foreground: "#1f2937",
+      primaryForeground: "#ffffff",
+      secondaryForeground: "#ffffff",
+      accentForeground: "#ffffff",
+      card: "#ffffff",
+      cardForeground: "#1f2937",
+      popover: "#ffffff",
+      popoverForeground: "#1f2937",
+      muted: "#f1f5f9",
+      mutedForeground: "#64748b",
+      border: "#e2e8f0",
       logoUrl: undefined,
       logoDarkUrl: undefined,
       faviconUrl: undefined,
@@ -69,12 +93,26 @@ export function BrandingApplier() {
         setBranding(data)
         if (data.configured) {
           applyBrandingToDocument(academyId, {
+            // Core colors
             primary: data.brandPrimary,
             secondary: data.brandSecondary,
             accent: data.brandAccent,
             neutral: data.brandNeutral,
             background: data.brandBackground,
             foreground: data.brandForeground,
+            // Button/element text colors - with safe defaults for light backgrounds
+            primaryForeground: data.brandPrimaryForeground || '#ffffff',
+            secondaryForeground: data.brandSecondaryForeground || '#ffffff',
+            accentForeground: data.brandAccentForeground || '#ffffff',
+            // UI element colors - with safe defaults
+            card: data.brandCard || data.brandBackground,
+            cardForeground: data.brandCardForeground || data.brandForeground,
+            popover: data.brandPopover || data.brandBackground,
+            popoverForeground: data.brandPopoverForeground || data.brandForeground,
+            muted: data.brandMuted || '#f1f5f9',
+            mutedForeground: data.brandMutedForeground || '#64748b',
+            border: data.brandBorder || '#e2e8f0',
+            // Assets
             logoUrl: data.logoUrl,
             logoDarkUrl: data.logoDarkUrl,
             faviconUrl: data.faviconUrl,
@@ -92,6 +130,16 @@ export function BrandingApplier() {
               neutral: data.original.brandNeutral,
               background: data.original.brandBackground,
               foreground: data.original.brandForeground,
+              primaryForeground: "#ffffff",
+              secondaryForeground: "#ffffff",
+              accentForeground: "#ffffff",
+              card: data.original.brandBackground,
+              cardForeground: data.original.brandForeground,
+              popover: data.original.brandBackground,
+              popoverForeground: data.original.brandForeground,
+              muted: "#374151",
+              mutedForeground: "#9ca3af",
+              border: "#374151",
               logoUrl: undefined,
               logoDarkUrl: undefined,
               faviconUrl: undefined,

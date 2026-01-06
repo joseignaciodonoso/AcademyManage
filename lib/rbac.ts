@@ -26,6 +26,10 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "class:delete",
     "report:read",
     "audit:read",
+    "branding:read",
+    "branding:write",
+    "settings:read",
+    "settings:write",
   ],
   [UserRole.ACADEMY_ADMIN]: [
     "academy:read",
@@ -51,6 +55,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "curriculum:write",
     "branding:read",
     "branding:write",
+    "settings:read",
+    "settings:write",
   ],
   [UserRole.COACH]: [
     "class:read",

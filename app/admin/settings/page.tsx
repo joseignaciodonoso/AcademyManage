@@ -218,13 +218,26 @@ export default function SettingsPage() {
     setExporting(true)
     try {
       const response = await fetch("/api/admin/data/export")
-      if (!response.ok) throw new Error("Error al exportar datos")
+      
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type")
+        if (contentType?.includes("application/json")) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Error al exportar datos")
+        }
+        throw new Error(`Error ${response.status}: ${response.statusText}`)
+      }
 
       const disposition = response.headers.get("Content-Disposition")
       const filenameMatch = disposition?.match(/filename="(.+)"/)
       const filename = filenameMatch ? filenameMatch[1] : `backup-${new Date().toISOString().split('T')[0]}.json`
 
       const blob = await response.blob()
+      
+      if (blob.size === 0) {
+        throw new Error("El archivo de respaldo está vacío")
+      }
+
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
@@ -235,8 +248,9 @@ export default function SettingsPage() {
       document.body.removeChild(a)
 
       toast({ title: "Exportación exitosa", description: "Se ha descargado el archivo de respaldo" })
-    } catch (error) {
-      toast({ title: "Error", description: "No se pudo exportar los datos", variant: "destructive" })
+    } catch (error: any) {
+      console.error("Export error:", error)
+      toast({ title: "Error", description: error.message || "No se pudo exportar los datos", variant: "destructive" })
     } finally {
       setExporting(false)
     }
