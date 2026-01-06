@@ -102,52 +102,52 @@ export function StudentDashboard({
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-[hsl(var(--primary))]/20 bg-gradient-to-br from-[hsl(var(--primary))]/5 to-transparent">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Mi Plan</CardTitle>
-            <div className="p-2 rounded-lg bg-[hsl(var(--primary))]/10">
-              <CreditCard className="h-4 w-4 text-[hsl(var(--primary))]" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Mi Plan</CardTitle>
+            <div className="p-2 rounded-lg bg-primary/10">
+              <CreditCard className="h-4 w-4 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold">{membership.plan.name}</div>
-            <p className="text-xs text-[hsl(var(--foreground))]/60 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {formatCurrency(membership.plan.price, membership.plan.currency)}/mes
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-green-500/20 bg-gradient-to-br from-green-500/5 to-transparent">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Asistencia</CardTitle>
-            <div className="p-2 rounded-lg bg-green-500/10">
-              <Trophy className="h-4 w-4 text-green-500" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Asistencia</CardTitle>
+            <div className="p-2 rounded-lg bg-success/10">
+              <Trophy className="h-4 w-4 text-success" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold">{attendanceRate.toFixed(0)}%</div>
-            <p className="text-xs text-[hsl(var(--foreground))]/60 mt-1">Últimos 30 días</p>
+            <p className="text-xs text-muted-foreground mt-1">Últimos 30 días</p>
             <Progress value={attendanceRate} className="mt-2 h-1.5" />
           </CardContent>
         </Card>
 
-        <Card className="border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-transparent">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clases Este Mes</CardTitle>
-            <div className="p-2 rounded-lg bg-blue-500/10">
-              <Calendar className="h-4 w-4 text-blue-500" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Clases Este Mes</CardTitle>
+            <div className="p-2 rounded-lg bg-info/10">
+              <Calendar className="h-4 w-4 text-info" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold">
               {classesThisMonth}
               {!membership.plan.unlimitedClasses && membership.plan.classesPerMonth && (
-                <span className="text-sm font-normal text-[hsl(var(--foreground))]/60">
+                <span className="text-sm font-normal text-muted-foreground">
                   /{membership.plan.classesPerMonth}
                 </span>
               )}
             </div>
-            <p className="text-xs text-[hsl(var(--foreground))]/60 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {membership.plan.unlimitedClasses ? "Ilimitadas" : "Clases disponibles"}
             </p>
             {!membership.plan.unlimitedClasses && membership.plan.classesPerMonth && (
@@ -159,16 +159,16 @@ export function StudentDashboard({
           </CardContent>
         </Card>
 
-        <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-transparent">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Nivel</CardTitle>
-            <div className="p-2 rounded-lg bg-purple-500/10">
-              <User className="h-4 w-4 text-purple-500" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Nivel</CardTitle>
+            <div className="p-2 rounded-lg bg-accent/10">
+              <User className="h-4 w-4 text-accent" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold">{user.beltLevel || "Principiante"}</div>
-            <p className="text-xs text-[hsl(var(--foreground))]/60 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {user.discipline || "Sin disciplina"}
             </p>
           </CardContent>
