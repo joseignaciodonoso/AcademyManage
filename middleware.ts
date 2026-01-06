@@ -12,6 +12,11 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes - allow access without authentication
+  // - Static files (uploads, images, etc.)
+  if (pathname.startsWith("/uploads")) {
+    return NextResponse.next()
+  }
+
   // - Global auth pages
   if (pathname.startsWith("/auth") || pathname === "/") {
     return NextResponse.next()

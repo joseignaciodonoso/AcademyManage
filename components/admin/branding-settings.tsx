@@ -15,12 +15,29 @@ import { useToast } from "@/hooks/use-toast"
 
 interface BrandingData {
   name?: string
+  // Custom titles
+  adminPanelTitle: string
+  studentPortalTitle: string
+  // Core colors
   brandPrimary: string
   brandSecondary: string
   brandAccent: string
   brandNeutral: string
   brandBackground: string
   brandForeground: string
+  // Text colors for buttons/elements
+  brandPrimaryForeground: string
+  brandSecondaryForeground: string
+  brandAccentForeground: string
+  // UI Element colors
+  brandCard: string
+  brandCardForeground: string
+  brandPopover: string
+  brandPopoverForeground: string
+  brandMuted: string
+  brandMutedForeground: string
+  brandBorder: string
+  // Assets
   logoUrl?: string
   logoDarkUrl?: string
   faviconUrl?: string
@@ -35,12 +52,28 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
   const [activeTab, setActiveTab] = useState<"general" | "colors" | "logos" | "preview">("general")
   const [data, setData] = useState<BrandingData>({
     name: academy?.name || "",
-    brandPrimary: "#3b82f6",    // blue-500
-    brandSecondary: "#64748b",  // slate-500
-    brandAccent: "#8b5cf6",     // violet-500
-    brandNeutral: "#374151",    // slate-600
-    brandBackground: "#ffffff", // white
-    brandForeground: "#1f2937", // slate-800
+    // Custom titles
+    adminPanelTitle: "Panel de Administración",
+    studentPortalTitle: "Portal del Estudiante",
+    // Core colors
+    brandPrimary: "#3b82f6",
+    brandSecondary: "#64748b",
+    brandAccent: "#8b5cf6",
+    brandNeutral: "#f5f5f5",
+    brandBackground: "#ffffff",
+    brandForeground: "#1f2937",
+    // Text colors for buttons
+    brandPrimaryForeground: "#ffffff",
+    brandSecondaryForeground: "#ffffff",
+    brandAccentForeground: "#ffffff",
+    // UI Element colors
+    brandCard: "#ffffff",
+    brandCardForeground: "#1f2937",
+    brandPopover: "#ffffff",
+    brandPopoverForeground: "#1f2937",
+    brandMuted: "#f5f5f5",
+    brandMutedForeground: "#737373",
+    brandBorder: "#e5e5e5",
     defaultThemeMode: "light",
   })
 
@@ -134,13 +167,30 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
           setData((prev) => ({
             ...prev,
             name: branding.name || prev.name,
-            brandPrimary: branding.brandPrimary,
-            brandSecondary: branding.brandSecondary,
-            brandAccent: branding.brandAccent,
-            brandNeutral: branding.brandNeutral,
-            brandBackground: branding.brandBackground,
-            brandForeground: branding.brandForeground,
-            defaultThemeMode: branding.defaultThemeMode,
+            // Custom titles
+            adminPanelTitle: branding.adminPanelTitle || prev.adminPanelTitle,
+            studentPortalTitle: branding.studentPortalTitle || prev.studentPortalTitle,
+            // Core colors
+            brandPrimary: branding.brandPrimary || prev.brandPrimary,
+            brandSecondary: branding.brandSecondary || prev.brandSecondary,
+            brandAccent: branding.brandAccent || prev.brandAccent,
+            brandNeutral: branding.brandNeutral || prev.brandNeutral,
+            brandBackground: branding.brandBackground || prev.brandBackground,
+            brandForeground: branding.brandForeground || prev.brandForeground,
+            // Text colors for buttons
+            brandPrimaryForeground: branding.brandPrimaryForeground || prev.brandPrimaryForeground,
+            brandSecondaryForeground: branding.brandSecondaryForeground || prev.brandSecondaryForeground,
+            brandAccentForeground: branding.brandAccentForeground || prev.brandAccentForeground,
+            // UI Element colors
+            brandCard: branding.brandCard || prev.brandCard,
+            brandCardForeground: branding.brandCardForeground || prev.brandCardForeground,
+            brandPopover: branding.brandPopover || prev.brandPopover,
+            brandPopoverForeground: branding.brandPopoverForeground || prev.brandPopoverForeground,
+            brandMuted: branding.brandMuted || prev.brandMuted,
+            brandMutedForeground: branding.brandMutedForeground || prev.brandMutedForeground,
+            brandBorder: branding.brandBorder || prev.brandBorder,
+            // Settings & Assets
+            defaultThemeMode: branding.defaultThemeMode || prev.defaultThemeMode,
             logoUrl: branding.logoUrl,
             logoDarkUrl: branding.logoDarkUrl,
             faviconUrl: branding.faviconUrl,
@@ -214,17 +264,32 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
         payload = {
           ...basePayload,
           name: data.name,
+          adminPanelTitle: data.adminPanelTitle,
+          studentPortalTitle: data.studentPortalTitle,
           defaultThemeMode: data.defaultThemeMode,
         }
       } else if (activeTab === "colors") {
         payload = {
           ...basePayload,
+          // Core colors
           brandPrimary: data.brandPrimary,
           brandSecondary: data.brandSecondary,
           brandAccent: data.brandAccent,
           brandNeutral: data.brandNeutral,
           brandBackground: data.brandBackground,
           brandForeground: data.brandForeground,
+          // Text colors for buttons
+          brandPrimaryForeground: data.brandPrimaryForeground,
+          brandSecondaryForeground: data.brandSecondaryForeground,
+          brandAccentForeground: data.brandAccentForeground,
+          // UI Element colors
+          brandCard: data.brandCard,
+          brandCardForeground: data.brandCardForeground,
+          brandPopover: data.brandPopover,
+          brandPopoverForeground: data.brandPopoverForeground,
+          brandMuted: data.brandMuted,
+          brandMutedForeground: data.brandMutedForeground,
+          brandBorder: data.brandBorder,
           defaultThemeMode: data.defaultThemeMode,
         }
       } else if (activeTab === "logos") {
@@ -261,6 +326,16 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
             neutral: b.brandNeutral,
             background: b.brandBackground,
             foreground: b.brandForeground,
+            primaryForeground: b.brandPrimaryForeground || '#ffffff',
+            secondaryForeground: b.brandSecondaryForeground || '#ffffff',
+            accentForeground: b.brandAccentForeground || '#ffffff',
+            card: b.brandCard || b.brandBackground,
+            cardForeground: b.brandCardForeground || b.brandForeground,
+            popover: b.brandPopover || b.brandBackground,
+            popoverForeground: b.brandPopoverForeground || b.brandForeground,
+            muted: b.brandMuted || b.brandNeutral,
+            mutedForeground: b.brandMutedForeground || '#737373',
+            border: b.brandBorder || '#e5e5e5',
             logoUrl: b.logoUrl,
             logoDarkUrl: b.logoDarkUrl,
             faviconUrl: b.faviconUrl,
@@ -306,12 +381,22 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
         // Reset to ORIGINAL app colors (light theme)
         payload = {
           ...base,
-          brandPrimary: "#3b82f6",    // blue-500
-          brandSecondary: "#64748b",  // slate-500
-          brandAccent: "#8b5cf6",     // violet-500
-          brandNeutral: "#374151",    // slate-600
-          brandBackground: "#ffffff", // white
-          brandForeground: "#1f2937", // slate-800
+          brandPrimary: "#3b82f6",
+          brandSecondary: "#64748b",
+          brandAccent: "#8b5cf6",
+          brandNeutral: "#f5f5f5",
+          brandBackground: "#ffffff",
+          brandForeground: "#1f2937",
+          brandPrimaryForeground: "#ffffff",
+          brandSecondaryForeground: "#ffffff",
+          brandAccentForeground: "#ffffff",
+          brandCard: "#ffffff",
+          brandCardForeground: "#1f2937",
+          brandPopover: "#ffffff",
+          brandPopoverForeground: "#1f2937",
+          brandMuted: "#f5f5f5",
+          brandMutedForeground: "#737373",
+          brandBorder: "#e5e5e5",
           defaultThemeMode: "light",
         }
       } else if (activeTab === "logos") {
@@ -343,13 +428,23 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
         setData((prev) => ({
           ...prev,
           name: branding.name || prev.name,
-          brandPrimary: branding.brandPrimary,
-          brandSecondary: branding.brandSecondary,
-          brandAccent: branding.brandAccent,
-          brandNeutral: branding.brandNeutral,
-          brandBackground: branding.brandBackground,
-          brandForeground: branding.brandForeground,
-          defaultThemeMode: branding.defaultThemeMode,
+          brandPrimary: branding.brandPrimary || prev.brandPrimary,
+          brandSecondary: branding.brandSecondary || prev.brandSecondary,
+          brandAccent: branding.brandAccent || prev.brandAccent,
+          brandNeutral: branding.brandNeutral || prev.brandNeutral,
+          brandBackground: branding.brandBackground || prev.brandBackground,
+          brandForeground: branding.brandForeground || prev.brandForeground,
+          brandPrimaryForeground: branding.brandPrimaryForeground || prev.brandPrimaryForeground,
+          brandSecondaryForeground: branding.brandSecondaryForeground || prev.brandSecondaryForeground,
+          brandAccentForeground: branding.brandAccentForeground || prev.brandAccentForeground,
+          brandCard: branding.brandCard || prev.brandCard,
+          brandCardForeground: branding.brandCardForeground || prev.brandCardForeground,
+          brandPopover: branding.brandPopover || prev.brandPopover,
+          brandPopoverForeground: branding.brandPopoverForeground || prev.brandPopoverForeground,
+          brandMuted: branding.brandMuted || prev.brandMuted,
+          brandMutedForeground: branding.brandMutedForeground || prev.brandMutedForeground,
+          brandBorder: branding.brandBorder || prev.brandBorder,
+          defaultThemeMode: branding.defaultThemeMode || prev.defaultThemeMode,
           logoUrl: branding.logoUrl,
           logoDarkUrl: branding.logoDarkUrl,
           faviconUrl: branding.faviconUrl,
@@ -362,6 +457,16 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
             neutral: branding.brandNeutral,
             background: branding.brandBackground,
             foreground: branding.brandForeground,
+            primaryForeground: branding.brandPrimaryForeground || '#ffffff',
+            secondaryForeground: branding.brandSecondaryForeground || '#ffffff',
+            accentForeground: branding.brandAccentForeground || '#ffffff',
+            card: branding.brandCard || branding.brandBackground,
+            cardForeground: branding.brandCardForeground || branding.brandForeground,
+            popover: branding.brandPopover || branding.brandBackground,
+            popoverForeground: branding.brandPopoverForeground || branding.brandForeground,
+            muted: branding.brandMuted || branding.brandNeutral,
+            mutedForeground: branding.brandMutedForeground || '#737373',
+            border: branding.brandBorder || '#e5e5e5',
             logoUrl: branding.logoUrl,
             logoDarkUrl: branding.logoDarkUrl,
             faviconUrl: branding.faviconUrl,
@@ -398,13 +503,29 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
   }
 
   // Typed list of color fields for safer indexing
-  const colorOptions: { key: keyof BrandingData; label: string; placeholder: string }[] = [
-    { key: "brandPrimary", label: "Color Primario", placeholder: "#0066cc" },
-    { key: "brandSecondary", label: "Color Secundario", placeholder: "#666666" },
-    { key: "brandAccent", label: "Color de Acento", placeholder: "#ff6b35" },
-    { key: "brandNeutral", label: "Color Neutral", placeholder: "#f5f5f5" },
+  const coreColorOptions: { key: keyof BrandingData; label: string; placeholder: string }[] = [
+    { key: "brandPrimary", label: "Primario", placeholder: "#0066cc" },
+    { key: "brandSecondary", label: "Secundario", placeholder: "#666666" },
+    { key: "brandAccent", label: "Acento", placeholder: "#ff6b35" },
+    { key: "brandNeutral", label: "Neutral", placeholder: "#f5f5f5" },
     { key: "brandBackground", label: "Fondo", placeholder: "#ffffff" },
-    { key: "brandForeground", label: "Texto", placeholder: "#000000" },
+    { key: "brandForeground", label: "Texto General", placeholder: "#000000" },
+  ]
+  
+  const buttonTextOptions: { key: keyof BrandingData; label: string; placeholder: string }[] = [
+    { key: "brandPrimaryForeground", label: "Texto Botón Primario", placeholder: "#ffffff" },
+    { key: "brandSecondaryForeground", label: "Texto Botón Secundario", placeholder: "#ffffff" },
+    { key: "brandAccentForeground", label: "Texto Botón Acento", placeholder: "#ffffff" },
+  ]
+  
+  const uiElementOptions: { key: keyof BrandingData; label: string; placeholder: string }[] = [
+    { key: "brandCard", label: "Fondo Tarjetas", placeholder: "#ffffff" },
+    { key: "brandCardForeground", label: "Texto Tarjetas", placeholder: "#000000" },
+    { key: "brandPopover", label: "Fondo Menús", placeholder: "#ffffff" },
+    { key: "brandPopoverForeground", label: "Texto Menús", placeholder: "#000000" },
+    { key: "brandMuted", label: "Fondo Secundario", placeholder: "#f5f5f5" },
+    { key: "brandMutedForeground", label: "Texto Secundario", placeholder: "#737373" },
+    { key: "brandBorder", label: "Bordes", placeholder: "#e5e5e5" },
   ]
 
   const logoOptions: Array<{
@@ -473,7 +594,37 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
                   placeholder="Ej: Academia Jiu-Jitsu Santiago"
                   className="max-w-md"
                 />
-                <p className="text-xs text-muted-foreground">Este nombre aparecerá en el portal de estudiantes y emails</p>
+                <p className="text-xs text-muted-foreground">Este nombre aparecerá en el sidebar, header y emails</p>
+              </div>
+
+              {/* Custom Titles Section */}
+              <div className="rounded-xl border border-border p-5 space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-1">🏷️ Títulos Personalizados</h4>
+                  <p className="text-sm text-muted-foreground">Personaliza los títulos que aparecen en el header de cada sección</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-panel-title">Título Panel Admin</Label>
+                    <Input
+                      id="admin-panel-title"
+                      value={data.adminPanelTitle}
+                      onChange={(e) => setData((prev) => ({ ...prev, adminPanelTitle: e.target.value }))}
+                      placeholder="Panel de Administración"
+                    />
+                    <p className="text-xs text-muted-foreground">Aparece en el header del panel de administración</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="student-portal-title">Título Portal Estudiante</Label>
+                    <Input
+                      id="student-portal-title"
+                      value={data.studentPortalTitle}
+                      onChange={(e) => setData((prev) => ({ ...prev, studentPortalTitle: e.target.value }))}
+                      placeholder="Portal del Estudiante"
+                    />
+                    <p className="text-xs text-muted-foreground">Aparece en el header del portal de estudiantes</p>
+                  </div>
+                </div>
               </div>
               
               <div className="space-y-2">
@@ -537,11 +688,65 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
                 </div>
               </div>
 
-              {/* Colores Avanzados */}
+              {/* Colores de Texto para Botones */}
+              <div className="rounded-xl border border-border p-5">
+                <h4 className="font-semibold mb-1">🎨 Texto de Botones</h4>
+                <p className="text-sm text-muted-foreground mb-4">Color del texto dentro de botones (ej: blanco para botones oscuros)</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {buttonTextOptions.map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-2">
+                      <Label className="text-sm">{label}</Label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={data[key] as string}
+                          onChange={(e) => handleColorChange(key, e.target.value)}
+                          className="w-10 h-10 rounded cursor-pointer border border-border"
+                        />
+                        <Input
+                          value={data[key] as string}
+                          onChange={(e) => handleColorChange(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="font-mono text-sm"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Colores de Elementos UI */}
+              <div className="rounded-xl border border-border p-5">
+                <h4 className="font-semibold mb-1">📦 Elementos de Interfaz</h4>
+                <p className="text-sm text-muted-foreground mb-4">Fondos y textos de tarjetas, menús desplegables y otros elementos</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {uiElementOptions.map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-2">
+                      <Label className="text-sm">{label}</Label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={data[key] as string}
+                          onChange={(e) => handleColorChange(key, e.target.value)}
+                          className="w-10 h-10 rounded cursor-pointer border border-border"
+                        />
+                        <Input
+                          value={data[key] as string}
+                          onChange={(e) => handleColorChange(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="font-mono text-sm"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Colores Base - Colapsable */}
               <details className="group">
-                <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Configuración avanzada de colores</summary>
+                <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Ver todos los colores base</summary>
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {colorOptions.map(({ key, label, placeholder }) => (
+                  {coreColorOptions.map(({ key, label, placeholder }) => (
                     <div key={key} className="space-y-2">
                       <Label className="text-sm">{label}</Label>
                       <div className="flex gap-2">

@@ -61,12 +61,29 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       name: academy.name,
+      // Core colors
       brandPrimary: academy.brandPrimary,
       brandSecondary: academy.brandSecondary,
       brandAccent: academy.brandAccent,
       brandNeutral: academy.brandNeutral,
       brandBackground: academy.brandBackground,
       brandForeground: academy.brandForeground,
+      // Button/element text colors
+      brandPrimaryForeground: academy.brandPrimaryForeground,
+      brandSecondaryForeground: academy.brandSecondaryForeground,
+      brandAccentForeground: academy.brandAccentForeground,
+      // UI element colors
+      brandCard: academy.brandCard,
+      brandCardForeground: academy.brandCardForeground,
+      brandPopover: academy.brandPopover,
+      brandPopoverForeground: academy.brandPopoverForeground,
+      brandMuted: academy.brandMuted,
+      brandMutedForeground: academy.brandMutedForeground,
+      brandBorder: academy.brandBorder,
+      // Titles
+      adminPanelTitle: academy.adminPanelTitle,
+      studentPortalTitle: academy.studentPortalTitle,
+      // Theme & Assets
       defaultThemeMode: academy.defaultThemeMode,
       logoUrl: academy.logoUrl,
       logoDarkUrl: academy.logoDarkUrl,
@@ -97,12 +114,29 @@ export async function PUT(req: Request) {
     
     const {
       name,
+      // Core colors
       brandPrimary,
       brandSecondary,
       brandAccent,
       brandNeutral,
       brandBackground,
       brandForeground,
+      // Button/element text colors
+      brandPrimaryForeground,
+      brandSecondaryForeground,
+      brandAccentForeground,
+      // UI element colors
+      brandCard,
+      brandCardForeground,
+      brandPopover,
+      brandPopoverForeground,
+      brandMuted,
+      brandMutedForeground,
+      brandBorder,
+      // Titles
+      adminPanelTitle,
+      studentPortalTitle,
+      // Theme & Assets
       defaultThemeMode,
       logoUrl,
       logoDarkUrl,
@@ -119,21 +153,30 @@ export async function PUT(req: Request) {
     if (!targetAcademyId) {
       return NextResponse.json({ error: "Academia no especificada" }, { status: 400 })
     }
-    
-    console.log("Target Academy ID:", targetAcademyId)
-    console.log("Valores a actualizar:", { brandPrimary, brandSecondary, brandAccent, brandNeutral, brandBackground, brandForeground })
 
     const updated = await prisma.academy.update({
       where: { id: targetAcademyId },
       data: resetToOriginal
         ? {
             // Reset to ORIGINAL app colors (dark theme)
-            brandPrimary: "#3b82f6",    // blue-500
-            brandSecondary: "#64748b",  // slate-500
-            brandAccent: "#8b5cf6",     // violet-500
-            brandNeutral: "#1f2937",    // slate-800
-            brandBackground: "#0b1220", // dark base
-            brandForeground: "#e5e7eb", // gray-200
+            brandPrimary: "#3b82f6",
+            brandSecondary: "#64748b",
+            brandAccent: "#8b5cf6",
+            brandNeutral: "#1f2937",
+            brandBackground: "#0b1220",
+            brandForeground: "#e5e7eb",
+            brandPrimaryForeground: "#ffffff",
+            brandSecondaryForeground: "#ffffff",
+            brandAccentForeground: "#ffffff",
+            brandCard: "#1f2937",
+            brandCardForeground: "#e5e7eb",
+            brandPopover: "#1f2937",
+            brandPopoverForeground: "#e5e7eb",
+            brandMuted: "#374151",
+            brandMutedForeground: "#9ca3af",
+            brandBorder: "#374151",
+            adminPanelTitle: "Panel de Administración",
+            studentPortalTitle: "Portal del Estudiante",
             defaultThemeMode: "dark",
             logoUrl: null,
             logoDarkUrl: null,
@@ -143,12 +186,29 @@ export async function PUT(req: Request) {
           }
         : {
             ...(name !== undefined ? { name } : {}),
+            // Core colors
             ...(brandPrimary !== undefined ? { brandPrimary } : {}),
             ...(brandSecondary !== undefined ? { brandSecondary } : {}),
             ...(brandAccent !== undefined ? { brandAccent } : {}),
             ...(brandNeutral !== undefined ? { brandNeutral } : {}),
             ...(brandBackground !== undefined ? { brandBackground } : {}),
             ...(brandForeground !== undefined ? { brandForeground } : {}),
+            // Button/element text colors
+            ...(brandPrimaryForeground !== undefined ? { brandPrimaryForeground } : {}),
+            ...(brandSecondaryForeground !== undefined ? { brandSecondaryForeground } : {}),
+            ...(brandAccentForeground !== undefined ? { brandAccentForeground } : {}),
+            // UI element colors
+            ...(brandCard !== undefined ? { brandCard } : {}),
+            ...(brandCardForeground !== undefined ? { brandCardForeground } : {}),
+            ...(brandPopover !== undefined ? { brandPopover } : {}),
+            ...(brandPopoverForeground !== undefined ? { brandPopoverForeground } : {}),
+            ...(brandMuted !== undefined ? { brandMuted } : {}),
+            ...(brandMutedForeground !== undefined ? { brandMutedForeground } : {}),
+            ...(brandBorder !== undefined ? { brandBorder } : {}),
+            // Titles
+            ...(adminPanelTitle !== undefined ? { adminPanelTitle } : {}),
+            ...(studentPortalTitle !== undefined ? { studentPortalTitle } : {}),
+            // Theme & Assets
             ...(defaultThemeMode !== undefined ? { defaultThemeMode } : {}),
             ...(logoUrl !== undefined ? { logoUrl } : {}),
             ...(logoDarkUrl !== undefined ? { logoDarkUrl } : {}),

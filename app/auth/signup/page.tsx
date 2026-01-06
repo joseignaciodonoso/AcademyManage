@@ -65,7 +65,7 @@ export default function SignUpAcademyPage() {
     }
 
     if (!formData.slug || formData.slug.length < 3) {
-      setError("El identificador de la academia debe tener al menos 3 caracteres")
+      setError("El identificador debe tener al menos 3 caracteres")
       setLoading(false)
       return
     }
@@ -112,15 +112,15 @@ export default function SignUpAcademyPage() {
           router.push("/admin/onboarding")
         } else {
           console.log("❌ Auto-login failed, redirecting to manual login")
-          router.push("/auth/signin?message=Academia creada exitosamente. Por favor inicia sesión.")
+          router.push("/auth/signin?message=Organización creada exitosamente. Por favor inicia sesión.")
         }
       } else {
         const data = await response.json()
-        setError(data.error || "Error al crear la academia")
+        setError(data.error || "Error al crear la organización")
       }
     } catch (error) {
       console.error("Error creating academy:", error)
-      setError("Error al crear la academia. Por favor intenta nuevamente.")
+      setError("Error al crear la organización. Por favor intenta nuevamente.")
     } finally {
       setLoading(false)
     }
@@ -128,15 +128,15 @@ export default function SignUpAcademyPage() {
 
   return (
     <AuthLayout
-      title="Crear Academia"
-      subtitle="Registra tu academia y empieza a gestionar tus estudiantes"
+      title="Crear Organización"
+      subtitle="Registra tu academia o club y empieza a gestionar tu equipo"
       Icon={Building2}
     >
       <Card>
         <CardHeader className="text-center pb-4">
-          <CardTitle className="text-xl font-bold">Registro de Academia</CardTitle>
+          <CardTitle className="text-xl font-bold">Registro de Organización</CardTitle>
           <CardDescription>
-            Completa la información para crear tu academia deportiva
+            Completa la información para crear tu academia o club deportivo
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -236,7 +236,7 @@ export default function SignUpAcademyPage() {
                   value={formData.academyName}
                   onChange={(e) => handleAcademyNameChange(e.target.value)}
                   required
-                  placeholder="Academia de Jiu-Jitsu"
+                  placeholder="Academia de Jiu-Jitsu o Club Deportivo"
                 />
               </div>
 
@@ -252,7 +252,7 @@ export default function SignUpAcademyPage() {
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
                   required
-                  placeholder="academia-jiujitsu"
+                  placeholder="mi-organizacion"
                   pattern="[a-z0-9-]+"
                                   />
                 <p className="text-xs text-muted-foreground">Solo letras minúsculas, números y guiones</p>
@@ -292,7 +292,7 @@ export default function SignUpAcademyPage() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
-                  placeholder="admin@tuacademia.cl"
+                  placeholder="admin@tuorganizacion.cl"
                                   />
               </div>
 
@@ -362,7 +362,7 @@ export default function SignUpAcademyPage() {
               className="w-full"
               disabled={loading}
             >
-              {loading ? "Creando Academia..." : "🚀 Crear Mi Academia"}
+              {loading ? "Creando Organización..." : "🚀 Crear Mi Organización"}
             </Button>
           </form>
 
@@ -372,7 +372,7 @@ export default function SignUpAcademyPage() {
                 <div className="w-full border-t border-border"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-card text-muted-foreground">¿Ya tienes una academia registrada?</span>
+                <span className="px-2 bg-card text-muted-foreground">¿Ya tienes una organización registrada?</span>
               </div>
             </div>
           </div>

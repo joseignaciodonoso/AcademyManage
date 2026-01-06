@@ -34,19 +34,34 @@ export default async function AdminLayout({
     redirect("/unauthorized")
   }
 
-  // Get academy data including type
+  // Get academy data including type, logo, favicon, and custom titles
   let academyName = "Academia"
   let organizationType: "ACADEMY" | "CLUB" = "ACADEMY"
+  let logoUrl: string | null = null
+  let logoDarkUrl: string | null = null
+  let faviconUrl: string | null = null
+  let adminPanelTitle = "Panel de Administración"
   try {
     const academyId = (session.user as any).academyId as string | undefined
     if (academyId) {
       const academy = await prisma.academy.findUnique({
         where: { id: academyId },
-        select: { name: true, type: true }
+        select: { 
+          name: true, 
+          type: true, 
+          logoUrl: true,
+          logoDarkUrl: true,
+          faviconUrl: true,
+          adminPanelTitle: true 
+        }
       })
       if (academy) {
         academyName = academy.name
         organizationType = academy.type as "ACADEMY" | "CLUB"
+        logoUrl = academy.logoUrl
+        logoDarkUrl = academy.logoDarkUrl
+        faviconUrl = academy.faviconUrl
+        adminPanelTitle = academy.adminPanelTitle || "Panel de Administración"
       }
     }
   } catch {}
@@ -55,20 +70,52 @@ export default async function AdminLayout({
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       {/* Sidebar */}
       <div className="hidden md:block">
-        <AdminSidebar role={session.user.role} organizationType={organizationType} />
+        <AdminSidebar 
+          role={session.user.role} 
+          organizationType={organizationType}
+          academyName={academyName}
+          logoUrl={logoUrl}
+          logoDarkUrl={logoDarkUrl}
+        />
       </div>
 
       {/* Main Content */}
       <div className="flex flex-col">
         {/* Header */}
         <header className="flex h-16 items-center gap-4 border-b border-border bg-card px-4 lg:px-6">
-          <MobileAdminSidebar role={session.user.role} organizationType={organizationType} />
+          <MobileAdminSidebar 
+            role={session.user.role} 
+            organizationType={organizationType}
+            academyName={academyName}
+            logoUrl={logoUrl}
+            logoDarkUrl={logoDarkUrl}
+          />
 
-          {/* Academy Info */}
+          {/* Academy Info with Logo/Favicon */}
           <div className="flex items-center gap-3 flex-1">
+            {/* Show favicon if available, otherwise logo, otherwise default icon */}
+            <div className="h-10 w-10 rounded-lg overflow-hidden bg-primary/10 flex items-center justify-center shrink-0 border border-border">
+              {faviconUrl ? (
+                <img 
+                  src={faviconUrl} 
+                  alt={academyName} 
+                  className="h-6 w-6 object-contain"
+                />
+              ) : logoUrl ? (
+                <img 
+                  src={logoUrl} 
+                  alt={academyName} 
+                  className="h-full w-full object-contain p-1"
+                />
+              ) : (
+                <span className="text-lg font-bold text-primary">
+                  {academyName.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
             <div className="flex flex-col">
               <HeaderAcademyName initialName={academyName} />
-              <p className="text-xs text-muted-foreground">Panel de Administración</p>
+              <p className="text-xs text-muted-foreground">{adminPanelTitle}</p>
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
+import { useToast } from "@/hooks/use-toast"
 import { 
   Plus, 
   Edit, 
@@ -21,7 +22,14 @@ import {
   XCircle,
   CreditCard,
   ChevronRight,
-  Palette
+  Palette,
+  Download,
+  Upload,
+  Database,
+  RefreshCw,
+  Shield,
+  AlertTriangle,
+  FileJson
 } from "lucide-react"
 import Link from "next/link"
 
@@ -59,12 +67,19 @@ const BANKS_CHILE = [
 
 export default function SettingsPage() {
   const { data: session } = useSession()
+  const { toast } = useToast()
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null)
+
+  // Data management state
+  const [exporting, setExporting] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importStats, setImportStats] = useState<any>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -195,6 +210,68 @@ export default function SettingsPage() {
       }
     } catch (err) {
       setError("Error de conexión")
+    }
+  }
+
+  // Data Export
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const response = await fetch("/api/admin/data/export")
+      if (!response.ok) throw new Error("Error al exportar datos")
+
+      const disposition = response.headers.get("Content-Disposition")
+      const filenameMatch = disposition?.match(/filename="(.+)"/)
+      const filename = filenameMatch ? filenameMatch[1] : `backup-${new Date().toISOString().split('T')[0]}.json`
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast({ title: "Exportación exitosa", description: "Se ha descargado el archivo de respaldo" })
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudo exportar los datos", variant: "destructive" })
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  // Data Import
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setImporting(true)
+    setImportStats(null)
+
+    try {
+      const text = await file.text()
+      const data = JSON.parse(text)
+
+      if (!data.version || !data.data) throw new Error("Formato de archivo inválido")
+
+      const response = await fetch("/api/admin/data/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || "Error al importar datos")
+
+      setImportStats(result.stats)
+      toast({ title: "Importación exitosa", description: "Se importaron los datos correctamente" })
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "No se pudo importar los datos", variant: "destructive" })
+    } finally {
+      setImporting(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
     }
   }
 
@@ -455,6 +532,123 @@ export default function SettingsPage() {
               </Table>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Data Management Section */}
+      <Card className="glass-effect rounded-2xl border-[hsl(var(--border))]/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Gestión de Datos
+          </CardTitle>
+          <CardDescription>
+            Exporta e importa datos de tu academia para respaldo o migración
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Export Section */}
+          <div className="rounded-xl border border-border p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <Download className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <h4 className="font-semibold">Exportar Datos (Backup)</h4>
+                <p className="text-sm text-muted-foreground">Descarga un archivo JSON con todos los datos</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Shield className="h-4 w-4" />
+              <span>Las contraseñas NO se incluyen por seguridad</span>
+            </div>
+            <Button onClick={handleExport} disabled={exporting}>
+              {exporting ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Exportando...
+                </>
+              ) : (
+                <>
+                  <FileJson className="mr-2 h-4 w-4" />
+                  Descargar Backup
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Import Section */}
+          <div className="rounded-xl border border-border p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-500/10">
+                <Upload className="h-5 w-5 text-amber-500" />
+              </div>
+              <div>
+                <h4 className="font-semibold">Importar Datos (Restaurar)</h4>
+                <p className="text-sm text-muted-foreground">Restaura datos desde un archivo de backup</p>
+              </div>
+            </div>
+            <Alert variant="destructive" className="bg-destructive/10">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                La importación sobrescribirá datos existentes (excepto credenciales de admins)
+              </AlertDescription>
+            </Alert>
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                className="hidden"
+                id="import-file"
+              />
+              <Button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing}
+                variant="outline"
+              >
+                {importing ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Importando...
+                  </>
+                ) : (
+                  <>
+                    <Database className="mr-2 h-4 w-4" />
+                    Seleccionar archivo
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {importStats && (
+              <div className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800 p-4">
+                <h4 className="font-medium flex items-center gap-2 text-green-800 dark:text-green-200 mb-3">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Importación completada
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Usuarios</span>
+                    <p className="font-semibold">{importStats.users || 0}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Planes</span>
+                    <p className="font-semibold">{importStats.plans || 0}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Sedes</span>
+                    <p className="font-semibold">{importStats.branches || 0}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Gastos</span>
+                    <p className="font-semibold">{importStats.expenses || 0}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

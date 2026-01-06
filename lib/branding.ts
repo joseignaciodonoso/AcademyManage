@@ -1,12 +1,26 @@
 // Note: Do not rely on the app's generic Academy type; the Prisma model includes branding fields.
 
 export interface BrandingTheme {
+  // Core Colors
   primary: string
   secondary: string
   accent: string
   neutral: string
   background: string
   foreground: string
+  // Text Colors for elements
+  primaryForeground: string
+  secondaryForeground: string
+  accentForeground: string
+  // UI Element Colors
+  card: string
+  cardForeground: string
+  popover: string
+  popoverForeground: string
+  muted: string
+  mutedForeground: string
+  border: string
+  // Assets
   logoUrl?: string
   logoDarkUrl?: string
   faviconUrl?: string
@@ -78,12 +92,27 @@ export function applyBrandingToDocument(academyId: string, theme: BrandingTheme)
     }
   }
 
+  // Core colors
   const primaryHsl = hexToHslString(theme.primary)
   const secondaryHsl = hexToHslString(theme.secondary)
   const accentHsl = hexToHslString(theme.accent)
   const backgroundHsl = hexToHslString(theme.background)
   const foregroundHsl = hexToHslString(theme.foreground)
   const neutralHsl = hexToHslString(theme.neutral)
+  
+  // Text colors for elements
+  const primaryFgHsl = hexToHslString(theme.primaryForeground)
+  const secondaryFgHsl = hexToHslString(theme.secondaryForeground)
+  const accentFgHsl = hexToHslString(theme.accentForeground)
+  
+  // UI Element colors
+  const cardHsl = hexToHslString(theme.card)
+  const cardFgHsl = hexToHslString(theme.cardForeground)
+  const popoverHsl = hexToHslString(theme.popover)
+  const popoverFgHsl = hexToHslString(theme.popoverForeground)
+  const mutedHsl = hexToHslString(theme.muted)
+  const mutedFgHsl = hexToHslString(theme.mutedForeground)
+  const borderHsl = hexToHslString(theme.border)
 
   styleElement.textContent = `
     :root[data-academy-id="${academyId}"] {
@@ -92,55 +121,59 @@ export function applyBrandingToDocument(academyId: string, theme: BrandingTheme)
       --background: ${backgroundHsl};
       --foreground: ${foregroundHsl};
       --primary: ${primaryHsl};
-      --primary-foreground: ${foregroundHsl};
+      --primary-foreground: ${primaryFgHsl};
       --secondary: ${secondaryHsl};
-      --secondary-foreground: ${foregroundHsl};
+      --secondary-foreground: ${secondaryFgHsl};
       --accent: ${accentHsl};
-      --accent-foreground: ${foregroundHsl};
+      --accent-foreground: ${accentFgHsl};
+      --card: ${cardHsl};
+      --card-foreground: ${cardFgHsl};
+      --popover: ${popoverHsl};
+      --popover-foreground: ${popoverFgHsl};
+      --muted: ${mutedHsl};
+      --muted-foreground: ${mutedFgHsl};
+      --border: ${borderHsl};
+      --input: ${borderHsl};
+      --ring: ${primaryHsl};
       /* Semantic tokens */
       --success: ${hexToHslString('#16a34a')};
-      --success-foreground: ${foregroundHsl};
+      --success-foreground: 0 0% 100%;
       --warning: ${hexToHslString('#ca8a04')};
-      --warning-foreground: ${foregroundHsl};
+      --warning-foreground: 0 0% 100%;
       --info: ${accentHsl};
-      --info-foreground: ${foregroundHsl};
+      --info-foreground: ${accentFgHsl};
       --destructive: ${hexToHslString('#dc2626')};
-      --destructive-foreground: ${foregroundHsl};
-      --muted: ${neutralHsl};
-      --muted-foreground: ${foregroundHsl};
-      --border: ${neutralHsl};
-      --input: ${neutralHsl};
-      --ring: ${primaryHsl};
+      --destructive-foreground: 0 0% 100%;
     }
 
     .dark[data-academy-id="${academyId}"] {
-      /* Dark mode now respects academy branding tokens */
+      /* Dark mode respects academy branding tokens */
       --background: ${backgroundHsl};
       --foreground: ${foregroundHsl};
-      --card: ${backgroundHsl};
-      --card-foreground: ${foregroundHsl};
-      --popover: ${backgroundHsl};
-      --popover-foreground: ${foregroundHsl};
+      --card: ${cardHsl};
+      --card-foreground: ${cardFgHsl};
+      --popover: ${popoverHsl};
+      --popover-foreground: ${popoverFgHsl};
       --primary: ${primaryHsl};
-      --primary-foreground: ${foregroundHsl};
+      --primary-foreground: ${primaryFgHsl};
       --secondary: ${secondaryHsl};
-      --secondary-foreground: ${foregroundHsl};
-      --muted: ${neutralHsl};
-      --muted-foreground: ${foregroundHsl};
+      --secondary-foreground: ${secondaryFgHsl};
+      --muted: ${mutedHsl};
+      --muted-foreground: ${mutedFgHsl};
       --accent: ${accentHsl};
-      --accent-foreground: ${foregroundHsl};
+      --accent-foreground: ${accentFgHsl};
+      --border: ${borderHsl};
+      --input: ${borderHsl};
+      --ring: ${primaryHsl};
       /* Semantic tokens */
       --success: ${hexToHslString('#16a34a')};
-      --success-foreground: ${foregroundHsl};
+      --success-foreground: 0 0% 100%;
       --warning: ${hexToHslString('#ca8a04')};
-      --warning-foreground: ${foregroundHsl};
+      --warning-foreground: 0 0% 100%;
       --info: ${accentHsl};
-      --info-foreground: ${foregroundHsl};
+      --info-foreground: ${accentFgHsl};
       --destructive: ${hexToHslString('#dc2626')};
-      --destructive-foreground: ${foregroundHsl};
-      --border: ${neutralHsl};
-      --input: ${neutralHsl};
-      --ring: ${primaryHsl};
+      --destructive-foreground: 0 0% 100%;
     }
   `
 }
@@ -206,6 +239,16 @@ type AcademyBrandingSource = {
   brandNeutral: string
   brandBackground: string
   brandForeground: string
+  brandPrimaryForeground?: string | null
+  brandSecondaryForeground?: string | null
+  brandAccentForeground?: string | null
+  brandCard?: string | null
+  brandCardForeground?: string | null
+  brandPopover?: string | null
+  brandPopoverForeground?: string | null
+  brandMuted?: string | null
+  brandMutedForeground?: string | null
+  brandBorder?: string | null
   logoUrl?: string | null
   logoDarkUrl?: string | null
   faviconUrl?: string | null
@@ -221,6 +264,16 @@ export function generateBrandingFromAcademy(academy: AcademyBrandingSource): Bra
     neutral: academy.brandNeutral,
     background: academy.brandBackground,
     foreground: academy.brandForeground,
+    primaryForeground: academy.brandPrimaryForeground || '#ffffff',
+    secondaryForeground: academy.brandSecondaryForeground || '#ffffff',
+    accentForeground: academy.brandAccentForeground || '#ffffff',
+    card: academy.brandCard || academy.brandBackground,
+    cardForeground: academy.brandCardForeground || academy.brandForeground,
+    popover: academy.brandPopover || academy.brandBackground,
+    popoverForeground: academy.brandPopoverForeground || academy.brandForeground,
+    muted: academy.brandMuted || academy.brandNeutral,
+    mutedForeground: academy.brandMutedForeground || '#737373',
+    border: academy.brandBorder || '#e5e5e5',
     logoUrl: academy.logoUrl || undefined,
     logoDarkUrl: academy.logoDarkUrl || undefined,
     faviconUrl: academy.faviconUrl || undefined,

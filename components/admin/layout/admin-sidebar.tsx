@@ -23,6 +23,7 @@ import {
   Target,
   Activity,
   Receipt,
+  Database,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -162,9 +163,22 @@ interface AdminSidebarProps {
   prefix?: string // e.g., "/demoacademy" for tenantized routes
   role?: string
   organizationType?: "ACADEMY" | "CLUB"
+  // Branding props
+  academyName?: string
+  logoUrl?: string | null
+  logoDarkUrl?: string | null
 }
 
-function SidebarContent({ prefix, role, organizationType }: { prefix?: string; role?: string; organizationType?: "ACADEMY" | "CLUB" }) {
+interface SidebarContentProps {
+  prefix?: string
+  role?: string
+  organizationType?: "ACADEMY" | "CLUB"
+  academyName?: string
+  logoUrl?: string | null
+  logoDarkUrl?: string | null
+}
+
+function SidebarContent({ prefix, role, organizationType, academyName, logoUrl, logoDarkUrl }: SidebarContentProps) {
   const pathname = usePathname()
   const pref = prefix ?? ""
   const isSuperAdmin = role === "SUPER_ADMIN"
@@ -183,13 +197,29 @@ function SidebarContent({ prefix, role, organizationType }: { prefix?: string; r
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      {/* Header */}
-      <div className="flex h-16 items-center border-b border-white/10 px-5">
-        <Link href={`${pref}${isClub ? '/club/dashboard' : '/admin/dashboard'}`} className="flex items-center gap-3 font-semibold group">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-md">
-            {isClub ? <Trophy className="h-5 w-5 text-primary-foreground" /> : <GraduationCap className="h-5 w-5 text-primary-foreground" />}
-          </div>
-          <span className="text-base font-semibold">{isClub ? 'Club Admin' : 'Academia Admin'}</span>
+      {/* Header with Branding */}
+      <div className="flex h-16 items-center border-b border-white/10 px-4">
+        <Link href={`${pref}${isClub ? '/club/dashboard' : '/admin/dashboard'}`} className="flex items-center justify-center w-full">
+          {logoDarkUrl || logoUrl ? (
+            <img 
+              src={logoDarkUrl || logoUrl || ''} 
+              alt={academyName || 'Logo'} 
+              className="h-10 max-w-[200px] object-contain"
+            />
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-md">
+                {isClub ? (
+                  <Trophy className="h-5 w-5 text-primary-foreground" />
+                ) : (
+                  <GraduationCap className="h-5 w-5 text-primary-foreground" />
+                )}
+              </div>
+              <span className="text-base font-semibold truncate max-w-[160px]">
+                {academyName || (isClub ? 'Club Admin' : 'Academia Admin')}
+              </span>
+            </div>
+          )}
         </Link>
       </div>
       <ScrollArea className="flex-1">
@@ -260,15 +290,31 @@ function SidebarContent({ prefix, role, organizationType }: { prefix?: string; r
   )
 }
 
-export function AdminSidebar({ className, prefix, role, organizationType }: AdminSidebarProps) {
+export function AdminSidebar({ className, prefix, role, organizationType, academyName, logoUrl, logoDarkUrl }: AdminSidebarProps) {
   return (
     <div className={cn("h-full", className)}>
-      <SidebarContent prefix={prefix} role={role} organizationType={organizationType} />
+      <SidebarContent 
+        prefix={prefix} 
+        role={role} 
+        organizationType={organizationType}
+        academyName={academyName}
+        logoUrl={logoUrl}
+        logoDarkUrl={logoDarkUrl}
+      />
     </div>
   )
 }
 
-export function MobileAdminSidebar({ prefix, role, organizationType }: { prefix?: string; role?: string; organizationType?: "ACADEMY" | "CLUB" }) {
+interface MobileSidebarProps {
+  prefix?: string
+  role?: string
+  organizationType?: "ACADEMY" | "CLUB"
+  academyName?: string
+  logoUrl?: string | null
+  logoDarkUrl?: string | null
+}
+
+export function MobileAdminSidebar({ prefix, role, organizationType, academyName, logoUrl, logoDarkUrl }: MobileSidebarProps) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -280,7 +326,14 @@ export function MobileAdminSidebar({ prefix, role, organizationType }: { prefix?
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="flex flex-col p-0">
-        <SidebarContent prefix={prefix} role={role} organizationType={organizationType} />
+        <SidebarContent 
+          prefix={prefix} 
+          role={role} 
+          organizationType={organizationType}
+          academyName={academyName}
+          logoUrl={logoUrl}
+          logoDarkUrl={logoDarkUrl}
+        />
       </SheetContent>
     </Sheet>
   )

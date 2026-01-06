@@ -131,18 +131,37 @@ model Academy {
   odooDb       String?
   odooClientId String?
 
-  // Branding
+  // Branding - Core Colors
   brandPrimary     String  @default("#000000")
   brandSecondary   String  @default("#666666")
   brandAccent      String  @default("#0066cc")
   brandNeutral     String  @default("#f5f5f5")
   brandBackground  String  @default("#ffffff")
   brandForeground  String  @default("#000000")
+  
+  // Branding - Text Colors (for buttons and elements)
+  brandPrimaryForeground   String  @default("#ffffff") // Text color on primary buttons
+  brandSecondaryForeground String  @default("#ffffff") // Text color on secondary elements
+  brandAccentForeground    String  @default("#ffffff") // Text color on accent elements
+  
+  // Branding - UI Element Colors
+  brandCard           String  @default("#ffffff") // Card backgrounds
+  brandCardForeground String  @default("#000000") // Card text
+  brandPopover        String  @default("#ffffff") // Dropdown/popover backgrounds
+  brandPopoverForeground String @default("#000000") // Dropdown/popover text
+  brandMuted          String  @default("#f5f5f5") // Muted backgrounds
+  brandMutedForeground String @default("#737373") // Muted text
+  brandBorder         String  @default("#e5e5e5") // Border color
+  
   logoUrl          String?
   logoDarkUrl      String?
   faviconUrl       String?
   ogImageUrl       String?
   defaultThemeMode String  @default("system") // light | dark | system
+  
+  // Branding - Custom Titles
+  adminPanelTitle  String  @default("Panel de Administración") // Customizable admin panel title
+  studentPortalTitle String @default("Portal del Estudiante") // Customizable student portal title
 
   // Business Settings
   currency   String  @default("CLP")
