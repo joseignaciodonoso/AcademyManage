@@ -24,46 +24,39 @@ export default function AuthLayout({
   className,
 }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] relative overflow-hidden">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 gradient-bg opacity-20" />
-        <div className="absolute -top-40 -right-32 w-80 h-80 bg-[hsl(var(--accent))] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" />
-        <div className="absolute -bottom-40 -left-32 w-80 h-80 bg-[hsl(var(--primary))] rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[hsl(var(--secondary))] rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse" />
-      </div>
-
-      <nav className="relative z-10 flex items-center justify-between p-4 lg:px-8 backdrop-blur-md bg-[hsl(var(--foreground))]/10 border-b border-border">
+    <div className="min-h-screen flex flex-col">
+      <nav className="flex items-center justify-between p-4 lg:px-8 border-b border-border bg-card">
         <div className="flex items-center space-x-2">
           <span className="text-2xl">🥋</span>
           <span className="text-xl font-bold">AcademyPro</span>
         </div>
         {backHref && (
-          <div className="flex items-center space-x-4">
-            <Link href={backHref} className="px-3 py-2 rounded-md hover:bg-[hsl(var(--muted))]/40 transition-colors">
-              Volver al inicio
-            </Link>
-          </div>
+          <Link href={backHref} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Volver al inicio
+          </Link>
         )}
       </nav>
 
-      <div className="relative z-10 flex items-center justify-center min-h-[calc(100vh-80px)] px-4 py-8">
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className={cn("w-full max-w-md", className)}>
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <div className="p-4 bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--accent))] rounded-2xl shadow-lg">
-                {Icon ? <Icon className="h-8 w-8 text-white" /> : <span className="h-8 w-8 block" />}
+              <div className="p-3 bg-primary rounded-xl">
+                {Icon ? <Icon className="h-7 w-7 text-primary-foreground" /> : <span className="h-7 w-7 block" />}
               </div>
             </div>
-            <h1 className="text-3xl font-bold mb-2">{title}</h1>
+            <h1 className="text-2xl font-bold mb-2">{title}</h1>
             {subtitle && (
-              <p className="text-[hsl(var(--foreground))]/70">{subtitle}</p>
+              <p className="text-muted-foreground">{subtitle}</p>
             )}
           </div>
 
-          {children}
+          <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+            {children}
+          </div>
 
           {footer && (
-            <div className="text-center mt-8">
+            <div className="text-center mt-6">
               {footer}
             </div>
           )}

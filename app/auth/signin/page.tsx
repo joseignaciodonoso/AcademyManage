@@ -90,7 +90,6 @@ export default function SignInPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
             placeholder="tu@email.com"
-            className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))]"
           />
         </div>
 
@@ -107,12 +106,12 @@ export default function SignInPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="•••••••"
-              className="bg-[hsl(var(--muted))]/50 border-border placeholder:text-[hsl(var(--foreground))]/60 focus:border-[hsl(var(--primary))] pr-10"
+              className="pr-10"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[hsl(var(--foreground))]/60 hover:text-[hsl(var(--foreground))] transition-colors"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -130,67 +129,51 @@ export default function SignInPage() {
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="rounded border-border bg-[hsl(var(--muted))]/50 text-[hsl(var(--primary))] focus:ring-[hsl(var(--ring))]"
+              className="rounded border-input"
             />
-            <Label htmlFor="remember" className="text-sm text-[hsl(var(--foreground))]/70">
+            <Label htmlFor="remember" className="text-sm text-muted-foreground">
               Recordarme
             </Label>
           </div>
           <Link
             href="/auth/forgot-password"
-            className="text-sm text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80 transition-colors"
+            className="text-sm text-primary hover:underline"
           >
             Olvidaste tu contrasena?
           </Link>
         </div>
 
-        <Button
-          type="submit"
-          className="w-full font-medium py-3 transition-all duration-300 transform hover:scale-105"
-          disabled={loading}
-        >
+        <Button type="submit" className="w-full" disabled={loading}>
           {loading ? (
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 border-2 border-[hsl(var(--foreground))]/30 border-t-[hsl(var(--foreground))] rounded-full animate-spin"></div>
-              <span>Iniciando sesion...</span>
-            </div>
+            <>
+              <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2"></div>
+              Iniciando sesion...
+            </>
           ) : (
-            <div className="flex items-center space-x-2">
-              <LogIn className="h-4 w-4" />
-              <span>Iniciar Sesion</span>
-            </div>
+            <>
+              <LogIn className="h-4 w-4 mr-2" />
+              Iniciar Sesion
+            </>
           )}
         </Button>
       </form>
 
-      <div className="mt-6 mb-6">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/20"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-transparent text-slate-400">No tienes cuenta?</span>
-          </div>
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-card text-muted-foreground">No tienes cuenta?</span>
         </div>
       </div>
 
-      <div className="text-center">
-        <Button
-          variant="outline"
-          asChild
-          className="w-full transition-all duration-300"
-        >
-          <Link href="/auth/signup">
-            Crear cuenta nueva
-          </Link>
-        </Button>
-      </div>
+      <Button variant="outline" asChild className="w-full">
+        <Link href="/auth/signup">Crear cuenta nueva</Link>
+      </Button>
 
-      <div className="text-center mt-8">
-        <p className="text-[hsl(var(--foreground))]/70 text-sm">
-          Al iniciar sesion, aceptas nuestros <Link href="/terms" className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80 transition-colors">Terminos de Servicio</Link> y <Link href="/privacy" className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80 transition-colors">Politica de Privacidad</Link>
-        </p>
-      </div>
+      <p className="text-center mt-6 text-xs text-muted-foreground">
+        Al iniciar sesion, aceptas nuestros <Link href="/terms" className="text-primary hover:underline">Terminos de Servicio</Link> y <Link href="/privacy" className="text-primary hover:underline">Politica de Privacidad</Link>
+      </p>
     </AuthLayout>
   )
 }
