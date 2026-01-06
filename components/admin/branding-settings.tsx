@@ -418,128 +418,150 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
   ]
 
   if (loading) {
-    return <div className="flex items-center justify-center p-8">Cargando configuración...</div>
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Cargando configuración...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Configuración de Branding</h2>
-          <p className="text-muted-foreground">Personaliza la apariencia visual de tu academia</p>
+          <h1 className="text-2xl font-bold tracking-tight">Personalización de Marca</h1>
+          <p className="text-muted-foreground">Define la identidad visual de tu academia</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={resetToDefaults} disabled={saving}>
+          <Button variant="outline" onClick={resetToDefaults} disabled={saving} size="sm">
             <RefreshCw className="mr-2 h-4 w-4" />
-            Restablecer configuración
+            Restablecer
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving} size="sm">
             <Save className="mr-2 h-4 w-4" />
-            {saving ? "Guardando..." : "Guardar Cambios"}
+            {saving ? "Guardando..." : "Guardar"}
           </Button>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v)=>setActiveTab(v as typeof activeTab)} className="space-y-4">
-        <TabsList className="bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))]/70 border border-border">
-          <TabsTrigger value="general" className="data-[state=active]:bg-[hsl(var(--background))] data-[state=active]:text-[hsl(var(--foreground))]">
-            General
-          </TabsTrigger>
-          <TabsTrigger value="colors" className="data-[state=active]:bg-[hsl(var(--background))] data-[state=active]:text-[hsl(var(--foreground))]">
-            Colores
-          </TabsTrigger>
-          <TabsTrigger value="logos" className="data-[state=active]:bg-[hsl(var(--background))] data-[state=active]:text-[hsl(var(--foreground))]">
-            Logos
-          </TabsTrigger>
-          <TabsTrigger value="preview" className="data-[state=active]:bg-[hsl(var(--background))] data-[state=active]:text-[hsl(var(--foreground))]">
-            Vista Previa
-          </TabsTrigger>
+      <Tabs value={activeTab} onValueChange={(v)=>setActiveTab(v as typeof activeTab)} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="logos">Logos</TabsTrigger>
+          <TabsTrigger value="colors">Colores</TabsTrigger>
+          <TabsTrigger value="preview">Vista Previa</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="space-y-4">
-          <Card className="glass-effect border-gray-700/50">
+        <TabsContent value="general" className="space-y-6">
+          <Card>
             <CardHeader>
-              <CardTitle>Datos de la Academia</CardTitle>
-              <CardDescription>Nombre y preferencias generales</CardDescription>
+              <CardTitle>Información de la Academia</CardTitle>
+              <CardDescription>Nombre y configuración básica de tu organización</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label>Nombre de la academia</Label>
+                <Label htmlFor="academy-name">Nombre de la academia</Label>
                 <Input
+                  id="academy-name"
                   value={data.name || ""}
                   onChange={(e) => setData((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="Tu Academia"
+                  placeholder="Ej: Academia Jiu-Jitsu Santiago"
+                  className="max-w-md"
                 />
+                <p className="text-xs text-muted-foreground">Este nombre aparecerá en el portal de estudiantes y emails</p>
               </div>
+              
               <div className="space-y-2">
-                <Label>Tema por Defecto</Label>
-                <Select
-                  value={data.defaultThemeMode}
-                  onValueChange={(value) => handleColorChange("defaultThemeMode", value)}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="light">Claro</SelectItem>
-                    <SelectItem value="dark">Oscuro</SelectItem>
-                    <SelectItem value="system">Automático</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Tema por defecto</Label>
+                <div className="flex gap-3">
+                  {[{value: 'light', label: '☀️ Claro'}, {value: 'dark', label: '🌙 Oscuro'}, {value: 'system', label: '💻 Automático'}].map((theme) => (
+                    <button
+                      key={theme.value}
+                      type="button"
+                      onClick={() => handleColorChange('defaultThemeMode', theme.value)}
+                      className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                        data.defaultThemeMode === theme.value
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      {theme.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">El tema que verán tus usuarios por defecto</p>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="colors" className="space-y-4">
-          <Card className="glass-effect border-gray-700/50">
+        <TabsContent value="colors" className="space-y-6">
+          <Card>
             <CardHeader>
-              <CardTitle>Paleta de Colores</CardTitle>
-              <CardDescription>Define los colores principales de tu marca</CardDescription>
+              <CardTitle>Colores de Marca</CardTitle>
+              <CardDescription>Personaliza los colores principales de tu academia</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Modo simple recomendado */}
-              <div className="rounded-lg border border-border p-4 bg-[hsl(var(--background))]">
-                <div className="flex items-center justify-between mb-3">
+            <CardContent className="space-y-6">
+              {/* Modo Simple - Recomendado */}
+              <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                   <div>
-                    <h4 className="font-medium">Modo Simple (3 colores)</h4>
-                    <p className="text-sm text-[hsl(var(--foreground))]/70">Elige Primario, Acento y Neutral. Derivaremos fondo y texto automáticamente según el modo del tema.</p>
+                    <h4 className="font-semibold flex items-center gap-2">✨ Modo Recomendado</h4>
+                    <p className="text-sm text-muted-foreground">Elige 3 colores y generaremos el resto automáticamente</p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={deriveFromSimple}>Aplicar reglas recomendadas</Button>
+                  <Button variant="default" size="sm" onClick={deriveFromSimple}>Generar paleta</Button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[{key:'brandPrimary',label:'Primario'},{key:'brandAccent',label:'Acento'},{key:'brandNeutral',label:'Neutral'}].map(({key,label}: any) => (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {[{key:'brandPrimary',label:'Color Principal', desc:'Botones y elementos destacados'},{key:'brandAccent',label:'Color de Acento', desc:'Detalles y llamadas a la acción'},{key:'brandNeutral',label:'Color Neutral', desc:'Fondos y bordes'}].map(({key,label,desc}: any) => (
                     <div key={key} className="space-y-2">
-                      <Label>{label}</Label>
+                      <Label className="font-medium">{label}</Label>
                       <div className="flex gap-2">
-                        <Input type="color" value={(data as any)[key]} onChange={(e)=>handleColorChange(key as any, e.target.value)} className="w-16 h-10 p-1"/>
-                        <Input value={(data as any)[key]} onChange={(e)=>handleColorChange(key as any, e.target.value)} />
+                        <div className="relative">
+                          <input 
+                            type="color" 
+                            value={(data as any)[key]} 
+                            onChange={(e)=>handleColorChange(key as any, e.target.value)} 
+                            className="w-12 h-12 rounded-lg cursor-pointer border-2 border-border"
+                          />
+                        </div>
+                        <Input value={(data as any)[key]} onChange={(e)=>handleColorChange(key as any, e.target.value)} className="font-mono text-sm" />
                       </div>
+                      <p className="text-xs text-muted-foreground">{desc}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {colorOptions.map(({ key, label, placeholder }) => (
-                  <div key={key} className="space-y-2">
-                    <Label>{label}</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="color"
-                        value={data[key] as string}
-                        onChange={(e) => handleColorChange(key, e.target.value)}
-                        className="w-16 h-10 p-1"
-                      />
-                      <Input
-                        value={data[key] as string}
-                        onChange={(e) => handleColorChange(key, e.target.value)}
-                        placeholder={placeholder}
-                      />
+              {/* Colores Avanzados */}
+              <details className="group">
+                <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Configuración avanzada de colores</summary>
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {colorOptions.map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-2">
+                      <Label className="text-sm">{label}</Label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={data[key] as string}
+                          onChange={(e) => handleColorChange(key, e.target.value)}
+                          className="w-10 h-10 rounded cursor-pointer border border-border"
+                        />
+                        <Input
+                          value={data[key] as string}
+                          onChange={(e) => handleColorChange(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="font-mono text-sm"
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </details>
 
               {contrastCheck && (
                 <Alert variant={contrastCheck.level === "fail" ? "destructive" : "default"}>
@@ -577,114 +599,197 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
           </Card>
         </TabsContent>
 
-        <TabsContent value="logos" className="space-y-4">
-          <div className="grid gap-4">
-            {logoOptions.map(({ key, label, type }) => (
-              <Card key={key} className="glass-effect border-gray-700/50">
-                <CardHeader>
-                  <CardTitle className="text-base">{label}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4">
-                    {data[key] ? (
-                      <div className="flex items-center gap-4">
-                        <img
-                          src={(data[key] as string) || "/placeholder.svg"}
-                          alt={label}
-                          className={`h-12 w-auto ${type === "logoDark" ? "bg-gray-900 p-2 rounded" : ""}`}
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => document.getElementById(`${type}-upload`)?.click()}
-                          disabled={uploading}
-                        >
-                          Cambiar
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="text-center">
-                        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <Button
-                          variant="outline"
-                          onClick={() => document.getElementById(`${type}-upload`)?.click()}
-                          disabled={uploading}
-                        >
-                          {uploading ? "Subiendo..." : `Subir ${label}`}
-                        </Button>
-                      </div>
-                    )}
-                    <input
-                      id={`${type}-upload`}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) handleFileUpload(file, type)
-                      }}
-                    />
+        <TabsContent value="logos" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Identidad Visual</CardTitle>
+              <CardDescription>Sube tu logo y favicon para personalizar la experiencia</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Logo Principal */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base font-medium">Logo Principal</Label>
+                    <p className="text-xs text-muted-foreground">Aparece en el sidebar y encabezados (fondo claro)</p>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                </div>
+                <div 
+                  className="relative border-2 border-dashed border-border rounded-xl p-6 hover:border-primary/50 transition-colors cursor-pointer bg-card"
+                  onClick={() => document.getElementById('logo-upload')?.click()}
+                >
+                  {data.logoUrl ? (
+                    <div className="flex items-center gap-4">
+                      <div className="bg-muted rounded-lg p-4">
+                        <img src={data.logoUrl} alt="Logo" className="h-16 w-auto max-w-[200px] object-contain" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Logo cargado</p>
+                        <p className="text-xs text-muted-foreground">Haz clic para cambiar</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setData(prev => ({...prev, logoUrl: undefined})) }}>
+                        Eliminar
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                      <p className="font-medium">Arrastra tu logo aquí</p>
+                      <p className="text-xs text-muted-foreground mt-1">PNG, SVG o JPG (max. 2MB)</p>
+                    </div>
+                  )}
+                  <input id="logo-upload" type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleFileUpload(file, 'logo') }} />
+                </div>
+              </div>
+
+              {/* Logo Oscuro */}
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-base font-medium">Logo para Modo Oscuro</Label>
+                  <p className="text-xs text-muted-foreground">Opcional - versión del logo para fondos oscuros</p>
+                </div>
+                <div 
+                  className="relative border-2 border-dashed border-border rounded-xl p-6 hover:border-primary/50 transition-colors cursor-pointer bg-sidebar"
+                  onClick={() => document.getElementById('logoDark-upload')?.click()}
+                >
+                  {data.logoDarkUrl ? (
+                    <div className="flex items-center gap-4">
+                      <div className="bg-black/20 rounded-lg p-4">
+                        <img src={data.logoDarkUrl} alt="Logo Oscuro" className="h-16 w-auto max-w-[200px] object-contain" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-sidebar-foreground">Logo oscuro cargado</p>
+                        <p className="text-xs text-sidebar-foreground/60">Haz clic para cambiar</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setData(prev => ({...prev, logoDarkUrl: undefined})) }}>
+                        Eliminar
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <Upload className="h-10 w-10 mx-auto mb-3 text-sidebar-foreground/50" />
+                      <p className="font-medium text-sidebar-foreground">Sube logo para modo oscuro</p>
+                      <p className="text-xs text-sidebar-foreground/60 mt-1">Opcional - se usará el logo principal si no se sube</p>
+                    </div>
+                  )}
+                  <input id="logoDark-upload" type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleFileUpload(file, 'logoDark') }} />
+                </div>
+              </div>
+
+              {/* Favicon */}
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-base font-medium">Favicon</Label>
+                  <p className="text-xs text-muted-foreground">Icono que aparece en la pestaña del navegador</p>
+                </div>
+                <div 
+                  className="relative border-2 border-dashed border-border rounded-xl p-6 hover:border-primary/50 transition-colors cursor-pointer"
+                  onClick={() => document.getElementById('favicon-upload')?.click()}
+                >
+                  {data.faviconUrl ? (
+                    <div className="flex items-center gap-4">
+                      <div className="bg-muted rounded-lg p-3">
+                        <img src={data.faviconUrl} alt="Favicon" className="h-8 w-8 object-contain" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Favicon cargado</p>
+                        <p className="text-xs text-muted-foreground">Haz clic para cambiar</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setData(prev => ({...prev, faviconUrl: undefined})) }}>
+                        Eliminar
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                      <p className="font-medium">Sube tu favicon</p>
+                      <p className="text-xs text-muted-foreground mt-1">ICO, PNG o SVG (32x32 recomendado)</p>
+                    </div>
+                  )}
+                  <input id="favicon-upload" type="file" accept="image/*,.ico" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleFileUpload(file, 'favicon') }} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="preview" className="space-y-4">
-          <Card className="glass-effect border-gray-700/50">
+        <TabsContent value="preview" className="space-y-6">
+          <Card>
             <CardHeader>
-              <CardTitle>Vista Previa del Branding</CardTitle>
+              <CardTitle>Vista Previa</CardTitle>
               <CardDescription>Así se verá tu academia con la configuración actual</CardDescription>
             </CardHeader>
             <CardContent>
-              <div
-                className="space-y-4 p-4 rounded-lg border"
-                style={{
-                  backgroundColor: data.brandBackground,
-                  color: data.brandForeground,
-                  borderColor: data.brandNeutral,
-                }}
-              >
-                <div
-                  className="flex items-center justify-between p-4 rounded-lg"
-                  style={{ backgroundColor: data.brandPrimary }}
-                >
-                  {data.logoUrl && <img src={data.logoUrl || "/placeholder.svg"} alt="Logo" className="h-8 w-auto" />}
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      style={{
-                        backgroundColor: data.brandAccent,
-                        color: data.brandBackground,
-                      }}
-                    >
-                      Botón de Acento
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      style={{
-                        borderColor: data.brandBackground,
-                        color: data.brandBackground,
-                      }}
-                    >
-                      Botón Secundario
-                    </Button>
+              <div className="space-y-6">
+                {/* Header Preview */}
+                <div className="rounded-xl overflow-hidden border">
+                  <div
+                    className="flex items-center justify-between p-4"
+                    style={{ backgroundColor: data.brandPrimary }}
+                  >
+                    <div className="flex items-center gap-3">
+                      {data.logoUrl ? (
+                        <img src={data.logoUrl} alt="Logo" className="h-8 w-auto" />
+                      ) : (
+                        <div className="h-8 w-8 rounded bg-white/20" />
+                      )}
+                      <span className="font-semibold text-white">{data.name || 'Tu Academia'}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                        style={{ backgroundColor: data.brandAccent, color: '#fff' }}
+                      >
+                        Acción Principal
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div
+                    className="p-6 space-y-4"
+                    style={{ backgroundColor: data.brandBackground, color: data.brandForeground }}
+                  >
+                    <h3 className="text-xl font-bold" style={{ color: data.brandPrimary }}>
+                      Bienvenido a {data.name || 'Tu Academia'}
+                    </h3>
+                    <p className="text-sm" style={{ color: data.brandForeground, opacity: 0.8 }}>
+                      Este es un ejemplo de cómo se verá el contenido de tu portal con los colores seleccionados.
+                    </p>
+                    
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-4 rounded-lg text-center" style={{ backgroundColor: data.brandPrimary + '15' }}>
+                        <div className="text-2xl font-bold" style={{ color: data.brandPrimary }}>24</div>
+                        <div className="text-xs" style={{ color: data.brandForeground, opacity: 0.7 }}>Alumnos</div>
+                      </div>
+                      <div className="p-4 rounded-lg text-center" style={{ backgroundColor: data.brandAccent + '15' }}>
+                        <div className="text-2xl font-bold" style={{ color: data.brandAccent }}>8</div>
+                        <div className="text-xs" style={{ color: data.brandForeground, opacity: 0.7 }}>Clases</div>
+                      </div>
+                      <div className="p-4 rounded-lg text-center" style={{ backgroundColor: data.brandNeutral + '30' }}>
+                        <div className="text-2xl font-bold" style={{ color: data.brandForeground }}>3</div>
+                        <div className="text-xs" style={{ color: data.brandForeground, opacity: 0.7 }}>Planes</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold" style={{ color: data.brandPrimary }}>
-                    Tu Academia de Artes Marciales
-                  </h3>
-                  <p style={{ color: data.brandForeground }}>
-                    Este es un ejemplo de cómo se verá el contenido con tu branding aplicado.
-                  </p>
-                  <div className="p-3 rounded" style={{ backgroundColor: data.brandNeutral }}>
-                    <p className="text-sm" style={{ color: data.brandForeground }}>
-                      Tarjeta de ejemplo con fondo neutral
-                    </p>
+                
+                {/* Color Palette Summary */}
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-sm">
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: data.brandPrimary }} />
+                    Principal
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-sm">
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: data.brandAccent }} />
+                    Acento
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-sm">
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: data.brandNeutral }} />
+                    Neutral
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-sm">
+                    <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: data.brandBackground }} />
+                    Fondo
                   </div>
                 </div>
               </div>
@@ -692,6 +797,7 @@ export function BrandingSettings({ academy }: { academy: { id: string; name?: st
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

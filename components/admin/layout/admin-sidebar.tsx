@@ -83,11 +83,6 @@ const academyNavigation = [
     href: "/admin/reports",
     icon: BarChart3,
   },
-  {
-    name: "Configuración",
-    href: "/admin/settings",
-    icon: Settings,
-  },
 ]
 
 // Navigation for CLUB type
@@ -151,14 +146,14 @@ const clubNavigation = [
 
 const getSettingsNavigation = (isClub: boolean) => [
   {
-    name: "Branding",
-    href: isClub ? "/club/settings/branding" : "/admin/settings/branding",
-    icon: Palette,
-  },
-  {
     name: "General",
     href: isClub ? "/club/settings" : "/admin/settings",
     icon: Settings,
+  },
+  {
+    name: "Branding",
+    href: isClub ? "/club/settings/branding" : "/admin/settings/branding",
+    icon: Palette,
   },
 ]
 
