@@ -169,11 +169,12 @@ export default function ClubMembersPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Jugadores del Club</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Jugadores del Club</h1>
           <p className="text-muted-foreground">
             Gestiona los integrantes del club deportivo
           </p>
@@ -469,6 +470,7 @@ export default function ClubMembersPage() {
         selectedIds={selectedIds}
         onRemoveSelected={(id) => setSelectedIds((prev) => prev.filter(x => x !== id))}
       />
+      </div>
     </div>
   )
 }
