@@ -85,19 +85,19 @@ function SidebarContent({ hasActivePlan, hasPendingPayment, prefix }: { hasActiv
   const visibleNav = hasActivePlan ? fullNav : hasPendingPayment ? pendingNav : minimalNav
 
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-slate-900">
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       {/* Header */}
-      <div className="flex h-16 items-center border-b border-slate-200 dark:border-slate-800 px-6">
-        <Link href={`${pref}/app`} className="flex items-center gap-3 font-bold group transition-all duration-200 hover:scale-105">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/20 transition-all duration-200">
-            <GraduationCap className="h-5 w-5 text-white" />
+      <div className="flex h-16 items-center border-b border-white/10 px-5">
+        <Link href={`${pref}/app`} className="flex items-center gap-3 font-semibold">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-md">
+            <GraduationCap className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-lg text-slate-900 dark:text-white">Mi Portal</span>
+          <span className="text-base font-semibold">Mi Portal</span>
         </Link>
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="space-y-6 py-6 px-4">
+        <div className="space-y-1 py-4 px-3">
           <div className="space-y-1">
             {visibleNav.map((item) => {
               const isActive =
@@ -108,27 +108,18 @@ function SidebarContent({ hasActivePlan, hasPendingPayment, prefix }: { hasActiv
                 <Link key={item.name} href={item.href} className="block">
                   <div
                     className={cn(
-                      "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
+                      "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 shadow-sm"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-white/10"
                     )}
                   >
-                    <div
-                      className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200",
-                        isActive
-                          ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4" />
-                    </div>
-                    <span className="flex-1">{item.name}</span>
-                    {isActive && <ChevronRight className="h-4 w-4 text-blue-500" />}
-                    {isActive && (
-                      <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-blue-500 to-purple-600 rounded-r-full" />
-                    )}
+                    <item.icon className={cn(
+                      "h-5 w-5 shrink-0",
+                      isActive ? "text-primary-foreground" : "text-sidebar-foreground/60"
+                    )} />
+                    <span>{item.name}</span>
+                    {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
                   </div>
                 </Link>
               )
