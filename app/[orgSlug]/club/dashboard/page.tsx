@@ -103,11 +103,12 @@ export default function ClubDashboardPage() {
     : `${metrics.wins}W - ${metrics.losses}L`
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard del Club</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard del Club</h1>
           <p className="text-muted-foreground">Métricas y estadísticas del equipo</p>
         </div>
         
@@ -142,32 +143,26 @@ export default function ClubDashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Record */}
-        <Card className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--primary))]/10 to-transparent border-[hsl(var(--primary))]/30">
-          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[hsl(var(--primary))]/15" />
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold text-[hsl(var(--foreground))]">Récord</CardTitle>
-            <div className="p-2 rounded-lg bg-[hsl(var(--primary))]/15">
-              <Trophy className="h-4 w-4 text-[hsl(var(--primary))]" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Récord</CardTitle>
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Trophy className="h-4 w-4 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{record}</div>
-            <p className="text-xs text-muted-foreground">
-              {winRate}% de victorias
-            </p>
+            <p className="text-xs text-muted-foreground">{winRate}% de victorias</p>
           </CardContent>
         </Card>
 
-        {/* Offensive */}
-        <Card className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--accent))]/10 to-transparent border-[hsl(var(--accent))]/30">
-          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-[hsl(var(--accent))]/15" />
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold text-[hsl(var(--foreground))]">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               {sport === "FOOTBALL" ? "Goles a Favor" : "Puntos a Favor"}
             </CardTitle>
-            <div className="p-2 rounded-lg bg-[hsl(var(--accent))]/15">
-              <Target className="h-4 w-4 text-[hsl(var(--accent))]" />
+            <div className="p-2 rounded-lg bg-accent/10">
+              <Target className="h-4 w-4 text-accent" />
             </div>
           </CardHeader>
           <CardContent>
@@ -183,15 +178,13 @@ export default function ClubDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Defensive */}
-        <Card className="relative overflow-hidden bg-gradient-to-br from-red-500/10 to-transparent border-red-500/30">
-          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-red-500/15" />
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold text-[hsl(var(--foreground))]">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               {sport === "FOOTBALL" ? "Goles en Contra" : "Puntos en Contra"}
             </CardTitle>
-            <div className="p-2 rounded-lg bg-red-500/15">
-              <TrendingUp className="h-4 w-4 text-red-400" />
+            <div className="p-2 rounded-lg bg-destructive/10">
+              <TrendingUp className="h-4 w-4 text-destructive" />
             </div>
           </CardHeader>
           <CardContent>
@@ -207,22 +200,16 @@ export default function ClubDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Attendance */}
-        <Card className="relative overflow-hidden bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
-          <div className="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-green-500/15" />
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-semibold text-[hsl(var(--foreground))]">Asistencia</CardTitle>
-            <div className="p-2 rounded-lg bg-green-500/15">
-              <Users className="h-4 w-4 text-green-400" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Asistencia</CardTitle>
+            <div className="p-2 rounded-lg bg-success/10">
+              <Users className="h-4 w-4 text-success" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {metrics.avgTrainingAttendance.toFixed(0)}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Entrenamientos
-            </p>
+            <div className="text-2xl font-bold">{metrics.avgTrainingAttendance.toFixed(0)}%</div>
+            <p className="text-xs text-muted-foreground">Entrenamientos</p>
           </CardContent>
         </Card>
       </div>
@@ -230,8 +217,7 @@ export default function ClubDashboardPage() {
       {/* Top Performers and Recent Matches */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Top Performers */}
-        <Card className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--primary))]/5 to-transparent border-[hsl(var(--primary))]/30">
-          <div className="pointer-events-none absolute -top-10 -right-10 h-28 w-28 rounded-full bg-[hsl(var(--primary))]/15" />
+        <Card>
           <CardHeader>
             <CardTitle>🏆 Top Performers</CardTitle>
             <CardDescription>Mejores jugadores del período</CardDescription>
@@ -455,6 +441,7 @@ export default function ClubDashboardPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   )
 }
