@@ -27,13 +27,8 @@ const DISCIPLINES = [
 ]
 
 const SPORTS = [
-  "Basketball",
-  "Football",
-  "Volleyball",
-  "Tennis",
-  "Rugby",
-  "Hockey",
-  "Otro",
+  { label: "Fútbol", value: "Football" },
+  { label: "Básquetbol", value: "Basketball" },
 ]
 
 export function AcademyDataStep({ data, onUpdate, organizationType = "ACADEMY" }: AcademyDataStepProps) {
@@ -64,11 +59,19 @@ export function AcademyDataStep({ data, onUpdate, organizationType = "ACADEMY" }
               <SelectValue placeholder={primaryPlaceholder} />
             </SelectTrigger>
             <SelectContent>
-              {(isClub ? SPORTS : DISCIPLINES).map((val) => (
-                <SelectItem key={val} value={val}>
-                  {val}
-                </SelectItem>
-              ))}
+              {isClub ? (
+                SPORTS.map((sport) => (
+                  <SelectItem key={sport.value} value={sport.value}>
+                    {sport.label}
+                  </SelectItem>
+                ))
+              ) : (
+                DISCIPLINES.map((discipline) => (
+                  <SelectItem key={discipline} value={discipline}>
+                    {discipline}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>

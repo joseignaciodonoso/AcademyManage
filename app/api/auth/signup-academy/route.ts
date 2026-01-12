@@ -35,12 +35,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate sport for clubs
-    if (type === "CLUB" && sport && !["FOOTBALL", "BASKETBALL"].includes(sport)) {
-      return NextResponse.json(
-        { error: "Deporte inválido" }, 
-        { status: 400 }
-      )
+    // Validate sport for clubs - sport is REQUIRED for CLUB type
+    if (type === "CLUB") {
+      if (!sport) {
+        console.log("❌ Signup failed: sport is required for CLUB type")
+        return NextResponse.json(
+          { error: "El deporte es obligatorio para clubs. Selecciona Fútbol o Básquetbol." }, 
+          { status: 400 }
+        )
+      }
+      if (!["FOOTBALL", "BASKETBALL"].includes(sport)) {
+        console.log(`❌ Signup failed: invalid sport '${sport}'`)
+        return NextResponse.json(
+          { error: "Deporte inválido. Solo se admite Fútbol o Básquetbol." }, 
+          { status: 400 }
+        )
+      }
     }
 
     // Check if email already exists
@@ -49,8 +59,9 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingUser) {
+      console.log(`❌ Signup failed: email '${email}' already exists`)
       return NextResponse.json(
-        { error: "El email ya está registrado" }, 
+        { error: `El email ${email} ya está registrado. Intenta iniciar sesión o usa otro email.` }, 
         { status: 400 }
       )
     }
@@ -61,8 +72,9 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingAcademy) {
+      console.log(`❌ Signup failed: slug '${slug}' already exists`)
       return NextResponse.json(
-        { error: "El identificador de la academia ya está en uso. Por favor elige otro." }, 
+        { error: `El identificador '${slug}' ya está en uso. Por favor elige otro nombre o agrega un número.` }, 
         { status: 400 }
       )
     }
