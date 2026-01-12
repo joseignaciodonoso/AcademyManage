@@ -253,7 +253,7 @@ export default function SignUpAcademyPage() {
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
                   required
                   placeholder="mi-organizacion"
-                  pattern="[a-z0-9-]+"
+                  pattern="[a-z0-9\-]+"
                                   />
                 <p className="text-xs text-muted-foreground">Solo letras minúsculas, números y guiones</p>
               </div>

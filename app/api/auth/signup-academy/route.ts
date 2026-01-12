@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs"
 
 export async function POST(request: NextRequest) {
   try {
+    const body = await request.json()
     const { 
       type,
       sport,
@@ -14,7 +15,9 @@ export async function POST(request: NextRequest) {
       password, 
       phone,
       discipline 
-    } = await request.json()
+    } = body
+    
+    console.log("📝 Signup academy request:", { type, sport, academyName, slug, adminName, email, discipline })
 
     // Validations
     if (!academyName || !slug || !adminName || !email || !password) {
