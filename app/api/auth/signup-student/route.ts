@@ -6,7 +6,9 @@ import { createOdooConnector } from "@/lib/odoo/connector"
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password, phone, selectedPlan } = await request.json()
+    const { name, email, password, phone, selectedPlan, orgSlug } = await request.json()
+
+    console.log("📝 Student signup request:", { name, email, phone, orgSlug })
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -14,22 +16,39 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingUser) {
+      console.log(`❌ Signup failed: email '${email}' already exists`)
       return NextResponse.json({ error: "El usuario ya existe" }, { status: 400 })
     }
 
     // Force role to STUDENT for all public signups
-    const forcedRole: UserRole = "STUDENT"
-    // Single-academy mode: attach students to the unique academy
+    
+    // Find academy by orgSlug if provided, otherwise use first academy
     let academyId: string | null = null
-    const existingAcademy = await prisma.academy.findFirst({})
-    if (existingAcademy) {
-      academyId = existingAcademy.id
-    } else {
-      const created = await prisma.academy.create({
-        data: { name: "Mi Academia", slug: "mi-academia", onboardingCompleted: false },
-        select: { id: true },
+    if (orgSlug) {
+      const academy = await prisma.academy.findUnique({
+        where: { slug: orgSlug },
+        select: { id: true, name: true }
       })
-      academyId = created.id
+      if (academy) {
+        academyId = academy.id
+        console.log(`✅ Found academy: ${academy.name} (${academyId})`)
+      } else {
+        console.log(`⚠️ Academy with slug '${orgSlug}' not found, using first academy`)
+      }
+    }
+    
+    // Fallback: use first academy or create one
+    if (!academyId) {
+      const existingAcademy = await prisma.academy.findFirst({})
+      if (existingAcademy) {
+        academyId = existingAcademy.id
+      } else {
+        const created = await prisma.academy.create({
+          data: { name: "Mi Academia", slug: "mi-academia", onboardingCompleted: false },
+          select: { id: true },
+        })
+        academyId = created.id
+      }
     }
 
     // Hash password
@@ -42,7 +61,7 @@ export async function POST(request: NextRequest) {
         email,
         password: hashedPassword,
         phone,
-        role: forcedRole as UserRole,
+        role: "STUDENT",
         academyId,
       },
     })
@@ -73,12 +92,11 @@ export async function POST(request: NextRequest) {
             create: {
               id: selectedPlan,
               academyId,
+              slug: selectedPlan,
               name: planInfo.name,
-              description: `${planInfo.name} - Entrenamiento completo`,
               price: planInfo.price,
               currency: "CLP",
               type: planInfo.type as any,
-              isActive: true,
             }
           })
 
