@@ -129,10 +129,10 @@ export const authOptions: NextAuthOptions = {
             select: { role: true, academyId: true, academy: { select: { id: true, name: true, slug: true } } },
           })
           if (u) {
-            token.role = u.role as string
-            token.academyId = (u.academyId ?? undefined) as string | undefined
-            token.academy = (u.academy ?? undefined) as any
-            token.orgSlug = (u.academy?.slug ?? undefined) as string | undefined
+            token.role = String(u.role)
+            token.academyId = u.academyId ?? undefined
+            token.academy = u.academy ?? undefined
+            token.orgSlug = u.academy?.slug ?? undefined
           }
         } catch {}
       }
