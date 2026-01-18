@@ -80,24 +80,22 @@ export async function POST(req: Request) {
         return NextResponse.json({ checkoutUrl })
       }
       case "flow": {
-        // Get credentials from database (academy settings) or fallback to env vars
-        const apiKey = academy.flowApiKey || process.env.FLOW_API_KEY
-        const secretKey = academy.flowSecretKey || process.env.FLOW_SECRET_KEY
+        // Get credentials ONLY from database (academy settings)
+        const apiKey = academy.flowApiKey
+        const secretKey = academy.flowSecretKey
         const flowEnabled = academy.flowEnabled
         
-        console.log("🏦 Flow checkout - Academy credentials:", {
-          academyId: academy.id,
-          academySlug: academy.slug,
-          hasDbApiKey: !!academy.flowApiKey,
-          hasDbSecretKey: !!academy.flowSecretKey,
-          hasEnvApiKey: !!process.env.FLOW_API_KEY,
-          hasEnvSecretKey: !!process.env.FLOW_SECRET_KEY,
-          flowEnabled,
-          finalApiKeyLength: apiKey?.length || 0,
-          finalSecretKeyLength: secretKey?.length || 0,
-        })
+        if (!flowEnabled) {
+          return NextResponse.json({ 
+            error: "Flow no está habilitado. Configúralo en Configuración > Medios de Pago > Flow" 
+          }, { status: 400 })
+        }
         
-        if (!flowEnabled || !apiKey || !secretKey) return notConfigured("Flow")
+        if (!apiKey || !secretKey) {
+          return NextResponse.json({ 
+            error: "Credenciales de Flow no configuradas. Ve a Configuración > Medios de Pago > Flow para configurarlas." 
+          }, { status: 400 })
+        }
         
         const url = new URL(req.url)
         const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || `${url.protocol}//${url.host}`

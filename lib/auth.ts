@@ -2,7 +2,6 @@ import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
-import type { UserRole } from "@/lib/types"
 
 // Ensure NEXTAUTH_URL is always defined to prevent "Invalid URL" errors
 const NEXTAUTH_URL = process.env.NEXTAUTH_URL || "http://localhost:3001"
@@ -129,10 +128,11 @@ export const authOptions: NextAuthOptions = {
             select: { role: true, academyId: true, academy: { select: { id: true, name: true, slug: true } } },
           })
           if (u) {
-            token.role = String(u.role)
-            token.academyId = u.academyId ?? undefined
-            token.academy = u.academy ?? undefined
-            token.orgSlug = u.academy?.slug ?? undefined
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (token as any).role = u.role;
+            (token as any).academyId = u.academyId;
+            (token as any).academy = u.academy;
+            (token as any).orgSlug = u.academy?.slug;
           }
         } catch {}
       }
@@ -140,11 +140,13 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub!
-        session.user.role = token.role as UserRole
-        session.user.academyId = token.academyId as string
-        session.user.academy = token.academy as any
-        ;(session.user as any).orgSlug = token.orgSlug as string | undefined
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const t = token as any;
+        (session.user as any).id = t.sub;
+        (session.user as any).role = t.role;
+        (session.user as any).academyId = t.academyId;
+        (session.user as any).academy = t.academy;
+        (session.user as any).orgSlug = t.orgSlug;
       }
       return session
     },

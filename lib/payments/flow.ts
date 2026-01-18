@@ -36,29 +36,16 @@ function generateSignature(params: Record<string, string>, secretKey: string): s
 /**
  * Create a payment in Flow
  * @param params Payment parameters
- * @param apiKeyOverride Optional API key (uses env var if not provided)
- * @param secretKeyOverride Optional secret key (uses env var if not provided)
+ * @param apiKey Flow API key from academy settings
+ * @param secretKey Flow Secret key from academy settings
  */
 export async function createFlowPayment(
   params: FlowPaymentParams,
-  apiKeyOverride?: string,
-  secretKeyOverride?: string
+  apiKey: string,
+  secretKey: string
 ): Promise<FlowPaymentResponse> {
-  const apiKey = apiKeyOverride || process.env.FLOW_API_KEY
-  const secretKey = secretKeyOverride || process.env.FLOW_SECRET_KEY
-
-  console.log("🔑 Flow credentials check:", {
-    hasApiKeyOverride: !!apiKeyOverride,
-    hasSecretKeyOverride: !!secretKeyOverride,
-    hasEnvApiKey: !!process.env.FLOW_API_KEY,
-    hasEnvSecretKey: !!process.env.FLOW_SECRET_KEY,
-    apiKeyLength: apiKey?.length || 0,
-    secretKeyLength: secretKey?.length || 0,
-    environment: process.env.FLOW_ENVIRONMENT || 'not set',
-  })
-
   if (!apiKey || !secretKey) {
-    throw new Error("Flow API credentials not configured")
+    throw new Error("Flow API credentials not configured. Configure them in Settings > Payment Methods > Flow")
   }
 
   const requestParams: Record<string, string> = {
