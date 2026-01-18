@@ -49,6 +49,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Public academy info endpoint
+  if (pathname.startsWith("/api/public")) {
+    return NextResponse.next()
+  }
+
   // Webhooks - allow without authentication (they use their own verification)
   if (pathname.startsWith("/api/webhooks")) {
     return NextResponse.next()
