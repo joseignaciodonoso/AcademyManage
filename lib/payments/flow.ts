@@ -48,6 +48,16 @@ export async function createFlowPayment(
     throw new Error("Flow API credentials not configured. Configure them in Settings > Payment Methods > Flow")
   }
 
+  console.log("🔐 Flow createPayment called with:", {
+    apiKeyProvided: !!apiKey,
+    apiKeyLength: apiKey?.length,
+    apiKeyFirst10: apiKey?.substring(0, 10),
+    secretKeyProvided: !!secretKey,
+    secretKeyLength: secretKey?.length,
+    environment: process.env.FLOW_ENVIRONMENT || "sandbox (default)",
+    apiUrl: FLOW_API_URL,
+  })
+
   const requestParams: Record<string, string> = {
     apiKey,
     commerceOrder: params.commerceOrder,
@@ -70,8 +80,21 @@ export async function createFlowPayment(
   const signature = generateSignature(requestParams, secretKey)
   requestParams.s = signature
 
+  console.log("📝 Flow request params (before signature):", {
+    apiKey: requestParams.apiKey?.substring(0, 15) + "...",
+    commerceOrder: requestParams.commerceOrder,
+    subject: requestParams.subject,
+    amount: requestParams.amount,
+    email: requestParams.email,
+    currency: requestParams.currency,
+    signatureGenerated: !!signature,
+    signatureLength: signature?.length,
+  })
+
   // Make request to Flow API
   const formData = new URLSearchParams(requestParams)
+  
+  console.log("🌐 Making Flow API request to:", `${FLOW_API_URL}/payment/create`)
   
   const response = await fetch(`${FLOW_API_URL}/payment/create`, {
     method: "POST",
@@ -81,9 +104,15 @@ export async function createFlowPayment(
     body: formData.toString(),
   })
 
+  console.log("📥 Flow API response:", {
+    status: response.status,
+    statusText: response.statusText,
+    ok: response.ok,
+  })
+
   if (!response.ok) {
     const errorText = await response.text()
-    console.error("Flow API error:", errorText)
+    console.error("❌ Flow API error response:", errorText)
     throw new Error(`Flow API error: ${response.status} - ${errorText}`)
   }
 
