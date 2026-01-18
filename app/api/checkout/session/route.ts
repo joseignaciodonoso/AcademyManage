@@ -81,21 +81,45 @@ export async function POST(req: Request) {
       }
       case "flow": {
         // Get credentials ONLY from database (academy settings)
-        const apiKey = academy.flowApiKey
-        const secretKey = academy.flowSecretKey
-        const flowEnabled = academy.flowEnabled
+        // Fetch fresh academy data to ensure we have the latest credentials
+        const freshAcademy = await prisma.academy.findUnique({
+          where: { id: academy.id },
+          select: {
+            id: true,
+            slug: true,
+            flowEnabled: true,
+            flowApiKey: true,
+            flowSecretKey: true,
+          }
+        })
         
-        if (!flowEnabled) {
+        if (!freshAcademy) {
+          return NextResponse.json({ error: "Academia no encontrada" }, { status: 404 })
+        }
+        
+        console.log("🔑 Flow checkout - Fresh credentials:", {
+          academyId: freshAcademy.id,
+          academySlug: freshAcademy.slug,
+          flowEnabled: freshAcademy.flowEnabled,
+          hasApiKey: !!freshAcademy.flowApiKey,
+          hasSecretKey: !!freshAcademy.flowSecretKey,
+          apiKeyLength: freshAcademy.flowApiKey?.length || 0,
+        })
+        
+        if (!freshAcademy.flowEnabled) {
           return NextResponse.json({ 
             error: "Flow no está habilitado. Configúralo en Configuración > Medios de Pago > Flow" 
           }, { status: 400 })
         }
         
-        if (!apiKey || !secretKey) {
+        if (!freshAcademy.flowApiKey || !freshAcademy.flowSecretKey) {
           return NextResponse.json({ 
             error: "Credenciales de Flow no configuradas. Ve a Configuración > Medios de Pago > Flow para configurarlas." 
           }, { status: 400 })
         }
+        
+        const apiKey = freshAcademy.flowApiKey
+        const secretKey = freshAcademy.flowSecretKey
         
         const url = new URL(req.url)
         const base = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || `${url.protocol}//${url.host}`
