@@ -139,6 +139,8 @@ export default function AdminSettingsPage() {
   })
   const [paymentLoading, setPaymentLoading] = useState(true)
   const [paymentSaving, setPaymentSaving] = useState(false)
+  const [paymentSuccess, setPaymentSuccess] = useState("")
+  const [paymentError, setPaymentError] = useState("")
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
 
   // Email/SMTP config state
@@ -334,20 +336,36 @@ export default function AdminSettingsPage() {
   const handlePaymentSave = async () => {
     try {
       setPaymentSaving(true)
+      console.log("💾 Guardando configuración de pagos:", paymentConfig)
+      
       const response = await fetch("/api/admin/settings/payments", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(paymentConfig)
       })
 
+      console.log("📥 Respuesta:", response.status, response.ok)
+      const data = await response.json()
+      console.log("📄 Datos:", data)
+
       if (response.ok) {
-        toast.success("Configuración de pagos guardada")
+        console.log("✅ Éxito - mostrando toast y alert")
+        toast.success("✅ Configuración de pagos guardada exitosamente")
+        // Clear any previous error and show success
+        setPaymentError("")
+        setPaymentSuccess("✅ Configuración guardada exitosamente")
+        setTimeout(() => setPaymentSuccess(""), 8000)
       } else {
-        const data = await response.json()
+        console.error("❌ Error:", data.error)
         toast.error(data.error || "Error al guardar configuración")
+        setPaymentSuccess("")
+        setPaymentError(data.error || "Error al guardar configuración")
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error("❌ Error de conexión:", err)
       toast.error("Error de conexión")
+      setPaymentSuccess("")
+      setPaymentError("Error de conexión")
     } finally {
       setPaymentSaving(false)
     }
@@ -1206,6 +1224,20 @@ export default function AdminSettingsPage() {
                       </CardContent>
                     )}
                   </Card>
+
+                  {/* Success/Error Messages */}
+                  {paymentSuccess && (
+                    <Alert className="bg-green-500/10 border-green-500/50">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <AlertDescription className="text-green-500 font-medium">{paymentSuccess}</AlertDescription>
+                    </Alert>
+                  )}
+                  {paymentError && (
+                    <Alert variant="destructive">
+                      <XCircle className="h-4 w-4" />
+                      <AlertDescription>{paymentError}</AlertDescription>
+                    </Alert>
+                  )}
 
                   {/* Save Button */}
                   <div className="flex justify-end">
