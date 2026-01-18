@@ -80,22 +80,21 @@ export default function TenantSignupPage() {
         const data = await response.json()
         console.log("✅ Student registration successful:", data)
         
-        await new Promise(resolve => setTimeout(resolve, 500))
+        // Small delay to ensure DB commit
+        await new Promise(resolve => setTimeout(resolve, 800))
         
         console.log("🔄 Attempting auto-login...")
         const loginResult = await signIn("credentials", {
           email: formData.email,
           password: formData.password,
-          orgSlug,
           redirect: false,
           callbackUrl: `/auth/post-signin?org=${orgSlug}`,
         })
 
         if (loginResult?.error) {
-          setError(`Registro exitoso pero error al iniciar sesión: ${loginResult.error}`)
-          setTimeout(() => {
-            router.push(`/${orgSlug}/auth/signin`)
-          }, 2000)
+          // Registration was successful, redirect to login with success message
+          console.log("⚠️ Auto-login failed, redirecting to signin...")
+          router.push(`/${orgSlug}/login?registered=true`)
         } else if (loginResult?.ok) {
           window.location.href = loginResult.url || `/auth/post-signin?org=${orgSlug}`
         }

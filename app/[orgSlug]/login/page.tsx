@@ -2,7 +2,7 @@
 
 import type React from 'react'
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -13,13 +13,16 @@ import { Eye, EyeOff, LogIn, Mail, Lock, ArrowRight, Trophy, Users, TrendingUp }
 
 export default function TenantLoginPage() {
   const params = useParams<{ orgSlug: string }>()
+  const searchParams = useSearchParams()
   const orgSlug = params?.orgSlug
+  const justRegistered = searchParams.get('registered') === 'true'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState(justRegistered ? '¡Cuenta creada exitosamente! Inicia sesión para continuar.' : '')
   const [loading, setLoading] = useState(false)
   const [academyName, setAcademyName] = useState('')
 
@@ -151,6 +154,12 @@ export default function TenantLoginPage() {
               Ingresa tus credenciales para acceder
             </p>
           </div>
+
+          {success && (
+            <Alert className="mb-6 border-green-200 bg-green-50 dark:bg-green-900/20">
+              <AlertDescription className="text-green-800 dark:text-green-200">{success}</AlertDescription>
+            </Alert>
+          )}
 
           {error && (
             <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50 dark:bg-red-900/20">
