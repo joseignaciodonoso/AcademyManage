@@ -19,15 +19,19 @@ export default async function OrgLandingPage({ params }: Props) {
       id: true,
       name: true,
       slug: true,
-      logo: true,
-      primaryColor: true,
-      description: true,
+      logoUrl: true,
+      brandPrimary: true,
       type: true,
       discipline: true,
       sport: true,
-      phone: true,
-      email: true,
-      address: true,
+      branches: {
+        take: 1,
+        select: {
+          phone: true,
+          email: true,
+          address: true,
+        }
+      },
       _count: {
         select: {
           users: true,
@@ -44,6 +48,8 @@ export default async function OrgLandingPage({ params }: Props) {
   const isClub = academy.type === "CLUB"
   const orgType = isClub ? "Club" : "Academia"
   const discipline = isClub ? academy.sport : academy.discipline
+  const branch = academy.branches[0]
+  const primaryColor = academy.brandPrimary || "#3b82f6"
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -51,9 +57,9 @@ export default async function OrgLandingPage({ params }: Props) {
       <header className="border-b bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {academy.logo ? (
+            {academy.logoUrl ? (
               <Image
-                src={academy.logo}
+                src={academy.logoUrl}
                 alt={academy.name}
                 width={48}
                 height={48}
@@ -62,7 +68,7 @@ export default async function OrgLandingPage({ params }: Props) {
             ) : (
               <div 
                 className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-xl"
-                style={{ backgroundColor: academy.primaryColor || "#3b82f6" }}
+                style={{ backgroundColor: primaryColor }}
               >
                 {academy.name.charAt(0)}
               </div>
@@ -80,7 +86,7 @@ export default async function OrgLandingPage({ params }: Props) {
               </Button>
             </Link>
             <Link href={`/${orgSlug}/auth/signup`}>
-              <Button size="sm" style={{ backgroundColor: academy.primaryColor || "#3b82f6" }}>
+              <Button size="sm" style={{ backgroundColor: primaryColor }}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 Registrarse
               </Button>
@@ -93,9 +99,9 @@ export default async function OrgLandingPage({ params }: Props) {
       <section className="container mx-auto px-4 py-16 md:py-24">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-8 flex justify-center">
-            {academy.logo ? (
+            {academy.logoUrl ? (
               <Image
-                src={academy.logo}
+                src={academy.logoUrl}
                 alt={academy.name}
                 width={120}
                 height={120}
@@ -104,7 +110,7 @@ export default async function OrgLandingPage({ params }: Props) {
             ) : (
               <div 
                 className="w-28 h-28 rounded-2xl flex items-center justify-center text-white font-bold text-4xl shadow-lg"
-                style={{ backgroundColor: academy.primaryColor || "#3b82f6" }}
+                style={{ backgroundColor: primaryColor }}
               >
                 {academy.name.charAt(0)}
               </div>
@@ -116,7 +122,7 @@ export default async function OrgLandingPage({ params }: Props) {
           </h1>
           
           <p className="text-xl text-slate-600 dark:text-slate-300 mb-8 max-w-2xl mx-auto">
-            {academy.description || `${orgType} de ${discipline}. Únete a nuestra comunidad y alcanza tus metas.`}
+            {`${orgType} de ${discipline}. Únete a nuestra comunidad y alcanza tus metas.`}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -124,7 +130,7 @@ export default async function OrgLandingPage({ params }: Props) {
               <Button 
                 size="lg" 
                 className="text-lg px-8"
-                style={{ backgroundColor: academy.primaryColor || "#3b82f6" }}
+                style={{ backgroundColor: primaryColor }}
               >
                 Comenzar Ahora
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -146,11 +152,11 @@ export default async function OrgLandingPage({ params }: Props) {
             <CardContent className="pt-6 text-center">
               <div 
                 className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
-                style={{ backgroundColor: `${academy.primaryColor || "#3b82f6"}20` }}
+                style={{ backgroundColor: `${primaryColor}20` }}
               >
                 <Trophy 
                   className="h-7 w-7" 
-                  style={{ color: academy.primaryColor || "#3b82f6" }}
+                  style={{ color: primaryColor }}
                 />
               </div>
               <h3 className="font-semibold text-lg mb-2 text-slate-900 dark:text-white">
@@ -166,11 +172,11 @@ export default async function OrgLandingPage({ params }: Props) {
             <CardContent className="pt-6 text-center">
               <div 
                 className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
-                style={{ backgroundColor: `${academy.primaryColor || "#3b82f6"}20` }}
+                style={{ backgroundColor: `${primaryColor}20` }}
               >
                 <Users 
                   className="h-7 w-7" 
-                  style={{ color: academy.primaryColor || "#3b82f6" }}
+                  style={{ color: primaryColor }}
                 />
               </div>
               <h3 className="font-semibold text-lg mb-2 text-slate-900 dark:text-white">
@@ -186,11 +192,11 @@ export default async function OrgLandingPage({ params }: Props) {
             <CardContent className="pt-6 text-center">
               <div 
                 className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
-                style={{ backgroundColor: `${academy.primaryColor || "#3b82f6"}20` }}
+                style={{ backgroundColor: `${primaryColor}20` }}
               >
                 <Calendar 
                   className="h-7 w-7" 
-                  style={{ color: academy.primaryColor || "#3b82f6" }}
+                  style={{ color: primaryColor }}
                 />
               </div>
               <h3 className="font-semibold text-lg mb-2 text-slate-900 dark:text-white">
@@ -208,7 +214,7 @@ export default async function OrgLandingPage({ params }: Props) {
       <section className="container mx-auto px-4 py-16">
         <div 
           className="max-w-4xl mx-auto rounded-2xl p-8 md:p-12 text-center text-white"
-          style={{ backgroundColor: academy.primaryColor || "#3b82f6" }}
+          style={{ backgroundColor: primaryColor }}
         >
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
             ¿Listo para comenzar?
@@ -229,9 +235,9 @@ export default async function OrgLandingPage({ params }: Props) {
       <footer className="border-t bg-white dark:bg-slate-900 py-8">
         <div className="container mx-auto px-4 text-center text-slate-600 dark:text-slate-400">
           <p className="mb-2">{academy.name}</p>
-          {academy.address && <p className="text-sm">{academy.address}</p>}
-          {academy.email && <p className="text-sm">{academy.email}</p>}
-          {academy.phone && <p className="text-sm">{academy.phone}</p>}
+          {branch?.address && <p className="text-sm">{branch.address}</p>}
+          {branch?.email && <p className="text-sm">{branch.email}</p>}
+          {branch?.phone && <p className="text-sm">{branch.phone}</p>}
           <p className="text-xs mt-4 opacity-60">
             Powered by ApexLeap
           </p>
