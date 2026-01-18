@@ -130,8 +130,10 @@ export default function PaymentSettingsPage() {
       })
 
       if (response.ok) {
-        setSuccess("Configuración guardada exitosamente")
-        setTimeout(() => setSuccess(""), 3000)
+        setSuccess("✅ Configuración guardada exitosamente")
+        // Scroll to top to show success message
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        setTimeout(() => setSuccess(""), 5000)
       } else {
         const data = await response.json()
         setError(data.error || "Error al guardar configuración")
