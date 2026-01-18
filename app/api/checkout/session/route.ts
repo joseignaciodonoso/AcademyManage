@@ -85,6 +85,18 @@ export async function POST(req: Request) {
         const secretKey = academy.flowSecretKey || process.env.FLOW_SECRET_KEY
         const flowEnabled = academy.flowEnabled
         
+        console.log("🏦 Flow checkout - Academy credentials:", {
+          academyId: academy.id,
+          academySlug: academy.slug,
+          hasDbApiKey: !!academy.flowApiKey,
+          hasDbSecretKey: !!academy.flowSecretKey,
+          hasEnvApiKey: !!process.env.FLOW_API_KEY,
+          hasEnvSecretKey: !!process.env.FLOW_SECRET_KEY,
+          flowEnabled,
+          finalApiKeyLength: apiKey?.length || 0,
+          finalSecretKeyLength: secretKey?.length || 0,
+        })
+        
         if (!flowEnabled || !apiKey || !secretKey) return notConfigured("Flow")
         
         const url = new URL(req.url)

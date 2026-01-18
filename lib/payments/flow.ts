@@ -47,6 +47,16 @@ export async function createFlowPayment(
   const apiKey = apiKeyOverride || process.env.FLOW_API_KEY
   const secretKey = secretKeyOverride || process.env.FLOW_SECRET_KEY
 
+  console.log("🔑 Flow credentials check:", {
+    hasApiKeyOverride: !!apiKeyOverride,
+    hasSecretKeyOverride: !!secretKeyOverride,
+    hasEnvApiKey: !!process.env.FLOW_API_KEY,
+    hasEnvSecretKey: !!process.env.FLOW_SECRET_KEY,
+    apiKeyLength: apiKey?.length || 0,
+    secretKeyLength: secretKey?.length || 0,
+    environment: process.env.FLOW_ENVIRONMENT || 'not set',
+  })
+
   if (!apiKey || !secretKey) {
     throw new Error("Flow API credentials not configured")
   }
