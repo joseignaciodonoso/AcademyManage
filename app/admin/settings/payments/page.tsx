@@ -123,23 +123,36 @@ export default function PaymentSettingsPage() {
       setError("")
       setSuccess("")
 
+      console.log("💾 Guardando configuración de pagos:", config)
+
       const response = await fetch("/api/admin/settings/payments", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config)
       })
 
+      console.log("📥 Respuesta del servidor:", response.status, response.ok)
+
+      const data = await response.json()
+      console.log("📄 Datos de respuesta:", data)
+
       if (response.ok) {
-        setSuccess("✅ Configuración guardada exitosamente")
+        const msg = "✅ Configuración guardada exitosamente"
+        setSuccess(msg)
+        console.log("✅ Éxito - mostrando mensaje:", msg)
         // Scroll to top to show success message
         window.scrollTo({ top: 0, behavior: 'smooth' })
-        setTimeout(() => setSuccess(""), 5000)
+        // Keep message visible for 8 seconds
+        setTimeout(() => setSuccess(""), 8000)
       } else {
-        const data = await response.json()
-        setError(data.error || "Error al guardar configuración")
+        const errorMsg = data.error || "Error al guardar configuración"
+        setError(errorMsg)
+        console.error("❌ Error:", errorMsg)
       }
-    } catch (err) {
-      setError("Error de conexión")
+    } catch (err: any) {
+      const errorMsg = err?.message || "Error de conexión"
+      setError(errorMsg)
+      console.error("❌ Error de conexión:", err)
     } finally {
       setSaving(false)
     }

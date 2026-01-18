@@ -85,6 +85,14 @@ export async function PUT(request: Request) {
     }
 
     const data = await request.json()
+    
+    console.log("💾 PUT /api/admin/settings/payments - Datos recibidos:", {
+      academyId,
+      flowEnabled: data.flowEnabled,
+      flowApiKey: data.flowApiKey ? `${data.flowApiKey.substring(0, 10)}... (len: ${data.flowApiKey.length})` : "NOT SET",
+      flowSecretKey: data.flowSecretKey ? `***... (len: ${data.flowSecretKey.length})` : "NOT SET",
+      flowSecretKeyIsMasked: data.flowSecretKey?.includes("•"),
+    })
 
     // Get current academy to check if tokens are being updated
     const currentAcademy = await prisma.academy.findUnique({
@@ -126,28 +134,29 @@ export async function PUT(request: Request) {
       updateData.flowSecretKey = data.flowSecretKey
     }
 
-    await prisma.academy.update({
+    console.log("📝 Datos a guardar en DB:", {
+      flowEnabled: updateData.flowEnabled,
+      flowApiKey: updateData.flowApiKey ? `${updateData.flowApiKey.substring(0, 10)}... (len: ${updateData.flowApiKey.length})` : "NOT SET",
+      flowSecretKeyUpdating: !!updateData.flowSecretKey,
+    })
+
+    const updatedAcademy = await prisma.academy.update({
       where: { id: academyId },
       data: updateData,
+      select: {
+        flowEnabled: true,
+        flowApiKey: true,
+        flowSecretKey: true,
+      }
     })
 
-    // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        academyId,
-        userId: session.user.id,
-        action: "PAYMENT_SETTINGS_UPDATED",
-        entityType: "Academy",
-        entityId: academyId,
-        details: {
-          mercadopagoEnabled: data.mercadopagoEnabled,
-          khipuEnabled: data.khipuEnabled,
-          flowEnabled: data.flowEnabled,
-          transferEnabled: data.transferEnabled,
-        },
-      },
+    console.log("✅ Academia actualizada:", {
+      flowEnabled: updatedAcademy.flowEnabled,
+      flowApiKey: updatedAcademy.flowApiKey ? `${updatedAcademy.flowApiKey.substring(0, 10)}... (len: ${updatedAcademy.flowApiKey.length})` : "NOT SET",
+      flowSecretKeySet: !!updatedAcademy.flowSecretKey,
     })
 
+    console.log("✅ Configuración guardada exitosamente")
     return NextResponse.json({ ok: true, message: "Configuración guardada" })
   } catch (error) {
     console.error("Error saving payment settings:", error)
